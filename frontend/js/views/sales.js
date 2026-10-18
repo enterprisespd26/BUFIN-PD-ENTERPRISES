@@ -459,7 +459,7 @@ export function showInvoicePreviewModal(doc) {
           <button type="button" class="pd-act-btn pd-act-primary pd-hide-sm" id="pd_modal_print" title="Print">${ICON_PRINT}<span class="pd-btn-label">Print</span></button>
           <button type="button" class="pd-act-btn pd-act-blue pd-hide-sm" id="pd_modal_pdf" title="Download PDF">${ICON_PDF}<span class="pd-btn-label">Download PDF</span></button>
           <button type="button" class="pd-act-btn pd-act-green pd-hide-sm" id="pd_modal_wa" title="Share on WhatsApp">${ICON_WA}<span class="pd-btn-label">WhatsApp</span></button>
-          <button type="button" class="pd-act-btn pd-act-close universal-close-btn" id="pd_modal_close" title="Close (Esc)" aria-label="Close">${ICON_X}<span class="pd-btn-label">Close</span></button>
+          <button type="button" class="pd-act-btn pd-act-close" id="pd_modal_close" title="Close (Esc)" aria-label="Close">${ICON_X}</button>
         </div>
       </div>
 
