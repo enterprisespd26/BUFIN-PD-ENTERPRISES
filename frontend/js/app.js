@@ -266,7 +266,7 @@ export async function render() {
         <div class="wrap" style="padding:24px;border-left:4px solid var(--rd)">
           <h3 style="color:var(--rd);margin-top:0">Unable to load ${esc(currentPage)}</h3>
           <p>${esc(err.message || 'An unexpected error occurred.')}</p>
-          <button class="p" onclick="location.reload()">Reload BUFIN</button>
+          <button class="p" onclick="(window.hardReloadBufin ? window.hardReloadBufin() : location.reload())">Reload BUFIN</button>
         </div>`;
     }
   }

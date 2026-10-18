@@ -21,6 +21,33 @@
   <link rel="stylesheet" href="css/login.css">
   <link rel="stylesheet" href="css/invoice.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    window.debounce = function(fn, ms) {
+      var timer;
+      ms = ms || 300;
+      return function() {
+        var ctx = this, args = arguments;
+        clearTimeout(timer);
+        timer = setTimeout(function() { fn.apply(ctx, args); }, ms);
+      };
+    };
+    window.hardReloadBufin = async function() {
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (var i = 0; i < regs.length; i++) await regs[i].unregister();
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          for (var j = 0; j < keys.length; j++) await caches.delete(keys[j]);
+        }
+      } catch (e) {
+        console.warn('Hard reload cache purge error:', e);
+      }
+      var clean = window.location.origin + window.location.pathname + '?_t=' + Date.now() + window.location.hash;
+      window.location.replace(clean);
+    };
+  </script>
 </head>
 <body>
   <!-- PIN Login Screen rendered directly in HTML -->
@@ -70,12 +97,22 @@
   <div id="toast" role="alert"></div>
   <dialog id="dlg"></dialog>
 
-  <script type="module" src="js/app.js?v=2.5"></script>
+  <script type="module" src="js/app.js?v=3.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+      var swRefreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (!swRefreshing) {
+          swRefreshing = true;
+          window.location.reload();
+        }
+      });
+      window.addEventListener('load', function() {
         navigator.serviceWorker.register('/sw.js', { scope: '/' })
-          .catch(err => console.warn('SW registration failed:', err));
+          .then(function(reg) {
+            reg.update().catch(function() {});
+          })
+          .catch(function(err) { console.warn('SW registration failed:', err); });
       });
     }
   </script>

@@ -1,5 +1,5 @@
 // BUFIN Service Worker - Offline Caching & App Shell Acceleration
-const CACHE_NAME = 'bufin-v2.5-cache';
+const CACHE_NAME = 'bufin-v3.0-cache';
 
 const PRECACHE_ASSETS = [
   '/',
@@ -75,23 +75,22 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. Static Assets (CSS, JS, Fonts, Images, SVG): Stale-While-Revalidate
+  // 2. Static Assets (CSS, JS, Fonts, Images, SVG): Network-First when online, Cache fallback when offline
   event.respondWith(
-    caches.match(req).then(cached => {
-      const fetchPromise = fetch(req).then(networkRes => {
+    fetch(req)
+      .then(networkRes => {
         if (networkRes && networkRes.status === 200) {
           const resClone = networkRes.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(req, resClone));
         }
         return networkRes;
-      }).catch(() => {
-        // If offline and request is an HTML navigation, return cached index
+      })
+      .catch(async () => {
+        const cached = await caches.match(req);
+        if (cached) return cached;
         if (req.mode === 'navigate') {
           return caches.match('/index.html') || caches.match('/');
         }
-      });
-
-      return cached || fetchPromise;
-    })
+      })
   );
 });

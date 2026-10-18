@@ -107,6 +107,10 @@ export function debounce(fn, ms = 300) {
   };
 }
 
+if (typeof window !== 'undefined') {
+  window.debounce = debounce;
+}
+
 /**
  * Optimize Cloudinary image URLs into WebP with responsive thumbnail sizing
  */

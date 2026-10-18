@@ -1,7 +1,22 @@
-import { $, $$, esc, fmt, head, kpi, toast, today, uid, P, convertRate, debounce } from '../modules/utils.js';
+import { $, $$, esc, fmt, head, kpi, toast, today, uid, P, convertRate, debounce as _utilsDebounce } from '../modules/utils.js';
 import { db, save, post, reverse, out, dstat, pn, isS, net, checkCashLiquidity } from '../modules/state.js';
 import { partyForm, markBillPaid, showDoc } from '../modules/actions.js';
 import { showActionSheet } from '../modules/components.js';
+
+// Safe debounce fallback: guaranteed never undefined in any scope
+export const debounce = (typeof _utilsDebounce === 'function') ? _utilsDebounce :
+  (typeof window !== 'undefined' && typeof window.debounce === 'function') ? window.debounce :
+  function (fn, ms = 300) {
+    let timer;
+    return function (...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn.apply(this, args), ms);
+    };
+  };
+
+if (typeof window !== 'undefined') {
+  window.debounce = debounce;
+}
 import {
   openCameraScanner,
   showAttachmentViewer,

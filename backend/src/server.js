@@ -7,11 +7,12 @@ app.disable('x-powered-by'); app.use(express.json({ limit: '15mb' }));
 app.use((q, s, n) => {
   const isApi = q.path.startsWith('/api/');
   const isSw = q.path === '/sw.js';
+  const isHtml = q.path === '/' || q.path === '/index.html' || q.path.endsWith('.html');
   s.set({
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'Referrer-Policy': 'no-referrer',
-    'Cache-Control': isApi || isSw ? 'no-store' : 'public, max-age=86400'
+    'Cache-Control': isApi || isSw || isHtml ? 'no-cache, no-store, must-revalidate' : 'public, max-age=3600'
   });
   n();
 });
@@ -94,6 +95,23 @@ app.put('/api/state', async (q, s, n) => {
     s.json({ version: v });
   } catch (e) { n(e) }
 });
-app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
+app.get(['/', '/index.html'], (q, s) => {
+  s.set({
+    'Content-Type': 'text/html; charset=UTF-8',
+    'Cache-Control': 'no-cache, no-store, must-revalidate'
+  });
+  s.sendFile(path.join(__dirname, '..', '..', 'frontend', 'index.html'));
+});
+app.use(express.static(path.join(__dirname, '..', '..', 'frontend'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html') || filePath.endsWith('sw.js')) {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else if (!prod) {
+      res.set('Cache-Control', 'no-cache, must-revalidate');
+    } else {
+      res.set('Cache-Control', 'public, max-age=3600');
+    }
+  }
+}));
 app.use((e, q, s, n) => s.status(e.status || 500).json({ error: e.status ? e.message : 'Server error' }));
 store.init().then(() => app.listen(process.env.PORT || 3000, () => console.log('BUFIN running on port ' + (process.env.PORT || 3000)))).catch(e => { console.error(e); process.exit(1) });
