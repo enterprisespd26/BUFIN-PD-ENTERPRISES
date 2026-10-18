@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>BUFIN - Business Ledger</title>
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BUFIN">
+  <meta name="theme-color" content="#A8BCA9">
+  <meta property="og:image" content="/png/og-image-1200x630.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/invoice.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <!-- PIN Login Screen rendered directly in HTML -->
+  <div id="pinScreen" class="login-screen">
+    <div class="login-card" id="loginCard">
+      <div class="login-header">
+        <div class="logo-circle">
+          <img src="/svg/app-icon.svg" alt="BUFIN" class="login-app-logo">
+        </div>
+        <h2>BUFIN</h2>
+        <p>Enter 4-digit PIN to access business ledger</p>
+      </div>
+
+      <div class="pin-display">
+        <div class="pin-dot" id="dot0"></div>
+        <div class="pin-dot" id="dot1"></div>
+        <div class="pin-dot" id="dot2"></div>
+        <div class="pin-dot" id="dot3"></div>
+      </div>
+
+      <div class="pin-keypad">
+        <button type="button" class="pin-btn" data-n="1">1</button>
+        <button type="button" class="pin-btn" data-n="2">2</button>
+        <button type="button" class="pin-btn" data-n="3">3</button>
+        <button type="button" class="pin-btn" data-n="4">4</button>
+        <button type="button" class="pin-btn" data-n="5">5</button>
+        <button type="button" class="pin-btn" data-n="6">6</button>
+        <button type="button" class="pin-btn" data-n="7">7</button>
+        <button type="button" class="pin-btn" data-n="8">8</button>
+        <button type="button" class="pin-btn" data-n="9">9</button>
+        <button type="button" class="pin-btn fn" id="pinClear">C</button>
+        <button type="button" class="pin-btn" data-n="0">0</button>
+        <button type="button" class="pin-btn fn" id="pinBack">&#x232B;</button>
+      </div>
+
+      <div class="pin-error" id="pinError"></div>
+    </div>
+  </div>
+
+  <!-- App Elements (hidden by default until unlocked) -->
+  <aside id="nav" aria-label="Main Navigation" style="display:none"></aside>
+  <main id="appMain" style="display:none">
+    <div id="v"></div>
+  </main>
+  <div id="ov" data-a="menu"></div>
+  <nav id="tab" aria-label="Quick navigation" style="display:none"></nav>
+  <div id="toast" role="alert"></div>
+  <dialog id="dlg"></dialog>
+
+  <script type="module" src="js/app.js?v=2.4"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+          .catch(err => console.warn('SW registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>

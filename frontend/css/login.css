@@ -1,0 +1,189 @@
+/* ================= CLEAN LIGHT / WHITE PIN LOGIN THEME ================= */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: #F8FAFC;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 360px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: 24px;
+  padding: 36px 24px 30px;
+  text-align: center;
+  box-sizing: border-box;
+  animation: cardFadeIn 0.25s ease-out;
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.login-header {
+  margin-bottom: 24px;
+}
+
+.logo-circle {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fdfdfb;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.login-app-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.login-card h2 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #0F172A;
+}
+
+.login-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748B;
+  line-height: 1.4;
+}
+
+.pin-display {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 0 auto 28px;
+}
+
+.pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #CBD5E1;
+  background: #F8FAFC;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pin-dot.filled {
+  background: #2563EB;
+  border-color: #2563EB;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+  transform: scale(1.15);
+}
+
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  max-width: 270px;
+  margin: 0 auto;
+}
+
+.pin-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50% !important;
+  border: 1px solid #E2E8F0 !important;
+  background: #F8FAFC !important;
+  color: #0F172A !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.pin-btn:hover {
+  background: #F1F5F9 !important;
+  border-color: #CBD5E1 !important;
+  transform: scale(1.05);
+}
+
+.pin-btn:active {
+  transform: scale(0.95);
+  background: #EFF6FF !important;
+  border-color: #2563EB !important;
+  color: #2563EB !important;
+}
+
+.pin-btn.fn {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  color: #64748B !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.pin-btn.fn:hover {
+  background: #F1F5F9 !important;
+  border-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+.pin-error {
+  min-height: 22px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #EF4444;
+  margin-top: 18px;
+}
+
+.shake {
+  animation: pinShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes pinShake {
+  10%, 90% { transform: translate3d(-3px, 0, 0); }
+  20%, 80% { transform: translate3d(5px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-7px, 0, 0); }
+  40%, 60% { transform: translate3d(7px, 0, 0); }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 28px 18px 24px;
+    border-radius: 20px;
+  }
+  .pin-btn {
+    width: 60px;
+    height: 60px;
+    font-size: 22px !important;
+  }
+  .pin-keypad {
+    gap: 12px;
+  }
+}

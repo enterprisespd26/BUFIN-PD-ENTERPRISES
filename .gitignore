@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment and secrets
+.env
+.env*.local
+backend/.env
+!backend/.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Editor & IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.agents/
+.gemini/
