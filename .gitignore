@@ -25,3 +25,6 @@ logs/
 *.swo
 .agents/
 .gemini/
+
+# Scripts & temporary dev utilities
+backend/scripts/

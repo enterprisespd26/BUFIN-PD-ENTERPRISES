@@ -1,7 +1,15 @@
-import { $, $$, esc, fmt, head, toast, today, uid, P, convertRate, debounce } from '../modules/utils.js';
+import { $, $$, esc, fmt, head, toast, today, uid, P, convertRate } from '../modules/utils.js';
 import { db, save, post, reverse, out, dstat, pn, isC, isS } from '../modules/state.js';
 import { partyForm, markSalePaid } from '../modules/actions.js';
 import { showActionSheet } from '../modules/components.js';
+
+const debounce = (fn, ms = 300) => {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
+};
 
 import { PD_LOGO } from '../modules/logo_data.js';
 export const LOGO = PD_LOGO;

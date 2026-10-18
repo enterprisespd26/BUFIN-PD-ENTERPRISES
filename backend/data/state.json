@@ -1,1 +1,951 @@
-{"version":4,"data":{"biz":{"name":"PD ENTERPRISES","owner":"Pritam Das","gstin":"21IFNPD3153M1ZC","addr":"Plot No-302, Khata No-111, Khaira,\nAt- Muhanchuan, Po- Panichhatra,\nDist- Balasore, Odisha – 756059, India","phone":"7684010176","email":"enterprisespd26@gmail.com","state":"Odisha","prefix":"PD/2627/","bank":"","upi":"","terms":"Goods once sold will not be taken back.\nWeight as per our weighbridge is final.\nSubject to Balasore jurisdiction.","lock":""},"accounts":[{"code":"1000","name":"Cash in Hand","t":"A","cash":true},{"code":"1010","name":"Bank Account","t":"A","cash":true},{"code":"1100","name":"Accounts Receivable","t":"A","cash":false},{"code":"1200","name":"Inventory","t":"A","cash":false},{"code":"1300","name":"Input GST","t":"A","cash":false},{"code":"1400","name":"Loan Receivable","t":"A","cash":false},{"code":"1500","name":"Equipment","t":"A","cash":false},{"code":"2000","name":"Accounts Payable","t":"L","cash":false},{"code":"2100","name":"Loan Payable","t":"L","cash":false},{"code":"2200","name":"Output GST","t":"L","cash":false},{"code":"3000","name":"Owner's Capital","t":"E","cash":false},{"code":"3100","name":"Drawings","t":"E","cash":false},{"code":"3200","name":"Opening Balance Equity","t":"E","cash":false},{"code":"4000","name":"Sales Revenue","t":"I","cash":false},{"code":"4100","name":"Service Revenue","t":"I","cash":false},{"code":"4200","name":"Other Income","t":"I","cash":false},{"code":"4300","name":"Interest Income","t":"I","cash":false},{"code":"5000","name":"Purchases / Cost of Goods Sold","t":"X","cash":false},{"code":"5100","name":"Rent Expense","t":"X","cash":false},{"code":"5200","name":"Transport Expense","t":"X","cash":false},{"code":"5300","name":"Salaries","t":"X","cash":false},{"code":"5400","name":"Utilities","t":"X","cash":false},{"code":"5500","name":"Interest Expense","t":"X","cash":false},{"code":"5600","name":"Miscellaneous Expense","t":"X","cash":false}],"parties":[{"id":"b0midkwrpiug","name":"ddsf","type":"customer","phone":"3324","gstin":"","state":"Odisha","addr":"","terms":"0"},{"id":"p_sup_1","name":"Maa Tarini Scrap Suppliers","type":"supplier"}],"entries":[{"id":"a6a81oa5piuh","ref":"JV-0001","date":"2026-10-16","narr":"PD/2627/0001 - ddsf (Scrap Sale)","src":"sale","meta":{"docNo":"PD/2627/0001","veh":""},"lines":[{"a":"1100","d":330400,"c":0,"p":"b0midkwrpiug"},{"a":"4000","d":0,"c":280000,"p":"b0midkwrpiug"},{"a":"2200","d":0,"c":50400}],"status":"posted","at":"2026-10-16T16:02:59.369Z"},{"id":"je_pb_001","ref":"JV-0002","date":"2026-10-16","narr":"BILL-001 - Maa Tarini Scrap Suppliers (Iron scrap)","src":"bill","lines":[{"a":"5000","d":1000000,"c":0,"p":"p_sup_1"},{"a":"1300","d":180000,"c":0,"p":"p_sup_1"},{"a":"2000","d":0,"c":1180000,"p":"p_sup_1"}],"status":"posted","at":"2026-10-16T16:05:00.000Z"}],"docs":[{"id":"2jg06rfnpiuh","type":"sale","pays":[],"no":"PD/2627/0001","date":"2026-10-16","due":"2026-10-16","party":"b0midkwrpiug","sno":"","desc":"Iron scrap (100 kg)","base":280000,"gst":50400,"rate":18,"tax":{"cg":25200,"sg":25200,"ig":0},"total":330400,"je":"a6a81oa5piuh","veh":"","disc":0,"mode":"intra","modeSel":"auto","paid":0,"pm":"Cash","nt":"","lines":[{"n":"Iron scrap","h":"7204","q":100,"u":"kg","r":28}],"c":{"n":"ddsf","p":"3324","g":"","s":"Odisha","a":""},"cancelled":false},{"id":"doc_pb_001","type":"bill","no":"BILL-0001","sno":"BILL-001","date":"2026-10-16","due":"2026-10-16","party":"p_sup_1","sup":"Maa Tarini Scrap Suppliers","mat":"Iron scrap","q":350,"u":"kg","r":28.57,"base":1000000,"gst":180000,"rate":18,"total":1180000,"paid":0,"pm":"Cash","je":"je_pb_001","hasFiles":false,"cancelled":false,"pays":[]}],"loans":[],"seq":{"jv":1},"items":[{"n":"Iron scrap","h":"7204","u":"kg","r":0},{"n":"Steel scrap","h":"7204","u":"kg","r":0},{"n":"Aluminium scrap","h":"7602","u":"kg","r":0},{"n":"Copper scrap","h":"7404","u":"kg","r":0},{"n":"Brass scrap","h":"7404","u":"kg","r":0},{"n":"Plastic scrap","h":"3915","u":"kg","r":0},{"n":"Paper / cardboard","h":"4707","u":"kg","r":0},{"n":"Battery scrap","h":"8549","u":"kg","r":0}],"audit":[{"at":"2026-10-16T16:02:59.369Z","a":"post JV-0001","d":"sale"},{"at":"2026-10-16T17:25:07.944Z","a":"account edit","d":"1000"}]}}
+{
+  "version": 1,
+  "data": {
+    "biz": {
+      "name": "M/S Apex Scrap Traders",
+      "owner": "Apex Scrap Traders",
+      "gstin": "27AAAAA0000A1Z5",
+      "addr": "Plot 45, MIDC Industrial Area, Taloja,\nNavi Mumbai, Maharashtra – 410208, India",
+      "phone": "9876543210",
+      "email": "apex.scrap@example.com",
+      "state": "Maharashtra",
+      "prefix": "AST/2627/",
+      "bank": "HDFC Bank - A/C 50200012345678, IFSC HDFC0001234",
+      "upi": "apexscrap@hdfcbank",
+      "terms": "1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.",
+      "lock": ""
+    },
+    "accounts": [
+      {
+        "code": "1000",
+        "name": "Cash in Hand",
+        "t": "A",
+        "cash": true
+      },
+      {
+        "code": "1010",
+        "name": "Bank Account",
+        "t": "A",
+        "cash": true
+      },
+      {
+        "code": "1100",
+        "name": "Accounts Receivable",
+        "t": "A",
+        "cash": false
+      },
+      {
+        "code": "1200",
+        "name": "Inventory",
+        "t": "A",
+        "cash": false
+      },
+      {
+        "code": "1300",
+        "name": "Input GST",
+        "t": "A",
+        "cash": false
+      },
+      {
+        "code": "1400",
+        "name": "Loan Receivable",
+        "t": "A",
+        "cash": false
+      },
+      {
+        "code": "1500",
+        "name": "Equipment",
+        "t": "A",
+        "cash": false
+      },
+      {
+        "code": "2000",
+        "name": "Accounts Payable",
+        "t": "L",
+        "cash": false
+      },
+      {
+        "code": "2100",
+        "name": "Loan Payable",
+        "t": "L",
+        "cash": false
+      },
+      {
+        "code": "2200",
+        "name": "Output GST",
+        "t": "L",
+        "cash": false
+      },
+      {
+        "code": "3000",
+        "name": "Owner's Capital",
+        "t": "E",
+        "cash": false
+      },
+      {
+        "code": "3100",
+        "name": "Drawings",
+        "t": "E",
+        "cash": false
+      },
+      {
+        "code": "3200",
+        "name": "Opening Balance Equity",
+        "t": "E",
+        "cash": false
+      },
+      {
+        "code": "4000",
+        "name": "Sales Revenue",
+        "t": "I",
+        "cash": false
+      },
+      {
+        "code": "4100",
+        "name": "Service Revenue",
+        "t": "I",
+        "cash": false
+      },
+      {
+        "code": "4200",
+        "name": "Other Income",
+        "t": "I",
+        "cash": false
+      },
+      {
+        "code": "4300",
+        "name": "Interest Income",
+        "t": "I",
+        "cash": false
+      },
+      {
+        "code": "5000",
+        "name": "Purchases / Cost of Goods Sold",
+        "t": "X",
+        "cash": false
+      },
+      {
+        "code": "5100",
+        "name": "Rent Expense",
+        "t": "X",
+        "cash": false
+      },
+      {
+        "code": "5200",
+        "name": "Transport Expense",
+        "t": "X",
+        "cash": false
+      },
+      {
+        "code": "5300",
+        "name": "Salaries",
+        "t": "X",
+        "cash": false
+      },
+      {
+        "code": "5400",
+        "name": "Utilities",
+        "t": "X",
+        "cash": false
+      },
+      {
+        "code": "5500",
+        "name": "Interest Expense",
+        "t": "X",
+        "cash": false
+      },
+      {
+        "code": "5600",
+        "name": "Miscellaneous Expense",
+        "t": "X",
+        "cash": false
+      }
+    ],
+    "parties": [
+      {
+        "id": "p_shreeji",
+        "name": "Shreeji Scrap Traders",
+        "type": "supplier",
+        "phone": "9820123456",
+        "gstin": "27AABCS1234F1Z1",
+        "state": "Maharashtra",
+        "addr": "Gala No 12, Iron Market, Carnac Bunder, Mumbai, Maharashtra - 400009",
+        "terms": "15"
+      },
+      {
+        "id": "p_national",
+        "name": "National Metal Works",
+        "type": "supplier",
+        "phone": "9898123456",
+        "gstin": "",
+        "state": "Gujarat",
+        "addr": "Plot 88, GIDC Industrial Estate, Vapi, Gujarat - 396195",
+        "terms": "0"
+      },
+      {
+        "id": "p_standard",
+        "name": "Standard Alloys Pvt Ltd",
+        "type": "customer",
+        "phone": "9822987654",
+        "gstin": "27AAACS5678K1Z3",
+        "state": "Maharashtra",
+        "addr": "Plot 10, TTC Industrial Area, Turbhe, Navi Mumbai, Maharashtra - 400705",
+        "terms": "30"
+      },
+      {
+        "id": "p_patel",
+        "name": "Patel Industries",
+        "type": "customer",
+        "phone": "9845112233",
+        "gstin": "29AABCP9012M1Z8",
+        "state": "Karnataka",
+        "addr": "Peenya Industrial Area, Phase 2, Bengaluru, Karnataka - 560058",
+        "terms": "15"
+      },
+      {
+        "id": "p_sbi",
+        "name": "State Bank of India",
+        "type": "lender",
+        "phone": "1800112211",
+        "gstin": "27AAACS0532F1ZV",
+        "state": "Maharashtra",
+        "addr": "SME Branch, MIDC Taloja, Navi Mumbai - 410208",
+        "terms": "0"
+      }
+    ],
+    "entries": [
+      {
+        "id": "je_open_01",
+        "ref": "JV-OPEN-01",
+        "date": "2026-10-01",
+        "narr": "Initial balance sheet migration & opening balances",
+        "src": "open",
+        "lines": [
+          {
+            "a": "1010",
+            "d": 3830400,
+            "c": 0
+          },
+          {
+            "a": "1000",
+            "d": 1000000,
+            "c": 0
+          },
+          {
+            "a": "1100",
+            "d": 1000000,
+            "c": 0,
+            "p": "p_standard"
+          },
+          {
+            "a": "1100",
+            "d": 500000,
+            "c": 0,
+            "p": "p_patel"
+          },
+          {
+            "a": "2000",
+            "d": 0,
+            "c": 800000,
+            "p": "p_shreeji"
+          },
+          {
+            "a": "2000",
+            "d": 0,
+            "c": 500000,
+            "p": "p_national"
+          },
+          {
+            "a": "3000",
+            "d": 0,
+            "c": 5000000
+          },
+          {
+            "a": "3200",
+            "d": 0,
+            "c": 30400
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-01T00:00:00.000Z"
+      },
+      {
+        "id": "je_bill_001",
+        "ref": "JV-0001",
+        "date": "2026-10-05",
+        "narr": "BILL-0001 - Shreeji Scrap Traders (Copper scrap)",
+        "src": "bill",
+        "lines": [
+          {
+            "a": "5000",
+            "d": 1000000,
+            "c": 0,
+            "p": "p_shreeji"
+          },
+          {
+            "a": "1300",
+            "d": 180000,
+            "c": 0,
+            "p": "p_shreeji"
+          },
+          {
+            "a": "2000",
+            "d": 0,
+            "c": 1180000,
+            "p": "p_shreeji"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-05T10:30:00.000Z"
+      },
+      {
+        "id": "je_bill_002",
+        "ref": "JV-0002",
+        "date": "2026-10-07",
+        "narr": "BILL-0002 - National Metal Works (Aluminium scrap)",
+        "src": "bill",
+        "lines": [
+          {
+            "a": "5000",
+            "d": 1800000,
+            "c": 0,
+            "p": "p_national"
+          },
+          {
+            "a": "2000",
+            "d": 0,
+            "c": 1800000,
+            "p": "p_national"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-07T11:15:00.000Z"
+      },
+      {
+        "id": "je_bill_003",
+        "ref": "JV-0003",
+        "date": "2026-10-09",
+        "narr": "BILL-0003 - Shreeji Scrap Traders (Steel scrap)",
+        "src": "bill",
+        "lines": [
+          {
+            "a": "5000",
+            "d": 1500000,
+            "c": 0,
+            "p": "p_shreeji"
+          },
+          {
+            "a": "1300",
+            "d": 270000,
+            "c": 0,
+            "p": "p_shreeji"
+          },
+          {
+            "a": "2000",
+            "d": 0,
+            "c": 1770000,
+            "p": "p_shreeji"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-09T14:00:00.000Z"
+      },
+      {
+        "id": "je_sale_001",
+        "ref": "JV-0004",
+        "date": "2026-10-11",
+        "narr": "AST/2627/0001 - Standard Alloys Pvt Ltd (Copper scrap)",
+        "src": "sale",
+        "meta": {
+          "docNo": "AST/2627/0001",
+          "veh": "MH-04-AB-1234"
+        },
+        "lines": [
+          {
+            "a": "1100",
+            "d": 708000,
+            "c": 0,
+            "p": "p_standard"
+          },
+          {
+            "a": "4000",
+            "d": 0,
+            "c": 600000,
+            "p": "p_standard"
+          },
+          {
+            "a": "2200",
+            "d": 0,
+            "c": 108000
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-11T09:30:00.000Z"
+      },
+      {
+        "id": "je_pay_sale_001",
+        "ref": "JV-0005",
+        "date": "2026-10-11",
+        "narr": "Payment received for AST/2627/0001 (Bank Transfer)",
+        "src": "in",
+        "lines": [
+          {
+            "a": "1010",
+            "d": 708000,
+            "c": 0,
+            "p": "p_standard"
+          },
+          {
+            "a": "1100",
+            "d": 0,
+            "c": 708000,
+            "p": "p_standard"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-11T10:00:00.000Z"
+      },
+      {
+        "id": "je_sale_002",
+        "ref": "JV-0006",
+        "date": "2026-10-13",
+        "narr": "AST/2627/0002 - Patel Industries (Aluminium scrap)",
+        "src": "sale",
+        "meta": {
+          "docNo": "AST/2627/0002",
+          "veh": "KA-01-XY-9876"
+        },
+        "lines": [
+          {
+            "a": "1100",
+            "d": 1770000,
+            "c": 0,
+            "p": "p_patel"
+          },
+          {
+            "a": "4000",
+            "d": 0,
+            "c": 1500000,
+            "p": "p_patel"
+          },
+          {
+            "a": "2200",
+            "d": 0,
+            "c": 270000
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-13T12:00:00.000Z"
+      },
+      {
+        "id": "je_out_001",
+        "ref": "JV-0007",
+        "date": "2026-10-14",
+        "narr": "Warehouse rent and labour handling charges",
+        "src": "out",
+        "lines": [
+          {
+            "a": "5100",
+            "d": 200000,
+            "c": 0
+          },
+          {
+            "a": "5600",
+            "d": 50000,
+            "c": 0
+          },
+          {
+            "a": "1000",
+            "d": 0,
+            "c": 250000
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-14T15:30:00.000Z"
+      },
+      {
+        "id": "je_xfer_001",
+        "ref": "JV-0008",
+        "date": "2026-10-15",
+        "narr": "Cash withdrawal from HDFC Bank to Cash in Hand",
+        "src": "xfer",
+        "lines": [
+          {
+            "a": "1000",
+            "d": 500000,
+            "c": 0
+          },
+          {
+            "a": "1010",
+            "d": 0,
+            "c": 500000
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-15T11:00:00.000Z"
+      },
+      {
+        "id": "je_loan_disb_001",
+        "ref": "JV-0009",
+        "date": "2026-10-16",
+        "narr": "Machinery Expansion Loan - SBI Initial Principal Disbursement",
+        "src": "loan",
+        "lines": [
+          {
+            "a": "1010",
+            "d": 10000000,
+            "c": 0,
+            "p": "p_sbi"
+          },
+          {
+            "a": "2100",
+            "d": 0,
+            "c": 10000000,
+            "p": "p_sbi"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-16T10:00:00.000Z"
+      },
+      {
+        "id": "je_loan_rep_001",
+        "ref": "JV-0010",
+        "date": "2026-10-17",
+        "narr": "EMI Repayment - SBI Loan (Principal ₹8,000 + Interest ₹2,000)",
+        "src": "loan",
+        "lines": [
+          {
+            "a": "2100",
+            "d": 800000,
+            "c": 0,
+            "p": "p_sbi"
+          },
+          {
+            "a": "5500",
+            "d": 200000,
+            "c": 0,
+            "p": "p_sbi"
+          },
+          {
+            "a": "1010",
+            "d": 0,
+            "c": 1000000,
+            "p": "p_sbi"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-10-17T16:00:00.000Z"
+      }
+    ],
+    "docs": [
+      {
+        "id": "doc_bill_001",
+        "type": "bill",
+        "no": "BILL-0001",
+        "sno": "ST/2627/881",
+        "date": "2026-10-05",
+        "due": "2026-10-20",
+        "party": "p_shreeji",
+        "sup": "Shreeji Scrap Traders",
+        "mat": "Copper scrap",
+        "q": 250,
+        "u": "kg",
+        "r": 40,
+        "base": 1000000,
+        "gst": 180000,
+        "rate": 18,
+        "total": 1180000,
+        "paid": 0,
+        "pm": "Bank Transfer",
+        "je": "je_bill_001",
+        "hasFiles": true,
+        "cancelled": false,
+        "pays": [],
+        "lines": [
+          {
+            "n": "Copper scrap",
+            "h": "7404",
+            "q": 250,
+            "u": "kg",
+            "r": 40,
+            "amt": 10000
+          }
+        ],
+        "files": [
+          {
+            "url": "https://res.cloudinary.com/iqsinmcr/image/upload/v1729234567/sample.jpg",
+            "thumb": "https://res.cloudinary.com/iqsinmcr/image/upload/c_thumb,w_200,g_face/v1729234567/sample.jpg",
+            "name": "weighbridge_slip_copper_250kg.jpg",
+            "size": 245000,
+            "type": "image/jpeg",
+            "at": "2026-10-05T10:32:00.000Z"
+          }
+        ]
+      },
+      {
+        "id": "doc_bill_002",
+        "type": "bill",
+        "no": "BILL-0002",
+        "sno": "NMW-904",
+        "date": "2026-10-07",
+        "due": "2026-10-07",
+        "party": "p_national",
+        "sup": "National Metal Works",
+        "mat": "Aluminium scrap",
+        "q": 1.5,
+        "u": "quintal",
+        "r": 120,
+        "base": 1800000,
+        "gst": 0,
+        "rate": 0,
+        "total": 1800000,
+        "paid": 0,
+        "pm": "Cash",
+        "je": "je_bill_002",
+        "hasFiles": false,
+        "cancelled": false,
+        "pays": [],
+        "lines": [
+          {
+            "n": "Aluminium scrap",
+            "h": "7602",
+            "q": 150,
+            "u": "kg",
+            "r": 120,
+            "amt": 18000
+          }
+        ]
+      },
+      {
+        "id": "doc_bill_003",
+        "type": "bill",
+        "no": "BILL-0003",
+        "sno": "ST/2627/899",
+        "date": "2026-10-09",
+        "due": "2026-10-24",
+        "party": "p_shreeji",
+        "sup": "Shreeji Scrap Traders",
+        "mat": "Steel scrap",
+        "q": 0.5,
+        "u": "ton",
+        "r": 30,
+        "base": 1500000,
+        "gst": 270000,
+        "rate": 18,
+        "total": 1770000,
+        "paid": 0,
+        "pm": "Bank Transfer",
+        "je": "je_bill_003",
+        "hasFiles": true,
+        "cancelled": false,
+        "pays": [],
+        "lines": [
+          {
+            "n": "Steel scrap",
+            "h": "7204",
+            "q": 500,
+            "u": "kg",
+            "r": 30,
+            "amt": 15000
+          }
+        ],
+        "files": [
+          {
+            "url": "https://res.cloudinary.com/iqsinmcr/image/upload/v1729234568/sample.jpg",
+            "thumb": "https://res.cloudinary.com/iqsinmcr/image/upload/c_thumb,w_200,g_face/v1729234568/sample.jpg",
+            "name": "invoice_shreeji_steel.pdf",
+            "size": 182000,
+            "type": "application/pdf",
+            "at": "2026-10-09T14:05:00.000Z"
+          }
+        ]
+      },
+      {
+        "id": "doc_sale_001",
+        "type": "sale",
+        "no": "AST/2627/0001",
+        "date": "2026-10-11",
+        "due": "2026-10-11",
+        "party": "p_standard",
+        "sno": "",
+        "desc": "Copper scrap (100 kg)",
+        "base": 600000,
+        "gst": 108000,
+        "rate": 18,
+        "tax": {
+          "cg": 54000,
+          "sg": 54000,
+          "ig": 0
+        },
+        "total": 708000,
+        "je": "je_sale_001",
+        "veh": "MH-04-AB-1234",
+        "disc": 0,
+        "mode": "intra",
+        "modeSel": "auto",
+        "paid": 708000,
+        "pm": "Bank Transfer",
+        "nt": "Full payment received via NEFT upon dispatch.",
+        "lines": [
+          {
+            "n": "Copper scrap",
+            "h": "7404",
+            "q": 100,
+            "u": "kg",
+            "r": 60
+          }
+        ],
+        "c": {
+          "n": "Standard Alloys Pvt Ltd",
+          "p": "9822987654",
+          "g": "27AAACS5678K1Z3",
+          "s": "Maharashtra",
+          "a": "Plot 10, TTC Industrial Area, Turbhe, Navi Mumbai"
+        },
+        "cancelled": false,
+        "pays": [
+          {
+            "id": "pay_sale_001",
+            "date": "2026-10-11",
+            "a": 708000,
+            "acct": "1010",
+            "method": "Bank Transfer",
+            "ref": "NEFT-HDFC-9912",
+            "je": "je_pay_sale_001"
+          }
+        ]
+      },
+      {
+        "id": "doc_sale_002",
+        "type": "sale",
+        "no": "AST/2627/0002",
+        "date": "2026-10-13",
+        "due": "2026-10-28",
+        "party": "p_patel",
+        "sno": "",
+        "desc": "Aluminium scrap (100 kg)",
+        "base": 1500000,
+        "gst": 270000,
+        "rate": 18,
+        "tax": {
+          "cg": 0,
+          "sg": 0,
+          "ig": 270000
+        },
+        "total": 1770000,
+        "je": "je_sale_002",
+        "veh": "KA-01-XY-9876",
+        "disc": 0,
+        "mode": "inter",
+        "modeSel": "inter",
+        "paid": 0,
+        "pm": "Bank Transfer",
+        "nt": "Credit terms 15 days. Unpaid invoice.",
+        "lines": [
+          {
+            "n": "Aluminium scrap",
+            "h": "7602",
+            "q": 100,
+            "u": "kg",
+            "r": 150
+          }
+        ],
+        "c": {
+          "n": "Patel Industries",
+          "p": "9845112233",
+          "g": "29AABCP9012M1Z8",
+          "s": "Karnataka",
+          "a": "Peenya Industrial Area, Phase 2, Bengaluru"
+        },
+        "cancelled": false,
+        "pays": []
+      },
+      {
+        "id": "doc_out_001",
+        "type": "out",
+        "no": "EXP-0001",
+        "date": "2026-10-14",
+        "total": 250000,
+        "acct": "1000",
+        "method": "Cash",
+        "je": "je_out_001",
+        "desc": "Warehouse rent (₹2,000) and labor handling charges (₹500)",
+        "lines": [
+          {
+            "a": "5100",
+            "amt": 200000,
+            "desc": "Godown rent"
+          },
+          {
+            "a": "5600",
+            "amt": 50000,
+            "desc": "Casual labour unloading"
+          }
+        ]
+      },
+      {
+        "id": "doc_xfer_001",
+        "type": "xfer",
+        "no": "TRF-0001",
+        "date": "2026-10-15",
+        "total": 500000,
+        "from": "1010",
+        "to": "1000",
+        "je": "je_xfer_001",
+        "desc": "ATM Cash withdrawal from HDFC Bank"
+      }
+    ],
+    "loans": [
+      {
+        "id": "loan_sbi_001",
+        "ref": "LN-SBI-2026",
+        "name": "SBI Machinery Term Loan",
+        "dir": "taken",
+        "party": "p_sbi",
+        "partyName": "State Bank of India",
+        "principal": 10000000,
+        "repaid": 800000,
+        "rate": 10.5,
+        "date": "2026-10-16",
+        "due": "2026-11-16",
+        "emi": 1000000,
+        "acct": "1010",
+        "notes": "Secured hypothecation loan against scrap baling machine. 12-month tenure.",
+        "last": "2026-10-17",
+        "hist": [
+          {
+            "id": "rep_001",
+            "date": "2026-10-17",
+            "pr": 800000,
+            "int": 200000,
+            "total": 1000000,
+            "acct": "1010",
+            "method": "Bank Transfer",
+            "refNo": "EMI-OCT-2026",
+            "notes": "Monthly installment Oct 2026 (Principal ₹8,000 + Interest ₹2,000)",
+            "jeRef": "JV-0010"
+          }
+        ]
+      }
+    ],
+    "seq": {
+      "jv": 10,
+      "sale": 2,
+      "bill": 3,
+      "exp": 1,
+      "trf": 1
+    },
+    "items": [
+      {
+        "n": "Iron scrap",
+        "h": "7204",
+        "u": "kg",
+        "r": 30
+      },
+      {
+        "n": "Steel scrap",
+        "h": "7204",
+        "u": "kg",
+        "r": 35
+      },
+      {
+        "n": "Aluminium scrap",
+        "h": "7602",
+        "u": "kg",
+        "r": 120
+      },
+      {
+        "n": "Copper scrap",
+        "h": "7404",
+        "u": "kg",
+        "r": 400
+      },
+      {
+        "n": "Brass scrap",
+        "h": "7404",
+        "u": "kg",
+        "r": 300
+      },
+      {
+        "n": "Plastic scrap",
+        "h": "3915",
+        "u": "kg",
+        "r": 25
+      },
+      {
+        "n": "Paper / cardboard",
+        "h": "4707",
+        "u": "kg",
+        "r": 12
+      },
+      {
+        "n": "Battery scrap",
+        "h": "8549",
+        "u": "kg",
+        "r": 90
+      }
+    ],
+    "audit": [
+      {
+        "at": "2026-10-01T00:00:00.000Z",
+        "a": "init database",
+        "d": "fresh seed"
+      },
+      {
+        "at": "2026-10-01T00:05:00.000Z",
+        "a": "post JV-OPEN-01",
+        "d": "open"
+      },
+      {
+        "at": "2026-10-05T10:30:00.000Z",
+        "a": "post JV-0001",
+        "d": "bill BILL-0001"
+      },
+      {
+        "at": "2026-10-07T11:15:00.000Z",
+        "a": "post JV-0002",
+        "d": "bill BILL-0002"
+      },
+      {
+        "at": "2026-10-09T14:00:00.000Z",
+        "a": "post JV-0003",
+        "d": "bill BILL-0003"
+      },
+      {
+        "at": "2026-10-11T09:30:00.000Z",
+        "a": "post JV-0004",
+        "d": "sale AST/2627/0001"
+      },
+      {
+        "at": "2026-10-11T10:00:00.000Z",
+        "a": "post JV-0005",
+        "d": "payment AST/2627/0001"
+      },
+      {
+        "at": "2026-10-13T12:00:00.000Z",
+        "a": "post JV-0006",
+        "d": "sale AST/2627/0002"
+      },
+      {
+        "at": "2026-10-14T15:30:00.000Z",
+        "a": "post JV-0007",
+        "d": "expense EXP-0001"
+      },
+      {
+        "at": "2026-10-15T11:00:00.000Z",
+        "a": "post JV-0008",
+        "d": "transfer TRF-0001"
+      },
+      {
+        "at": "2026-10-16T10:00:00.000Z",
+        "a": "post JV-0009",
+        "d": "loan disbursement LN-SBI-2026"
+      },
+      {
+        "at": "2026-10-17T16:00:00.000Z",
+        "a": "post JV-0010",
+        "d": "loan repayment LN-SBI-2026"
+      }
+    ]
+  }
+}
