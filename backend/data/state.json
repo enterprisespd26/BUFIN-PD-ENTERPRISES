@@ -388,6 +388,12 @@
         "date": "2026-10-11",
         "narr": "Payment received for AST/2627/0001 (Bank Transfer)",
         "src": "in",
+        "meta": {
+          "docNo": "AST/2627/0001",
+          "method": "Bank Transfer",
+          "ref": "NEFT-HDFC-9912",
+          "desc": "Customer payment received for AST/2627/0001"
+        },
         "lines": [
           {
             "a": "1010",
@@ -443,6 +449,12 @@
         "date": "2026-10-14",
         "narr": "Warehouse rent and labour handling charges",
         "src": "out",
+        "meta": {
+          "docNo": "EXP-0001",
+          "method": "Cash",
+          "ref": "EXP-0001",
+          "desc": "Warehouse rent & casual labour unloading charges"
+        },
         "lines": [
           {
             "a": "5100",
@@ -469,6 +481,12 @@
         "date": "2026-10-15",
         "narr": "Cash withdrawal from HDFC Bank to Cash in Hand",
         "src": "xfer",
+        "meta": {
+          "docNo": "TRF-0001",
+          "method": "Cash Withdrawal",
+          "ref": "TRF-0001",
+          "transferType": "Cash Withdrawal"
+        },
         "lines": [
           {
             "a": "1000",
@@ -490,6 +508,12 @@
         "date": "2026-10-16",
         "narr": "Machinery Expansion Loan - SBI Initial Principal Disbursement",
         "src": "loan",
+        "meta": {
+          "loanRef": "LN-SBI-2026",
+          "method": "Bank Transfer",
+          "ref": "LN-SBI-2026",
+          "kind": "disb"
+        },
         "lines": [
           {
             "a": "1010",
@@ -513,6 +537,12 @@
         "date": "2026-10-17",
         "narr": "EMI Repayment - SBI Loan (Principal ₹8,000 + Interest ₹2,000)",
         "src": "loan",
+        "meta": {
+          "loanRef": "LN-SBI-2026",
+          "method": "Bank Transfer",
+          "ref": "EMI-OCT-2026",
+          "kind": "rep"
+        },
         "lines": [
           {
             "a": "2100",

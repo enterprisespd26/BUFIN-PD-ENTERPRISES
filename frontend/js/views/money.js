@@ -85,10 +85,58 @@ export function getTxnRowData(e) {
     catName = e.lines[1] ? an(e.lines[1].a) : '';
   }
 
-  const refNo = e.meta?.ref || e.meta?.docNo || '';
+  let refNo = e.meta?.ref || e.meta?.docNo || e.meta?.refNo || '';
+  if (!refNo && db.docs) {
+    const d = db.docs.find(x => x.je === e.id || (x.pays && x.pays.some(p => p.je === e.id)));
+    if (d) {
+      const pay = d.pays && d.pays.find(p => p.je === e.id);
+      refNo = pay?.ref || d.no || d.sno || '';
+    }
+  }
+  if (!refNo && db.loans) {
+    const l = db.loans.find(x => x.id === e.meta?.loanId || (x.hist && x.hist.some(h => h.jeRef === e.ref)));
+    if (l) {
+      const h = l.hist && l.hist.find(h => h.jeRef === e.ref);
+      refNo = h?.refNo || l.ref || '';
+    }
+  }
+  if (!refNo) refNo = e.ref || '';
+
   const desc = (e.meta && typeof e.meta.desc === 'string') ? (e.meta.desc.trim() || '-') : (e.narr || '-');
+
   if (!method) {
-    method = e.meta?.method || (acctName.toLowerCase().includes('cash') ? 'Cash' : '');
+    method = e.meta?.method || '';
+  }
+  if (!method && db.docs) {
+    const d = db.docs.find(x => x.je === e.id || x.no === e.meta?.docNo || (x.pays && x.pays.some(p => p.je === e.id)));
+    if (d) {
+      const pay = d.pays && d.pays.find(p => p.je === e.id);
+      method = pay?.method || d.pm || '';
+    }
+  }
+  if (!method && db.loans) {
+    const l = db.loans.find(x => x.id === e.meta?.loanId || x.ref === e.meta?.loanRef || (x.hist && x.hist.some(h => h.jeRef === e.ref)));
+    if (l) {
+      const h = l.hist && l.hist.find(h => h.jeRef === e.ref);
+      method = h?.method || ((acc(l.acct)?.name || '').toLowerCase().includes('cash') ? 'Cash' : 'Bank Transfer');
+    }
+  }
+  if (!method && e.narr) {
+    const n = e.narr.toLowerCase();
+    if (n.includes('bank transfer') || n.includes('neft') || n.includes('rtgs') || n.includes('imps')) method = 'Bank Transfer';
+    else if (n.includes('upi')) method = 'UPI';
+    else if (n.includes('cheque')) method = 'Cheque';
+    else if (n.includes('cash')) method = 'Cash';
+  }
+  if (!method) {
+    const cashL = e.lines.find(l => acc(l.a)?.cash);
+    if (cashL) {
+      const aName = (acc(cashL.a)?.name || '').toLowerCase();
+      method = aName.includes('cash') ? 'Cash' : 'Bank Transfer';
+    } else if (acctName) {
+      const aName = acctName.toLowerCase();
+      method = aName.includes('cash') ? 'Cash' : aName.includes('bank') ? 'Bank Transfer' : '';
+    }
   }
   let amt = e.lines.reduce((s, l) => s + l.d, 0);
   if (e.src === 'loan') {
