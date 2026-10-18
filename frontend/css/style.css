@@ -883,18 +883,7 @@ aside.open ~ #ov {
     line-height: 1.25;
   }
   .menu {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 8px;
-    border-radius: 8px;
-    background: var(--sf);
-    border: 1px solid var(--bd);
-    color: var(--tx);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
+    display: none !important;
   }
   .subnav, .tabs-row, .plx-subnav, .pd-btn-row {
     overflow-x: auto;

@@ -304,7 +304,6 @@ export function renderGl() {
   const actions = `<div style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="p" data-a="newjv">+ New Journal</button>
     <button data-a="glcsv">Export CSV</button>
-    <button onclick="window.print()">Print</button>
   </div>`;
 
   return head('General Ledger', actions) +
@@ -586,7 +585,6 @@ export function renderBook() {
     <button data-a="newout">- Money Out</button>
     <button data-a="newxfer">⇄ Transfer</button>
     <button data-a="bkcsv">Export CSV</button>
-    <button onclick="window.print()">Print</button>
   </div>`;
 
   return head('Cash and Bank Book', actions) +

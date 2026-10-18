@@ -1,6 +1,7 @@
 import { $, $$, esc, fmt, P, toast, ic, today } from './modules/utils.js';
 import { db, setDb, setVer, ver, push, save, reverse, log, acc, an, SYS, TN, post } from './modules/state.js';
 import { modal, closeM, form, fld, sel, opts } from './modules/components.js';
+import './modules/mobile.js';
 
 // Namespace imports never fail when a name is missing, so they are used below to
 // look up helpers (accOpts, lacr) that the loan actions need, without breaking the app.

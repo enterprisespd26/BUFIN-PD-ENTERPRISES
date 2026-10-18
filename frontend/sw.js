@@ -13,6 +13,7 @@ const PRECACHE_ASSETS = [
   '/js/modules/components.js',
   '/js/modules/actions.js',
   '/js/modules/offline_store.js',
+  '/js/modules/mobile.js',
   '/js/views/login.js',
   '/js/views/overview.js',
   '/manifest.json',

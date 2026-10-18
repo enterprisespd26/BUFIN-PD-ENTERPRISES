@@ -101,7 +101,6 @@ export function renderTb() {
 
   const actions = `<div style="display:flex;gap:8px;flex-wrap:wrap">
     <button data-a="tbcsv">Export CSV</button>
-    <button onclick="window.print()">Print</button>
   </div>`;
 
   const overdrawnBanner = overdrawnAssets.length ? `
@@ -893,7 +892,6 @@ export function renderBs() {
 
   const actions = `<div style="display:flex;gap:8px;flex-wrap:wrap">
     <button data-a="bscsv">Export CSV</button>
-    <button onclick="window.print()">Print</button>
   </div>`;
 
   const overdrawnBanner = overdrawnAssets.length ? `
@@ -982,35 +980,40 @@ export function renderBs() {
         : `<span style="color:var(--rd);font-weight:700;">⚠ Out of Balance (${fmt(diff)})</span>`)}
     </div>` +
     overdrawnBanner +
-    `<div class="filters" style="align-items:center;flex-wrap:wrap;">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="${t === today() ? 'p' : ''}" data-a="bspreset" data-i="today">Today</button>
-        <button class="${t === getMonthEnd() ? 'p' : ''}" data-a="bspreset" data-i="monthend">Month End</button>
-        <button class="${t === getFyEnd() ? 'p' : ''}" data-a="bspreset" data-i="fyend">FY End</button>
+    `<div class="filters bs-filter-bar">
+      <div class="bs-filter-top">
+        <div class="mc-chips bs-presets">
+          <button class="${t === today() ? 'p' : ''}" data-a="bspreset" data-i="today">Today</button>
+          <button class="${t === getMonthEnd() ? 'p' : ''}" data-a="bspreset" data-i="monthend">Month End</button>
+          <button class="${t === getFyEnd() ? 'p' : ''}" data-a="bspreset" data-i="fyend">FY End</button>
+        </div>
+        <div class="bs-date-wrap">
+          <label>
+            <span>As of</span>
+            <input type="date" id="bsDate" value="${t}">
+          </label>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:12px;color:var(--t2)">
-          As of <input type="date" id="bsDate" value="${t}" style="width:auto">
-        </label>
-      </div>
-      <div style="display:flex;gap:6px;margin-left:auto;">
+      <div class="bs-toggle-wrap">
         <button class="${isStandardMode ? 'p' : ''}" data-a="bstoggle" data-i="standard" title="Reclassify overdrawn assets to liabilities per accounting standards">Standard (Reclassify Overdrafts)</button>
         <button class="${!isStandardMode ? 'p' : ''}" data-a="bstoggle" data-i="net" title="Show direct net ledger balances">Direct Ledger View</button>
       </div>
     </div>
-    <div class="wrap">
+    <div class="wrap" style="margin-bottom:28px;">
       <table>
         ${renderSection('Assets', A_display)}
         ${renderSection('Liabilities', L_display)}
         ${renderSection('Equity', E_display, 'Retained earnings to date', earn)}
-        <tr class="tot" style="background:${isBalanced ? '#f0fdf4' : '#fef2f2'};font-size:14px;font-weight:700;border-top:2px solid var(--bd);">
-          <td>
-            Total Assets (${fmt(totalAssets)}) vs Total Liabilities + Equity (${fmt(totalLiabAndEquity)})
-            ${isBalanced 
-              ? '<span class="b ok" style="margin-left:8px;">Balanced (A = L + E)</span>' 
-              : `<span class="b rd" style="margin-left:8px;">Out of Balance (${fmt(diff)})</span>`}
+        <tr class="tot" style="background:${isBalanced ? '#f0fdf4' : '#fef2f2'};border-top:2px solid var(--bd);">
+          <td style="padding:12px 14px;">
+            <div style="font-size:13.5px;color:var(--tx);font-weight:700;">Total Assets vs Total Liabilities + Equity</div>
+            <div style="margin-top:4px;">
+              ${isBalanced 
+                ? '<span class="b ok" style="font-size:11px;padding:2px 8px;border-radius:4px;">Balanced (A = L + E)</span>' 
+                : `<span class="b rd" style="font-size:11px;padding:2px 8px;border-radius:4px;">Out of Balance (${fmt(diff)})</span>`}
+            </div>
           </td>
-          <td class="num" style="color:${isBalanced ? '#047857' : '#b91c1c'};font-size:15px;">
+          <td class="num" style="padding:12px 14px;color:${isBalanced ? '#047857' : '#b91c1c'};font-size:16px;font-weight:800;vertical-align:top;">
             ${fmt(totalAssets)}
           </td>
         </tr>
