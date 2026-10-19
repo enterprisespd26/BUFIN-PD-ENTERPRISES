@@ -1,5 +1,18 @@
-const express = require('express'), crypto = require('crypto'), path = require('path');
-const store = require('./store'), { validate } = require('./ledger');
+const fs = require('fs');
+const envPath = path.join(__dirname, '..', '.env');
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const idx = trimmed.indexOf('=');
+      if (idx !== -1) {
+        const k = trimmed.slice(0, idx).trim();
+        const v = trimmed.slice(idx + 1).trim();
+        if (!process.env[k]) process.env[k] = v;
+      }
+    }
+  });
+}
 const PW = process.env.APP_PIN || process.env.APP_PASSWORD, SEC = process.env.SESSION_SECRET;
 if (!PW || !SEC) { console.error('Set APP_PIN (or APP_PASSWORD) and SESSION_SECRET (see .env.example)'); process.exit(1) }
 const app = express(), prod = process.env.NODE_ENV === 'production', DAY = 864e5 * 7;
