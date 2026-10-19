@@ -53,11 +53,19 @@ function words(n) {
   return (p(Math.floor(n / 1e7), 'Crore') + p(Math.floor(n / 1e5) % 100, 'Lakh') + p(Math.floor(n / 1e3) % 100, 'Thousand') + p(n % 1000, '')).trim();
 }
 
-function getMode(cs, modeVal, rateVal) {
+function getMode(cs, modeVal, rateVal, cg) {
   if (modeVal && modeVal !== 'auto') return modeVal;
   if (+rateVal === 0) return 'none';
+  const bizGstin = String(db.biz.gstin || '21IFNPD3153M1ZC').trim().toUpperCase();
+  const bizCode = bizGstin.length >= 2 ? bizGstin.slice(0, 2) : '21';
   const home = (db.biz.state || 'Odisha').trim().toLowerCase();
-  return (cs || '').trim().toLowerCase() === home ? 'intra' : 'inter';
+  const g = String(cg || '').trim().toUpperCase();
+  if (g.length >= 2 && /^\d{2}/.test(g)) {
+    return g.slice(0, 2) === bizCode ? 'intra' : 'inter';
+  }
+  const s = String(cs || '').trim().toLowerCase();
+  if (s === '21' || s === home || s === 'odisha' || s === 'orissa') return 'intra';
+  return 'inter';
 }
 
 function calcFigs(o) {
@@ -647,7 +655,7 @@ export function renderSales() {
     lines,
     disc: invDisc,
     rate: invRate,
-    mode: getMode(custState, invMode, invRate),
+    mode: getMode(custState, invMode, invRate, custGstin),
     paid: isPaymentReceived ? (parseFloat(invPaid) || 0) : 0,
     pm: invPm,
     nt: invNotes
@@ -1073,11 +1081,12 @@ export function bindSalesEvents() {
     const paidInput = $('#pd_paid');
     let invPaid = payReceived ? (parseFloat(paidInput?.value) || 0) : 0;
 
+    const custGstin = ($('#pd_cg')?.value || '').trim();
     let f = calcFigs({
       lines,
       disc: invDisc,
       rate: invRate,
-      mode: getMode(custState, invMode, invRate),
+      mode: getMode(custState, invMode, invRate, custGstin),
       paid: invPaid
     });
 
@@ -1088,7 +1097,7 @@ export function bindSalesEvents() {
         lines,
         disc: invDisc,
         rate: invRate,
-        mode: getMode(custState, invMode, invRate),
+        mode: getMode(custState, invMode, invRate, custGstin),
         paid: invPaid
       });
     }
@@ -1256,6 +1265,26 @@ export function bindSalesEvents() {
     };
   }
 
+  const cgInput = $('#pd_cg');
+  if (cgInput) {
+    cgInput.oninput = () => {
+      const val = cgInput.value.trim().toUpperCase();
+      if (val.length >= 2 && /^\d{2}/.test(val)) {
+        if (val.startsWith('21')) {
+          if ($('#pd_cs') && (!$('#pd_cs').value || $('#pd_cs').value.trim() !== 'Odisha')) {
+            $('#pd_cs').value = 'Odisha';
+          }
+        }
+      }
+      recalculateForm();
+    };
+  }
+
+  const csInput = $('#pd_cs');
+  if (csInput) {
+    csInput.oninput = recalculateForm;
+  }
+
   // Payment received checkbox & conditional fields
   const payRecChk = $('#pd_pay_received');
   const payFields = $('#pd_payment_fields');
@@ -1355,7 +1384,7 @@ export function bindSalesEvents() {
     const disc = parseFloat($('#pd_disc')?.value) || 0;
     const rate = parseFloat($('#pd_rate')?.value) || 0;
     const modeSel = $('#pd_mode')?.value || 'auto';
-    const effMode = getMode(cState, modeSel, rate);
+    const effMode = getMode(cState, modeSel, rate, cGstin);
     const payReceived = Boolean($('#pd_pay_received')?.checked);
     const paidAmt = payReceived ? (parseFloat($('#pd_paid')?.value) || 0) : 0;
     const pm = $('#pd_pm')?.value || 'Cash';

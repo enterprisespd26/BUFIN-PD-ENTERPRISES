@@ -9,14 +9,14 @@ export function renderSettings() {
         ${fld('name', 'Business name', 'text', db.biz.name || 'PD ENTERPRISES')}
         ${fld('owner', 'Proprietor name', 'text', db.biz.owner || 'Pritam Das')}
         ${fld('gstin', 'GSTIN', 'text', db.biz.gstin || '21IFNPD3153M1ZC')}
-        ${fld('phone', 'Mobile / Phone', 'text', db.biz.phone || '7684010176')}
+        ${fld('phone', 'Mobile / Phone', 'text', db.biz.phone || '+91 7684010176')}
         ${fld('email', 'Email', 'text', db.biz.email || 'enterprisespd26@gmail.com')}
         ${fld('state', 'Home State (for CGST+SGST vs IGST)', 'text', db.biz.state || 'Odisha')}
         ${fld('prefix', 'Invoice Prefix', 'text', db.biz.prefix || 'PD/2627/')}
-        ${fld('upi', 'UPI ID', 'text', db.biz.upi || '')}
-        <label>Address<textarea name="addr" rows="3">${esc(db.biz.addr || '')}</textarea></label>
-        <label>Bank details (shown on printed invoice)<textarea name="bank" rows="3">${esc(db.biz.bank || '')}</textarea></label>
-        <label>Terms &amp; conditions<textarea name="terms" rows="3">${esc(db.biz.terms || '')}</textarea></label>
+        ${fld('upi', 'UPI ID', 'text', db.biz.upi || '7684010176@upi')}
+        <label>Address<textarea name="addr" rows="3">${esc(db.biz.addr || 'Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India')}</textarea></label>
+        <label>Bank details (shown on printed invoice)<textarea name="bank" rows="3">${esc(db.biz.bank || 'State Bank of India - A/C 39876543210, IFSC SBIN0001234')}</textarea></label>
+        <label>Terms &amp; conditions<textarea name="terms" rows="3">${esc(db.biz.terms || '1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.\n4. Subject to Balasore jurisdiction.')}</textarea></label>
         ${fld('lock', 'Lock periods up to (no posting on or before)', 'date', db.biz.lock || '')}
         <div style="margin-top:14px"><button class="p">Save settings</button></div>
       </form>

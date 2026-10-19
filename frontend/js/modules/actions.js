@@ -10,9 +10,39 @@ let jvN = 3;
 function half(g) { return Math.floor(g / 2); }
 function sameSt(a, b) { return String(a).trim().toLowerCase() === String(b).trim().toLowerCase(); }
 
+export function isIntraState(party) {
+  if (!party) return true;
+  const pGstin = String(party.gstin || party.g || '').trim().toUpperCase();
+  const pState = String(party.state || party.s || '').trim().toLowerCase();
+
+  const bizGstin = String(db.biz.gstin || '21IFNPD3153M1ZC').trim().toUpperCase();
+  const bizCode = bizGstin.length >= 2 ? bizGstin.slice(0, 2) : '21';
+  const bizState = String(db.biz.state || 'Odisha').trim().toLowerCase();
+
+  // 1. If party has a GSTIN, match the 2-digit state code
+  if (pGstin.length >= 2 && /^\d{2}/.test(pGstin)) {
+    return pGstin.slice(0, 2) === bizCode;
+  }
+
+  // 2. If party state is numeric code e.g. "21"
+  if (/^\d{2}$/.test(pState)) {
+    return pState === bizCode;
+  }
+
+  // 3. Match state name against business state or Odisha (code 21)
+  if (pState) {
+    if (sameSt(pState, bizState)) return true;
+    if ((pState === 'odisha' || pState === 'orissa') && (bizState === 'odisha' || bizState === 'orissa' || bizCode === '21')) return true;
+    return false;
+  }
+
+  return true;
+}
+
 export function taxSplit(g, p) {
-  if (!g || !p || !p.state || !db.biz.state) return {};
-  return sameSt(p.state, db.biz.state) ? { cg: half(g), sg: g - half(g) } : { ig: g };
+  if (!g || !p) return {};
+  if (!p.state && !p.gstin && !p.s && !p.g && !db.biz.state) return {};
+  return isIntraState(p) ? { cg: half(g), sg: g - half(g) } : { ig: g };
 }
 
 export function taxRows(d, s) {
@@ -435,10 +465,16 @@ export function showDoc(id) {
   const p = db.parties.find(x => x.id === d.party) || {};
   const s = d.type === 'sale';
   const st = dstat(d);
+  const b = db.biz || {};
   modal(`<h3>${d.no} <span class="b ${st[1]}">${st[0]}</span></h3>
-    <p><b>${esc(db.biz.name)}</b> ${db.biz.gstin ? '· GSTIN ' + esc(db.biz.gstin) : ''}<br>
-    ${s ? 'Bill to' : 'Supplier'}: ${esc(p.name)} ${p.gstin ? '· GSTIN ' + esc(p.gstin) : ''}<br>
-    Date ${d.date}${d.due ? ' · Due ' + d.due : ''}</p>
+    <div style="font-size:12.5px;line-height:1.5;margin-bottom:12px;padding:10px 12px;background:#f8fafc;border:1px solid var(--bd);border-radius:6px">
+      <div style="font-weight:700;font-size:15px;color:var(--tx)">${esc(b.name || 'PD ENTERPRISES')}</div>
+      ${b.addr ? `<div style="color:var(--t2)">${esc(b.addr).replace(/\n/g, ', ')}</div>` : ''}
+      <div style="color:var(--t2)">${b.phone ? 'Mob: ' + esc(b.phone) : ''}${b.email ? (b.phone ? ' | ' : '') + 'Email: ' + esc(b.email) : ''}</div>
+      <div><b>GSTIN:</b> <code>${esc(b.gstin || '')}</code> · <b>State:</b> ${esc(b.state || 'Odisha')} (Code: 21)</div>
+    </div>
+    <p><b>${s ? 'Bill to' : 'Supplier'}:</b> ${esc(p.name || d.sup || '')} ${p.gstin || d.gstin ? '· <b>GSTIN:</b> ' + esc(p.gstin || d.gstin) : ''}<br>
+    <b>Date:</b> ${d.date}${d.due ? ' · <b>Due:</b> ' + d.due : ''}</p>
     <div class="wrap"><table>
       <tr><td>${esc(d.desc)}</td><td class="num">${fmt(d.base)}</td></tr>
       ${taxRows(d, s)}

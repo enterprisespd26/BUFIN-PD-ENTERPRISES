@@ -2,17 +2,17 @@
   "version": 1,
   "data": {
     "biz": {
-      "name": "M/S Apex Scrap Traders",
-      "owner": "Apex Scrap Traders",
-      "gstin": "27AAAAA0000A1Z5",
-      "addr": "Plot 45, MIDC Industrial Area, Taloja,\nNavi Mumbai, Maharashtra – 410208, India",
-      "phone": "9876543210",
-      "email": "apex.scrap@example.com",
-      "state": "Maharashtra",
-      "prefix": "AST/2627/",
-      "bank": "HDFC Bank - A/C 50200012345678, IFSC HDFC0001234",
-      "upi": "apexscrap@hdfcbank",
-      "terms": "1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.",
+      "name": "PD ENTERPRISES",
+      "owner": "Pritam Das",
+      "gstin": "21IFNPD3153M1ZC",
+      "addr": "Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India",
+      "phone": "+91 7684010176",
+      "email": "enterprisespd26@gmail.com",
+      "state": "Odisha",
+      "prefix": "PD/2627/",
+      "bank": "State Bank of India - A/C 39876543210, IFSC SBIN0001234",
+      "upi": "7684010176@upi",
+      "terms": "1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.\n4. Subject to Balasore jurisdiction.",
       "lock": ""
     },
     "accounts": [
@@ -164,12 +164,12 @@
     "parties": [
       {
         "id": "p_shreeji",
-        "name": "Shreeji Scrap Traders",
+        "name": "Kalinga Scrap Suppliers",
         "type": "supplier",
-        "phone": "9820123456",
-        "gstin": "27AABCS1234F1Z1",
-        "state": "Maharashtra",
-        "addr": "Gala No 12, Iron Market, Carnac Bunder, Mumbai, Maharashtra - 400009",
+        "phone": "9861123456",
+        "gstin": "21AABCK1234F1Z1",
+        "state": "Odisha",
+        "addr": "Plot 12, Industrial Area, Remuna, Balasore, Odisha - 756019",
         "terms": "15"
       },
       {
@@ -178,28 +178,28 @@
         "type": "supplier",
         "phone": "9898123456",
         "gstin": "",
-        "state": "Gujarat",
-        "addr": "Plot 88, GIDC Industrial Estate, Vapi, Gujarat - 396195",
+        "state": "Jharkhand",
+        "addr": "Plot 88, Adityapur Industrial Area, Jamshedpur, Jharkhand - 831013",
         "terms": "0"
       },
       {
         "id": "p_standard",
-        "name": "Standard Alloys Pvt Ltd",
+        "name": "Utkal Alloys Pvt Ltd",
         "type": "customer",
-        "phone": "9822987654",
-        "gstin": "27AAACS5678K1Z3",
-        "state": "Maharashtra",
-        "addr": "Plot 10, TTC Industrial Area, Turbhe, Navi Mumbai, Maharashtra - 400705",
+        "phone": "9437987654",
+        "gstin": "21AAACU5678K1Z3",
+        "state": "Odisha",
+        "addr": "Plot 10, Mancheswar Industrial Estate, Bhubaneswar, Odisha - 751010",
         "terms": "30"
       },
       {
         "id": "p_patel",
-        "name": "Patel Industries",
+        "name": "Bengal Metal Corp",
         "type": "customer",
-        "phone": "9845112233",
-        "gstin": "29AABCP9012M1Z8",
-        "state": "Karnataka",
-        "addr": "Peenya Industrial Area, Phase 2, Bengaluru, Karnataka - 560058",
+        "phone": "9830112233",
+        "gstin": "19AABCB9012M1Z8",
+        "state": "West Bengal",
+        "addr": "Taratala Industrial Area, Kolkata, West Bengal - 700088",
         "terms": "15"
       },
       {
@@ -207,9 +207,9 @@
         "name": "State Bank of India",
         "type": "lender",
         "phone": "1800112211",
-        "gstin": "27AAACS0532F1ZV",
-        "state": "Maharashtra",
-        "addr": "SME Branch, MIDC Taloja, Navi Mumbai - 410208",
+        "gstin": "21AAACS0532F1ZV",
+        "state": "Odisha",
+        "addr": "SME Branch, OT Road, Balasore, Odisha - 756001",
         "terms": "0"
       }
     ],
@@ -273,7 +273,7 @@
         "id": "je_bill_001",
         "ref": "JV-0001",
         "date": "2026-10-05",
-        "narr": "BILL-0001 - Shreeji Scrap Traders (Copper scrap)",
+        "narr": "BILL-0001 - Kalinga Scrap Suppliers (Copper scrap)",
         "src": "bill",
         "lines": [
           {
@@ -325,7 +325,7 @@
         "id": "je_bill_003",
         "ref": "JV-0003",
         "date": "2026-10-09",
-        "narr": "BILL-0003 - Shreeji Scrap Traders (Steel scrap)",
+        "narr": "BILL-0003 - Kalinga Scrap Suppliers (Steel scrap)",
         "src": "bill",
         "lines": [
           {
@@ -354,11 +354,11 @@
         "id": "je_sale_001",
         "ref": "JV-0004",
         "date": "2026-10-11",
-        "narr": "AST/2627/0001 - Standard Alloys Pvt Ltd (Copper scrap)",
+        "narr": "PD/2627/0001 - Utkal Alloys Pvt Ltd (Copper scrap)",
         "src": "sale",
         "meta": {
-          "docNo": "AST/2627/0001",
-          "veh": "MH-04-AB-1234"
+          "docNo": "PD/2627/0001",
+          "veh": "OD-01-AB-1234"
         },
         "lines": [
           {
@@ -386,13 +386,13 @@
         "id": "je_pay_sale_001",
         "ref": "JV-0005",
         "date": "2026-10-11",
-        "narr": "Payment received for AST/2627/0001 (Bank Transfer)",
+        "narr": "Payment received for PD/2627/0001 (Bank Transfer)",
         "src": "in",
         "meta": {
-          "docNo": "AST/2627/0001",
+          "docNo": "PD/2627/0001",
           "method": "Bank Transfer",
-          "ref": "NEFT-HDFC-9912",
-          "desc": "Customer payment received for AST/2627/0001"
+          "ref": "NEFT-SBI-9912",
+          "desc": "Customer payment received for PD/2627/0001"
         },
         "lines": [
           {
@@ -415,11 +415,11 @@
         "id": "je_sale_002",
         "ref": "JV-0006",
         "date": "2026-10-13",
-        "narr": "AST/2627/0002 - Patel Industries (Aluminium scrap)",
+        "narr": "PD/2627/0002 - Bengal Metal Corp (Aluminium scrap)",
         "src": "sale",
         "meta": {
-          "docNo": "AST/2627/0002",
-          "veh": "KA-01-XY-9876"
+          "docNo": "PD/2627/0002",
+          "veh": "WB-02-XY-9876"
         },
         "lines": [
           {
@@ -479,7 +479,7 @@
         "id": "je_xfer_001",
         "ref": "JV-0008",
         "date": "2026-10-15",
-        "narr": "Cash withdrawal from HDFC Bank to Cash in Hand",
+        "narr": "Cash withdrawal from SBI Bank to Cash in Hand",
         "src": "xfer",
         "meta": {
           "docNo": "TRF-0001",
@@ -572,11 +572,11 @@
         "id": "doc_bill_001",
         "type": "bill",
         "no": "BILL-0001",
-        "sno": "ST/2627/881",
+        "sno": "KS/2627/881",
         "date": "2026-10-05",
         "due": "2026-10-20",
         "party": "p_shreeji",
-        "sup": "Shreeji Scrap Traders",
+        "sup": "Kalinga Scrap Suppliers",
         "mat": "Copper scrap",
         "q": 250,
         "u": "kg",
@@ -650,11 +650,11 @@
         "id": "doc_bill_003",
         "type": "bill",
         "no": "BILL-0003",
-        "sno": "ST/2627/899",
+        "sno": "KS/2627/899",
         "date": "2026-10-09",
         "due": "2026-10-24",
         "party": "p_shreeji",
-        "sup": "Shreeji Scrap Traders",
+        "sup": "Kalinga Scrap Suppliers",
         "mat": "Steel scrap",
         "q": 0.5,
         "u": "ton",
@@ -683,7 +683,7 @@
           {
             "url": "https://res.cloudinary.com/iqsinmcr/image/upload/v1729234568/sample.jpg",
             "thumb": "https://res.cloudinary.com/iqsinmcr/image/upload/c_thumb,w_200,g_face/v1729234568/sample.jpg",
-            "name": "invoice_shreeji_steel.pdf",
+            "name": "invoice_kalinga_steel.pdf",
             "size": 182000,
             "type": "application/pdf",
             "at": "2026-10-09T14:05:00.000Z"
@@ -693,7 +693,7 @@
       {
         "id": "doc_sale_001",
         "type": "sale",
-        "no": "AST/2627/0001",
+        "no": "PD/2627/0001",
         "date": "2026-10-11",
         "due": "2026-10-11",
         "party": "p_standard",
@@ -709,7 +709,7 @@
         },
         "total": 708000,
         "je": "je_sale_001",
-        "veh": "MH-04-AB-1234",
+        "veh": "OD-01-AB-1234",
         "disc": 0,
         "mode": "intra",
         "modeSel": "auto",
@@ -726,11 +726,11 @@
           }
         ],
         "c": {
-          "n": "Standard Alloys Pvt Ltd",
-          "p": "9822987654",
-          "g": "27AAACS5678K1Z3",
-          "s": "Maharashtra",
-          "a": "Plot 10, TTC Industrial Area, Turbhe, Navi Mumbai"
+          "n": "Utkal Alloys Pvt Ltd",
+          "p": "9437987654",
+          "g": "21AAACU5678K1Z3",
+          "s": "Odisha",
+          "a": "Plot 10, Mancheswar Industrial Estate, Bhubaneswar, Odisha"
         },
         "cancelled": false,
         "pays": [
@@ -740,7 +740,7 @@
             "a": 708000,
             "acct": "1010",
             "method": "Bank Transfer",
-            "ref": "NEFT-HDFC-9912",
+            "ref": "NEFT-SBI-9912",
             "je": "je_pay_sale_001"
           }
         ]
@@ -748,7 +748,7 @@
       {
         "id": "doc_sale_002",
         "type": "sale",
-        "no": "AST/2627/0002",
+        "no": "PD/2627/0002",
         "date": "2026-10-13",
         "due": "2026-10-28",
         "party": "p_patel",
@@ -764,7 +764,7 @@
         },
         "total": 1770000,
         "je": "je_sale_002",
-        "veh": "KA-01-XY-9876",
+        "veh": "WB-02-XY-9876",
         "disc": 0,
         "mode": "inter",
         "modeSel": "inter",
@@ -781,11 +781,11 @@
           }
         ],
         "c": {
-          "n": "Patel Industries",
-          "p": "9845112233",
-          "g": "29AABCP9012M1Z8",
-          "s": "Karnataka",
-          "a": "Peenya Industrial Area, Phase 2, Bengaluru"
+          "n": "Bengal Metal Corp",
+          "p": "9830112233",
+          "g": "19AABCB9012M1Z8",
+          "s": "West Bengal",
+          "a": "Taratala Industrial Area, Kolkata, West Bengal"
         },
         "cancelled": false,
         "pays": []
@@ -822,7 +822,7 @@
         "from": "1010",
         "to": "1000",
         "je": "je_xfer_001",
-        "desc": "ATM Cash withdrawal from HDFC Bank"
+        "desc": "ATM Cash withdrawal from SBI Bank"
       }
     ],
     "loans": [
@@ -919,7 +919,7 @@
       {
         "at": "2026-10-01T00:00:00.000Z",
         "a": "init database",
-        "d": "fresh seed"
+        "d": "fresh seed for PD ENTERPRISES"
       },
       {
         "at": "2026-10-01T00:05:00.000Z",
@@ -944,17 +944,17 @@
       {
         "at": "2026-10-11T09:30:00.000Z",
         "a": "post JV-0004",
-        "d": "sale AST/2627/0001"
+        "d": "sale PD/2627/0001"
       },
       {
         "at": "2026-10-11T10:00:00.000Z",
         "a": "post JV-0005",
-        "d": "payment AST/2627/0001"
+        "d": "payment PD/2627/0001"
       },
       {
         "at": "2026-10-13T12:00:00.000Z",
         "a": "post JV-0006",
-        "d": "sale AST/2627/0002"
+        "d": "sale PD/2627/0002"
       },
       {
         "at": "2026-10-14T15:30:00.000Z",

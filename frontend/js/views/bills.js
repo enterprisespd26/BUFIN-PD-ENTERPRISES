@@ -1,6 +1,6 @@
 import { $, $$, esc, fmt, head, kpi, toast, today, uid, P, convertRate, debounce as _utilsDebounce } from '../modules/utils.js';
 import { db, save, post, reverse, out, dstat, pn, isS, net, checkCashLiquidity } from '../modules/state.js';
-import { partyForm, markBillPaid, showDoc } from '../modules/actions.js';
+import { partyForm, markBillPaid, showDoc, isIntraState } from '../modules/actions.js';
 import { showActionSheet } from '../modules/components.js';
 
 // Safe debounce fallback: guaranteed never undefined in any scope
@@ -1167,6 +1167,9 @@ export function bindBillsEvents() {
     docObj.base = basePaisa;
     docObj.gst = gstPaisa;
     docObj.rate = q && r ? Math.round(gst / amt * 100) : 0;
+    const isIntra = isIntraState({ state: supState, gstin: supGstin });
+    const halfGst = Math.floor(gstPaisa / 2);
+    docObj.tax = gstPaisa > 0 ? (isIntra ? { cg: halfGst, sg: gstPaisa - halfGst } : { ig: gstPaisa }) : {};
     docObj.total = totalPaisa;
     docObj.paid = paidAmt;
     docObj.pm = pm;
@@ -1374,6 +1377,13 @@ export function bindBillsEvents() {
       if (action === 'more') {
         const isPaid = doc.pays && doc.pays.length && doc.pays.reduce((s, p) => s + (p.a || 0), 0) >= (doc.total || 0);
         const sheetItems = [
+          {
+            label: 'View / Print Bill Voucher',
+            icon: '📄',
+            onClick: () => {
+              showDoc(id);
+            }
+          },
           {
             label: 'Edit Purchase Bill',
             icon: '✏️',
