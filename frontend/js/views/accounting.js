@@ -67,46 +67,92 @@ export function renderOpen() {
   let statusBanner = '';
   if (activeOpen && isLocked) {
     statusBanner = `
-      <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span style="font-size:26px;">🔒</span>
+      <div style="background:linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);border:1px solid #bbf7d0;border-left:4px solid #10b981;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(16,185,129,0.06);">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:42px;height:42px;border-radius:10px;background:#dcfce7;border:1px solid #86efac;color:#15803d;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 2px rgba(22,163,74,0.1);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
           <div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <b style="color:#065f46;font-size:14.5px;">Opening Balances Recorded & Locked</b>
-              <span class="pill" style="font-size:10.5px;padding:2px 8px;border-radius:99px;background:#059669;color:#fff;font-weight:700;">ACTIVE</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="color:#0f172a;font-size:15px;font-weight:700;letter-spacing:-0.2px;">Opening Balances Recorded &amp; Locked</span>
+              <span class="pill" style="font-size:10px;padding:2px 8px;border-radius:6px;background:#dcfce7;color:#15803d;border:1px solid #86efac;font-weight:700;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:4px;">
+                <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;display:inline-block;"></span>
+                ACTIVE
+              </span>
             </div>
-            <div style="color:#047857;font-size:12.5px;margin-top:2px;">
-              Recorded as of <b>${activeOpen.date}</b> · Journal Ref: <b>${activeOpen.ref}</b> · Total Ledger Effect: <b>${fmt(totalDr)}</b>
+            <div style="color:#64748b;font-size:12.5px;margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span>Recorded as of <b style="color:#1e293b;">${activeOpen.date}</b></span>
+              <span style="color:#cbd5e1;">•</span>
+              <span>Journal Ref: <b style="color:#1e293b;">${activeOpen.ref}</b></span>
+              <span style="color:#cbd5e1;">•</span>
+              <span>Total Ledger Effect: <b style="color:#059669;font-weight:700;">${fmt(totalDr)}</b></span>
             </div>
           </div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button type="button" class="btn sm" data-a="unlockopen" style="font-weight:600;display:inline-flex;align-items:center;gap:6px;">
-            <span>✏️</span> <span>Edit Balances</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button type="button" class="btn sm" data-a="unlockopen" style="font-weight:600;font-size:13px;background:#ffffff;color:#1e293b;border:1px solid #cbd5e1;padding:7px 14px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:all 0.15s ease;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+            <span>Edit Balances</span>
           </button>
-          <button type="button" class="btn d sm" data-a="revopen" style="font-weight:600;display:inline-flex;align-items:center;gap:6px;">
-            <span>↩️</span> <span>Reverse & Edit</span>
+          <button type="button" class="btn sm" data-a="revopen" style="font-weight:600;font-size:13px;background:#ffffff;color:#dc2626;border:1px solid #fecaca;padding:7px 14px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 2px rgba(220,38,38,0.05);cursor:pointer;transition:all 0.15s ease;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            <span>Reverse &amp; Edit</span>
           </button>
         </div>
       </div>`;
   } else if (activeOpen && !isLocked) {
     statusBanner = `
-      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:22px;">✏️</span>
+      <div style="background:linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);border:1px solid #bfdbfe;border-left:4px solid #3b82f6;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(37,99,235,0.06);">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:42px;height:42px;border-radius:10px;background:#dbeafe;border:1px solid #93c5fd;color:#1d4ed8;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 2px rgba(37,99,235,0.1);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </div>
           <div>
-            <b style="color:#1e40af;font-size:14px;">Editing Active Opening Balances</b>
-            <div style="color:#1d4ed8;font-size:12.5px;margin-top:1px;">
-              Modify your opening balances below. Changes will sync in-place upon review and confirmation.
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="color:#0f172a;font-size:15px;font-weight:700;letter-spacing:-0.2px;">Editing Active Opening Balances</span>
+              <span class="pill" style="font-size:10px;padding:2px 8px;border-radius:6px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;font-weight:700;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:4px;">
+                <span style="width:6px;height:6px;border-radius:50%;background:#2563eb;display:inline-block;"></span>
+                EDIT MODE
+              </span>
+            </div>
+            <div style="color:#475569;font-size:12.5px;margin-top:3px;">
+              Modify account opening balances below. Changes will sync in-place upon review and confirmation.
             </div>
           </div>
         </div>
-        <button type="button" class="btn alt sm" data-a="lockopen">Cancel Edit / Re-lock</button>
+        <button type="button" class="btn sm" data-a="lockopen" style="font-weight:600;font-size:13px;background:#ffffff;color:#475569;border:1px solid #cbd5e1;padding:7px 14px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:all 0.15s ease;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Cancel Edit / Re-lock</span>
+        </button>
       </div>`;
   } else {
     statusBanner = `
-      <div class="warn" style="padding:10px 14px;line-height:1.6;font-size:13px;border-radius:8px;margin-bottom:18px;">
-        💡 <b>Smart Opening Balances</b>: Enter initial account balances on your BUFIN start date. Standard asset and expense normal balance is <b>Debit</b>; liability, equity, and income is <b>Credit</b>. Any difference automatically balances to <b>Opening Balance Equity (3200)</b>.
+      <div style="background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);border:1px solid #e2e8f0;border-left:4px solid #3b82f6;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px;box-shadow:0 1px 3px rgba(15,23,42,0.04);">
+        <div style="width:36px;height:36px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </div>
+        <div style="font-size:13px;line-height:1.55;color:#334155;">
+          <b style="color:#0f172a;">Smart Opening Balances:</b> Enter initial account balances on your BUFIN start date. Standard asset and expense normal balance is <b>Debit</b>; liability, equity, and income is <b>Credit</b>. Any difference automatically balances to <b style="color:#2563eb;">Opening Balance Equity (3200)</b>.
+        </div>
       </div>`;
   }
 
@@ -180,16 +226,29 @@ export function renderOpen() {
     </div>
     <div class="bar" style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
       ${isLocked ? `
-        <span style="color:var(--t2);font-size:13px;display:flex;align-items:center;gap:6px;">
-          <span>🔒</span> <span>Opening balances are locked to prevent accidental modifications.</span>
+        <span style="color:#64748b;font-size:13px;display:flex;align-items:center;gap:7px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Opening balances are locked to prevent accidental modifications.</span>
         </span>
-        <button type="button" class="btn sm" data-a="unlockopen">✏️ Unlock & Edit</button>
+        <button type="button" class="btn sm" data-a="unlockopen" style="background:#ffffff;color:#1e293b;border:1px solid #cbd5e1;font-weight:600;font-size:13px;padding:7px 14px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          <span>Unlock &amp; Edit</span>
+        </button>
       ` : `
-        <span style="color:var(--t2);font-size:13px;">
+        <span style="color:#64748b;font-size:13px;">
           Review balance summary before posting to ledger.
         </span>
-        <button type="button" class="btn p" data-a="promptopen">
-          ${activeOpen ? 'Review & Update Opening Balances' : 'Review & Post Opening Balances'}
+        <button type="button" class="btn p" data-a="promptopen" style="font-weight:600;padding:8px 18px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>${activeOpen ? 'Review & Update Opening Balances' : 'Review & Post Opening Balances'}</span>
         </button>
       `}
     </div>` +
@@ -332,8 +391,32 @@ export function renderGl() {
       ${kpi('Period Credits', fmt(periodCr))}
       ${kpi('Closing Balance', fmt(closingBalance))}
     </div>
-    <div class="filters" style="margin-bottom:8px">
-      <select id="glAccSelect" style="width:100%;font-weight:600;padding:6px 10px;">${accOptionsHtml}</select>
+    <div class="gl-account-picker-wrap">
+      <div class="gl-account-label-bar">
+        <label for="glAccSelect" class="gl-account-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"></path>
+          </svg>
+          <span>Select Account Dropdown</span>
+        </label>
+        <span class="gl-account-hint">Switch Account</span>
+      </div>
+      <div class="gl-select-container">
+        <div class="gl-select-icon-left" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"></path>
+            <path d="M6 2v14"></path>
+          </svg>
+        </div>
+        <select id="glAccSelect" class="gl-account-select" aria-label="Select Ledger Account">
+          ${accOptionsHtml}
+        </select>
+        <div class="gl-select-chevron-right" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
     </div>
     <div class="filters gl-filter-bar">
       <div class="mc-chips gl-presets">
@@ -613,7 +696,7 @@ export function renderBook() {
       ${kpi('Period Outflow', fmt(cr))}
       ${kpi('Net Period Flow', fmt(netFlow))}
     </div>
-    <div class="filters mc-chips cb-acc-filters" style="margin-bottom:8px">
+    <div class="mc-chips cb-acc-filters" style="margin-bottom:8px">
       ${[['all', 'All cash and bank']].concat(cashAcc().map(a => [a.code, a.name])).map(x => `<button class="${u.c === x[0] ? 'p' : ''}" data-a="bk" data-i="${x[0]}">${esc(x[1])}</button>`).join('')}
     </div>
     <div class="filters cb-filter-bar">

@@ -493,24 +493,123 @@ tr.k:hover td {
 }
 
 /* ======================================================
+   GENERAL LEDGER ACCOUNT DROPDOWN SELECTOR
+   ====================================================== */
+.gl-account-picker-wrap {
+  margin-bottom: 14px;
+  width: 100%;
+}
+.gl-account-label-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding: 0 2px;
+}
+.gl-account-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+.gl-account-hint {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+.gl-select-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+.gl-select-icon-left {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.gl-select-chevron-right {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: transform 0.2s ease;
+}
+#glAccSelect.gl-account-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 100%;
+  min-height: 48px;
+  height: 48px;
+  padding: 0 44px 0 42px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+  border: 2px solid #3b82f6;
+  border-radius: 11px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+#glAccSelect.gl-account-select:hover {
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12), 0 3px 12px rgba(37, 99, 235, 0.15);
+}
+#glAccSelect.gl-account-select:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 3px 12px rgba(37, 99, 235, 0.15);
+}
+.gl-select-container:hover .gl-select-chevron-right {
+  transform: translateY(-40%);
+}
+
+/* ======================================================
    UNIFIED FILTER BAR SYSTEM – GL, CB, TB, BS, PL
-   Desktop: chips row + dates row + search stacked vertically
+   Desktop: [Preset chips ────────────── From │ To]
+            [Search bar (full width)           ]
    ====================================================== */
 
-/* Shared base for GL and Cash & Bank filter bars */
+/* Shared base: chips + dates on one row, search below */
 .gl-filter-bar, .cb-filter-bar {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin-bottom: 12px;
 }
 
-/* Preset chips row – horizontal, scrollable */
+/* Preset chips – grow to fill left side */
 .mc-chips {
   display: flex;
   flex-wrap: nowrap;
   overflow-x: auto;
   gap: 6px;
+  flex: 1 1 auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 2px;
@@ -526,18 +625,19 @@ tr.k:hover td {
   border-radius: 8px;
 }
 
-/* Date pair row – From + To side by side */
+/* Date pair – right-aligned on same row as chips */
 .mc-row {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 .mc-row label {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--t2);
@@ -552,13 +652,40 @@ tr.k:hover td {
   border-radius: 7px;
 }
 
-/* Search row – full width */
+/* Search row – always full width below */
+.gl-search-wrap,
+.cb-search-wrap {
+  flex: 0 0 100%;
+  width: 100%;
+}
 .gl-search-wrap input,
 .cb-search-wrap input {
   width: 100%;
   min-height: 36px;
   font-size: 13px;
   box-sizing: border-box;
+}
+
+
+/* CB account selector chips */
+.cb-acc-filters {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 6px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.cb-acc-filters::-webkit-scrollbar { display: none; }
+.cb-acc-filters > button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  min-height: 34px;
+  border-radius: 8px;
 }
 
 .bs-filter-bar, .tb-filter-bar {
@@ -569,31 +696,48 @@ tr.k:hover td {
 }
 .bs-filter-bar .bs-filter-top, .tb-filter-bar .tb-filter-top {
   display: flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
+  width: 100%;
 }
-/* TB: presets scroll horizontally */
-.tb-filter-bar .tb-presets {
+/* TB & BS: presets scroll horizontally on left */
+.tb-filter-bar .tb-presets,
+.bs-filter-bar .bs-presets {
   display: flex;
   flex-wrap: nowrap;
   overflow-x: auto;
   gap: 6px;
   flex: 1 1 auto;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: 2px;
 }
-.tb-filter-bar .tb-presets::-webkit-scrollbar { display: none; }
-.tb-filter-bar .tb-presets > button {
+.tb-filter-bar .tb-presets::-webkit-scrollbar,
+.bs-filter-bar .bs-presets::-webkit-scrollbar { display: none; }
+.tb-filter-bar .tb-presets > button,
+.bs-filter-bar .bs-presets > button {
   flex-shrink: 0;
   white-space: nowrap;
   padding: 6px 14px;
   font-size: 12.5px;
   font-weight: 600;
   min-height: 34px;
+  border-radius: 8px;
 }
-/* TB date label inline */
-.tb-filter-bar .tb-date-wrap label {
+/* TB & BS date label right-aligned */
+.tb-filter-bar .tb-date-wrap,
+.bs-filter-bar .bs-date-wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.tb-filter-bar .tb-date-wrap label,
+.bs-filter-bar .bs-date-wrap label {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -603,7 +747,8 @@ tr.k:hover td {
   margin: 0;
   white-space: nowrap;
 }
-.tb-filter-bar .tb-date-wrap input[type=date] {
+.tb-filter-bar .tb-date-wrap input[type=date],
+.bs-filter-bar .bs-date-wrap input[type=date] {
   width: auto;
   min-height: 34px;
   padding: 4px 8px;
@@ -1037,18 +1182,22 @@ aside.open ~ #ov {
   }
   .bar {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
     gap: 8px;
     margin-bottom: 12px;
     padding-bottom: 2px;
     width: 100%;
+    box-sizing: border-box;
   }
   .bar h2 {
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
     margin: 0;
-    font-size: 1.25rem;
+    font-size: clamp(16px, 4.6vw, 20px);
     font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
@@ -1057,16 +1206,20 @@ aside.open ~ #ov {
   }
   .bar > div,
   .bar .bar-actions {
-    display: flex;
+    display: inline-flex;
     flex-direction: row;
     align-items: center;
+    justify-content: flex-end;
     flex-wrap: nowrap;
+    flex: 0 0 auto;
+    margin-left: auto;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    gap: 8px;
-    width: 100%;
-    padding: 2px 0 6px 0;
+    gap: 6px;
+    width: auto;
+    max-width: 65%;
+    padding: 0;
     margin: 0;
   }
   .bar > div::-webkit-scrollbar,
@@ -1077,16 +1230,23 @@ aside.open ~ #ov {
   .bar .bar-actions > button, .bar .bar-actions > .btn,
   .bar > button:not(.menu), .bar > .btn:not(.menu) {
     flex: 0 0 auto;
-    min-height: 38px;
-    padding: 6px 14px;
-    font-size: 13px;
+    min-height: 34px;
+    height: 34px;
+    padding: 0 12px;
+    font-size: 12.5px;
     font-weight: 600;
-    border-radius: 9px;
+    border-radius: 8px;
     white-space: nowrap;
     width: auto;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
   }
   .bar > button:not(.menu), .bar > .btn:not(.menu) {
-    align-self: flex-start;
+    align-self: center;
+    margin-left: auto;
   }
   .menu {
     display: none !important;
@@ -1130,6 +1290,9 @@ aside.open ~ #ov {
   }
   .grid-5 > :first-child {
     grid-column: 1 / -1;
+  }
+  .grid-5 > :last-child {
+    grid-column: auto !important;
   }
   .kpi {
     padding: 10px 12px;

@@ -337,14 +337,18 @@ const PL_CSS = `
 .plx-sub b { color: var(--tx); font-weight: 600; }
 
 /* Filters */
-.plx-filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-bottom: 16px; }
-.plx-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.plx-dates { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.plx-dates label { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; color: var(--t2); }
-.plx-dates input { width: auto; }
-.plx-seg { display: inline-flex; margin-left: auto; border: 1px solid var(--bd); border-radius: 8px; overflow: hidden; background: var(--sf); }
-.plx-seg button { border: 0; border-right: 1px solid var(--bd); border-radius: 0; margin: 0; box-shadow: none; white-space: nowrap; }
-.plx-seg button:last-child { border-right: 0; }
+.plx-filters { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+.plx-chips { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; flex: 1 1 auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.plx-chips::-webkit-scrollbar { display: none; }
+.plx-chips button { flex-shrink: 0; white-space: nowrap; padding: 6px 14px; font-size: 12.5px; font-weight: 600; min-height: 34px; border-radius: 8px; }
+.plx-dates { display: flex; flex-direction: row; align-items: center; gap: 8px; flex: 0 0 auto; margin-left: auto; }
+.plx-dates label { display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--t2); margin: 0; white-space: nowrap; }
+.plx-dates input[type=date] { width: auto; min-height: 34px; padding: 4px 8px; font-size: 13px; border-radius: 7px; }
+.plx-seg-wrap { flex: 0 0 100%; width: 100%; }
+.plx-seg { display: inline-flex; align-items: center; background: #edf1ff; border: 1px solid #e0e7ff; border-radius: 9px; padding: 3px; gap: 4px; }
+.plx-seg button { border: 0; background: transparent; color: #64748b; font-size: 12.5px; font-weight: 600; padding: 6px 14px; border-radius: 7px; min-height: 32px; height: 32px; cursor: pointer; transition: all 0.15s ease; box-shadow: none; white-space: nowrap; }
+.plx-seg button:hover { background: rgba(255, 255, 255, 0.5); color: #1e293b; }
+.plx-seg button.p { background: #ffffff; color: #2563eb; font-weight: 700; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12); }
 
 /* KPI cards */
 .plx-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
@@ -411,12 +415,14 @@ const PL_CSS = `
   .plx-filters { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 100%; }
   .plx-chips { display: flex; flex-wrap: nowrap; overflow-x: auto; width: 100%; gap: 6px; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .plx-chips::-webkit-scrollbar { display: none; }
-  .plx-chips button { flex-shrink: 0; white-space: nowrap; min-height: 38px; }
-  .plx-dates { display: flex; flex-direction: row; align-items: center; gap: 8px; width: 100%; }
-  .plx-dates label { flex: 1 1 50%; min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 0; }
-  .plx-dates input { width: 100%; min-width: 0; min-height: 40px; box-sizing: border-box; }
-  .plx-seg { display: flex; flex-direction: row; width: 100%; margin-left: 0; min-height: 38px; border-radius: 9px; overflow: hidden; }
-  .plx-seg button { flex: 1 1 33.33%; padding: 6px 8px; min-height: 34px; font-size: 13px; font-weight: 600; }
+  .plx-chips button { flex-shrink: 0; white-space: nowrap; min-height: 38px; padding: 8px 14px; font-size: 13px; }
+  .plx-dates { display: flex; flex-direction: row; align-items: center; gap: 8px; width: 100%; flex-wrap: nowrap; margin-left: 0; }
+  .plx-dates label { flex: 1 1 50%; min-width: 0; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--t2); margin: 0; white-space: nowrap; }
+  .plx-dates input { flex: 1 1 auto; min-width: 0; width: 100%; min-height: 40px; padding: 4px 6px; font-size: 13px; box-sizing: border-box; }
+  .plx-seg-wrap { width: 100%; }
+  .plx-seg { display: flex; flex-direction: row; align-items: center; width: 100%; gap: 4px; background: #edf1ff; padding: 4px; border-radius: 10px; box-sizing: border-box; min-height: 42px; height: auto; }
+  .plx-seg button { flex: 1 1 33.33%; text-align: center; white-space: nowrap; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 8px; border: 0; background: transparent; color: #64748b; min-height: 34px; display: flex; align-items: center; justify-content: center; box-shadow: none; }
+  .plx-seg button.p { background: #ffffff; color: #2563eb; font-weight: 700; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.14); }
   .plx-kpi { padding: 10px 12px; }
   .plx-kpi b { font-size: clamp(14px, 4vw, 17px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .plx-card { padding: 14px; }
@@ -576,22 +582,41 @@ export function renderPl() {
 
   const sub = `<div class="plx-sub"><span><b>${esc((db.biz && db.biz.name && db.biz.name !== 'M/S Apex Scrap Traders') ? db.biz.name : 'PD ENTERPRISES')}</b></span><span>Period: <b>${plPeriod(u)}</b></span></div>`;
 
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const thisMonthStart = `${today().slice(0, 7)}-01`;
+  const isThisMonth = u.f === thisMonthStart && u.t === today();
+
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+  const lastMonthStart = `${prevMonthDate.getFullYear()}-${pad(prevMonthDate.getMonth() + 1)}-01`;
+  const lastMonthEnd = `${lastDayPrevMonth.getFullYear()}-${pad(lastDayPrevMonth.getMonth() + 1)}-${pad(lastDayPrevMonth.getDate())}`;
+  const isLastMonth = u.f === lastMonthStart && u.t === lastMonthEnd;
+
+  const fyYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  const fyStart = `${fyYear}-04-01`;
+  const fyEnd = `${fyYear + 1}-03-31`;
+  const isThisFy = u.f === fyStart && (u.t === fyEnd || u.t === today());
+  const isAll = !u.f;
+
   const filters = `
-    <div class="plx-filters plx-noprint">
-      <div class="plx-chips">
-        <button class="${u.f === today().slice(0, 8) + '01' && u.t === today() ? 'p' : ''}" data-a="plpreset" data-i="month">This Month</button>
-        <button data-a="plpreset" data-i="lastmonth">Last Month</button>
-        <button data-a="plpreset" data-i="fy">FY to Date</button>
-        <button data-a="plpreset" data-i="all">All Time</button>
+    <div class="filters plx-filters plx-noprint">
+      <div class="mc-chips plx-chips">
+        <button class="${isAll ? 'p' : ''}" data-a="plpreset" data-i="all">All Time</button>
+        <button class="${isThisMonth ? 'p' : ''}" data-a="plpreset" data-i="month">This Month</button>
+        <button class="${isLastMonth ? 'p' : ''}" data-a="plpreset" data-i="lastmonth">Last Month</button>
+        <button class="${isThisFy ? 'p' : ''}" data-a="plpreset" data-i="fy">This FY</button>
       </div>
-      <div class="plx-dates">
-        <label>From <input type="date" id="plFrom" value="${u.f}"></label>
-        <label>To <input type="date" id="plTo" value="${u.t}"></label>
+      <div class="mc-row plx-dates">
+        <label>From <input type="date" id="plFrom" value="${u.f || ''}"></label>
+        <label>To <input type="date" id="plTo" value="${u.t || ''}"></label>
       </div>
-      <div class="plx-seg">
-        <button class="${view === 'both' ? 'p' : ''}" data-a="pltoggle" data-i="both" title="Charts and statement">Overview</button>
-        <button class="${view === 'charts' ? 'p' : ''}" data-a="pltoggle" data-i="charts" title="Charts only">Charts</button>
-        <button class="${view === 'table' ? 'p' : ''}" data-a="pltoggle" data-i="table" title="Statement only">Statement</button>
+      <div class="plx-seg-wrap">
+        <div class="plx-seg">
+          <button class="${view === 'both' ? 'p' : ''}" data-a="pltoggle" data-i="both" title="Charts and statement">Overview</button>
+          <button class="${view === 'charts' ? 'p' : ''}" data-a="pltoggle" data-i="charts" title="Charts only">Charts</button>
+          <button class="${view === 'table' ? 'p' : ''}" data-a="pltoggle" data-i="table" title="Statement only">Statement</button>
+        </div>
       </div>
     </div>`;
 

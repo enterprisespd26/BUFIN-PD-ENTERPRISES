@@ -62,7 +62,8 @@ const CSS = String.raw`
     max-width: 100% !important;
     box-sizing: border-box !important;
   }
-  .filters select[style*="min-width"], #glAccSelect { min-width: 0 !important; width: 100% !important; max-width: 100% !important; min-height: 44px !important; box-sizing: border-box !important; }
+  .filters select[style*="min-width"], #glAccSelect { min-width: 0 !important; width: 100% !important; max-width: 100% !important; min-height: 48px !important; box-sizing: border-box !important; }
+  #glAccSelect.gl-account-select { min-height: 48px !important; height: 48px !important; padding: 0 40px 0 40px !important; font-size: 14.5px !important; border: 2px solid #3b82f6 !important; border-radius: 11px !important; }
 
   /* Search + export toolbars (Sales, Bills, Inventory) */
   .pd-btn-row input[type=text] { flex: 1 1 100% !important; min-width: 0 !important; width: 100% !important; max-width: none !important; }
@@ -70,32 +71,38 @@ const CSS = String.raw`
   #inv_search_q, #inv_filter_sup { flex: 1 1 100%; width: 100% !important; max-width: none !important; }
   #inv_from_date, #inv_to_date { flex: 1 1 calc(50% - 6px); width: auto !important; min-width: 0; }
   #inv_btn_csv { width: 100%; }
+  #pd_btn_csv, #u_csv { margin-left: auto !important; }
 
   /* ---------- Cards, grids, forms ---------- */
   .pd-card { padding: 14px !important; border-radius: 14px; max-width: 100vw !important; box-sizing: border-box !important; }
   .pd-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; gap: 12px !important; }
   .two { grid-template-columns: 1fr !important; }
-  .grid > :last-child:nth-child(odd), .grid-5 > :last-child:nth-child(odd), .grid-6 > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .grid > :last-child:nth-child(odd), .grid-6 > :last-child:nth-child(odd) { grid-column: 1 / -1; }
   .grid-5 > :first-child { grid-column: 1 / -1 !important; }
+  .grid-5 > :last-child { grid-column: auto !important; }
   .kpi b { font-size: clamp(13px, 3.8vw, 17px) !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; display: block !important; max-width: 100% !important; }
 
-  /* ---------- App Header Bar (Title + Action button row) ---------- */
+  /* ---------- App Header Bar (Title + Right-Aligned Action Buttons) ---------- */
   .bar {
     display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
     gap: 8px !important;
     margin-bottom: 12px !important;
     width: 100% !important;
+    box-sizing: border-box !important;
   }
   .bar > button.menu, button.menu {
     display: none !important;
   }
-  .bar > h2 {
-    width: 100% !important;
+  .bar > h2, .bar h2 {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
     margin: 0 !important;
-    font-size: 1.25rem !important; /* 20px */
+    font-size: clamp(16px, 4.6vw, 20px) !important;
     font-weight: 700 !important;
     color: var(--tx, #0f172a) !important;
     white-space: nowrap !important;
@@ -105,16 +112,20 @@ const CSS = String.raw`
   }
   .bar > div,
   .bar .bar-actions {
-    display: flex !important;
+    display: inline-flex !important;
     flex-direction: row !important;
     align-items: center !important;
+    justify-content: flex-end !important;
     flex-wrap: nowrap !important;
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
-    gap: 8px !important;
-    width: 100% !important;
-    padding: 2px 0 6px 0 !important;
+    gap: 6px !important;
+    width: auto !important;
+    max-width: 65% !important;
+    padding: 0 !important;
     margin: 0 !important;
   }
   .bar > div::-webkit-scrollbar,
@@ -125,20 +136,27 @@ const CSS = String.raw`
   .bar .bar-actions > button, .bar .bar-actions > .btn,
   .bar > button:not(.menu), .bar > .btn:not(.menu) {
     flex: 0 0 auto !important;
-    min-height: 38px !important;
-    padding: 6px 14px !important;
-    font-size: 13px !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0 12px !important;
+    font-size: 12.5px !important;
     font-weight: 600 !important;
-    border-radius: 9px !important;
+    border-radius: 8px !important;
     white-space: nowrap !important;
     width: auto !important;
+    align-self: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
   }
   .bar > button:not(.menu), .bar > .btn:not(.menu) {
-    align-self: flex-start !important;
+    align-self: center !important;
+    margin-left: auto !important;
   }
 
   /* ---------- Balance Sheet & Financial Statements Mobile Layout ---------- */
-  .bs-filter-bar, .tb-filter-bar, .gl-filter-bar, .cb-filter-bar {
+  .bs-filter-bar, .tb-filter-bar, .gl-filter-bar, .cb-filter-bar, .plx-filters {
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
@@ -146,14 +164,14 @@ const CSS = String.raw`
     margin-bottom: 12px !important;
     width: 100% !important;
   }
-  .bs-filter-bar > *, .tb-filter-bar > *, .gl-filter-bar > *, .cb-filter-bar > * {
+  .bs-filter-bar > *, .tb-filter-bar > *, .gl-filter-bar > *, .cb-filter-bar > *, .plx-filters > * {
     flex: 0 0 auto !important;
     min-height: 0 !important;
     width: 100% !important;
   }
 
-  /* GL & CB: chips row – horizontally scrollable */
-  .gl-filter-bar .mc-chips, .cb-filter-bar .mc-chips {
+  /* GL, CB, PL: chips row – horizontally scrollable */
+  .gl-filter-bar .mc-chips, .cb-filter-bar .mc-chips, .plx-filters .mc-chips {
     display: flex !important;
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
@@ -163,7 +181,7 @@ const CSS = String.raw`
     scrollbar-width: none !important;
     -webkit-overflow-scrolling: touch !important;
   }
-  .gl-filter-bar .mc-chips > button, .cb-filter-bar .mc-chips > button {
+  .gl-filter-bar .mc-chips > button, .cb-filter-bar .mc-chips > button, .plx-filters .mc-chips > button {
     flex-shrink: 0 !important;
     white-space: nowrap !important;
     min-height: 38px !important;
@@ -171,8 +189,8 @@ const CSS = String.raw`
     font-size: 13px !important;
   }
 
-  /* GL & CB: date pair – From/To side by side on mobile */
-  .gl-filter-bar .mc-row, .cb-filter-bar .mc-row {
+  /* GL, CB, PL: date pair – From/To side by side on mobile */
+  .gl-filter-bar .mc-row, .cb-filter-bar .mc-row, .plx-filters .mc-row {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
@@ -180,7 +198,7 @@ const CSS = String.raw`
     width: 100% !important;
     flex-wrap: nowrap !important;
   }
-  .gl-filter-bar .mc-row label, .cb-filter-bar .mc-row label {
+  .gl-filter-bar .mc-row label, .cb-filter-bar .mc-row label, .plx-filters .mc-row label {
     flex: 1 1 50% !important;
     min-width: 0 !important;
     display: flex !important;
@@ -192,7 +210,7 @@ const CSS = String.raw`
     margin: 0 !important;
     white-space: nowrap !important;
   }
-  .gl-filter-bar .mc-row input[type=date], .cb-filter-bar .mc-row input[type=date] {
+  .gl-filter-bar .mc-row input[type=date], .cb-filter-bar .mc-row input[type=date], .plx-filters .mc-row input[type=date] {
     flex: 1 1 auto !important;
     min-width: 0 !important;
     width: 100% !important;
@@ -213,12 +231,30 @@ const CSS = String.raw`
     box-sizing: border-box !important;
   }
 
+  /* CB account selector horizontal scrolling on mobile */
+  .cb-acc-filters {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 6px !important;
+    width: 100% !important;
+    padding-bottom: 2px !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .cb-acc-filters > button {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    min-height: 38px !important;
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+  }
+
   .bs-filter-bar .bs-filter-top, .tb-filter-bar .tb-filter-top {
     display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
     gap: 8px !important;
-    flex-wrap: wrap !important;
     width: 100% !important;
   }
   .bs-filter-bar .bs-presets, .tb-filter-bar .tb-presets {
@@ -226,40 +262,47 @@ const CSS = String.raw`
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
     gap: 6px !important;
-    flex: 1 1 auto !important;
+    width: 100% !important;
     padding-bottom: 2px !important;
     scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
   }
-  .tb-filter-bar .tb-presets > button {
+  .tb-filter-bar .tb-presets > button, .bs-filter-bar .bs-presets > button {
     flex-shrink: 0 !important;
     white-space: nowrap !important;
-    padding: 8px 12px !important;
+    padding: 8px 14px !important;
     font-size: 13px !important;
     min-height: 38px !important;
   }
-  .bs-filter-bar .bs-presets > button {
-    flex: 1 1 0 !important;
-    white-space: nowrap !important;
-    padding: 8px 12px !important;
-    font-size: 13px !important;
-    min-height: 38px !important;
+  .bs-filter-bar .bs-date-wrap, .tb-filter-bar .tb-date-wrap {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    margin-left: 0 !important;
   }
-  .bs-filter-bar .bs-date-wrap {
-    flex: 0 0 auto !important;
-  }
-  .bs-filter-bar .bs-date-wrap label {
+  .bs-filter-bar .bs-date-wrap label, .tb-filter-bar .tb-date-wrap label {
+    width: 100% !important;
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 8px !important;
     margin: 0 !important;
     font-size: 12.5px !important;
     font-weight: 600 !important;
     color: var(--t2, #64748b) !important;
   }
+  .bs-filter-bar .bs-date-wrap label span, .tb-filter-bar .tb-date-wrap label span {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
   .bs-filter-bar .bs-date-wrap input[type=date], .tb-filter-bar .tb-date-wrap input[type=date] {
-    width: auto !important;
-    min-height: 38px !important;
-    padding: 4px 8px !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    padding: 6px 10px !important;
+    font-size: 13.5px !important;
+    box-sizing: border-box !important;
   }
   /* TB search full width on mobile */
   .tb-filter-bar .tb-search-wrap {
