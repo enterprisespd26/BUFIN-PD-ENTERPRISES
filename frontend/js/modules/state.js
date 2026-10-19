@@ -51,6 +51,14 @@ export const SYS = ['1000','1010','1100','1300','1400','2000','2100','2200','320
 let initialDb;
 try {
   initialDb = JSON.parse(localStorage.getItem(K));
+  if (initialDb && initialDb.biz && (initialDb.biz.name === 'M/S Apex Scrap Traders' || initialDb.biz.name === 'BUFIN Business Ledger' || initialDb.biz.name === 'BUFIN')) {
+    initialDb.biz.name = 'PD ENTERPRISES';
+    initialDb.biz.gstin = initialDb.biz.gstin || '21IFNPD3153M1ZC';
+    initialDb.biz.state = initialDb.biz.state || 'Odisha';
+    initialDb.biz.phone = initialDb.biz.phone || '+91 7684010176';
+    initialDb.biz.email = initialDb.biz.email || 'enterprisespd26@gmail.com';
+    initialDb.biz.addr = initialDb.biz.addr || 'Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India';
+  }
 } catch (e) {}
 
 export const DEF_SCRAP_ITEMS = [

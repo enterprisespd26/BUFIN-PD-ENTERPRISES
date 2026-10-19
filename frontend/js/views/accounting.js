@@ -301,7 +301,7 @@ export function renderGl() {
     `<option value="${esc(ac.code)}"${ac.code === a.code ? ' selected' : ''}>${esc(ac.code)} · ${esc(ac.name)} (${TN[ac.t] || ac.t})</option>`
   ).join('');
 
-  const actions = `<div style="display:flex;gap:8px;flex-wrap:wrap">
+  const actions = `<div class="bar-actions" style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="p" data-a="newjv">+ New Journal</button>
     <button data-a="glcsv">Export CSV</button>
   </div>`;
@@ -333,24 +333,24 @@ export function renderGl() {
       ${kpi('Closing Balance', fmt(closingBalance))}
     </div>
     <div class="filters" style="margin-bottom:8px">
-      <select id="glAccSelect" style="min-width:300px;font-weight:600;padding:6px 10px;">${accOptionsHtml}</select>
+      <select id="glAccSelect" style="width:100%;font-weight:600;padding:6px 10px;">${accOptionsHtml}</select>
     </div>
-    <div class="filters" style="align-items:center">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <div class="filters gl-filter-bar">
+      <div class="mc-chips gl-presets">
         <button class="${isAll ? 'p' : ''}" data-a="glpreset" data-i="all">All Time</button>
         <button class="${isThisMonth ? 'p' : ''}" data-a="glpreset" data-i="month">This Month</button>
         <button class="${isLastMonth ? 'p' : ''}" data-a="glpreset" data-i="lastmonth">Last Month</button>
         <button class="${isThisFy ? 'p' : ''}" data-a="glpreset" data-i="fy">This FY</button>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:12px;color:var(--t2)">
-          From <input type="date" id="glFrom" value="${u.f || ''}" style="width:auto">
+      <div class="mc-row gl-dates">
+        <label>
+          From <input type="date" id="glFrom" value="${u.f || ''}">
         </label>
-        <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:12px;color:var(--t2)">
-          To <input type="date" id="glTo" value="${u.t || ''}" style="width:auto">
+        <label>
+          To <input type="date" id="glTo" value="${u.t || ''}">
         </label>
       </div>
-      <div style="flex:1;min-width:200px">
+      <div class="gl-search-wrap" style="width:100%">
         <input data-k="glq" placeholder="Search narration, ref, party, counter-account..." value="${esc(u.q || '')}">
       </div>
     </div>
@@ -580,7 +580,7 @@ export function renderBook() {
   const isThisFy = u.f === fyStart && u.t === fyEnd;
   const isAll = !u.f && !u.t;
 
-  const actions = `<div style="display:flex;gap:8px;flex-wrap:wrap">
+  const actions = `<div class="bar-actions" style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="p" data-a="newin">+ Money In</button>
     <button data-a="newout">- Money Out</button>
     <button data-a="newxfer">⇄ Transfer</button>
@@ -613,25 +613,25 @@ export function renderBook() {
       ${kpi('Period Outflow', fmt(cr))}
       ${kpi('Net Period Flow', fmt(netFlow))}
     </div>
-    <div class="filters" style="margin-bottom:8px">
+    <div class="filters mc-chips cb-acc-filters" style="margin-bottom:8px">
       ${[['all', 'All cash and bank']].concat(cashAcc().map(a => [a.code, a.name])).map(x => `<button class="${u.c === x[0] ? 'p' : ''}" data-a="bk" data-i="${x[0]}">${esc(x[1])}</button>`).join('')}
     </div>
-    <div class="filters" style="align-items:center">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <div class="filters cb-filter-bar">
+      <div class="mc-chips cb-presets">
         <button class="${isAll ? 'p' : ''}" data-a="bkpreset" data-i="all">All Time</button>
         <button class="${isThisMonth ? 'p' : ''}" data-a="bkpreset" data-i="month">This Month</button>
         <button class="${isLastMonth ? 'p' : ''}" data-a="bkpreset" data-i="lastmonth">Last Month</button>
         <button class="${isThisFy ? 'p' : ''}" data-a="bkpreset" data-i="fy">This FY</button>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:12px;color:var(--t2)">
-          From <input type="date" id="bookFrom" value="${u.f || ''}" style="width:auto">
+      <div class="mc-row cb-dates">
+        <label>
+          From <input type="date" id="bookFrom" value="${u.f || ''}">
         </label>
-        <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:12px;color:var(--t2)">
-          To <input type="date" id="bookTo" value="${u.t || ''}" style="width:auto">
+        <label>
+          To <input type="date" id="bookTo" value="${u.t || ''}">
         </label>
       </div>
-      <div style="flex:1;min-width:200px">
+      <div class="cb-search-wrap" style="width:100%">
         <input data-k="bkq" placeholder="Search narration, ref, party, account..." value="${esc(u.q || '')}">
       </div>
     </div>

@@ -133,7 +133,7 @@ export function renderTb() {
     <div class="print-only" style="margin-bottom:14px;border-bottom:2px solid #0f172a;padding-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
-          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc(db.biz.name || 'BUFIN Business Ledger')}</h2>
+          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc((db.biz && db.biz.name && db.biz.name !== 'M/S Apex Scrap Traders') ? db.biz.name : 'PD ENTERPRISES')}</h2>
           ${db.biz.gstin ? `<div style="font-size:12px;color:#475569;">GSTIN: <b>${esc(db.biz.gstin)}</b></div>` : ''}
         </div>
         <div style="text-align:right;">
@@ -155,22 +155,25 @@ export function renderTb() {
       ${kpi('Active Accounts', `${activeCount} with balance <small style="color:var(--t2);">(${sortedAccounts.length} total)</small>`)}
     </div>` +
     overdrawnBanner +
-    `<div class="filters" style="align-items:center">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="${t === today() ? 'p' : ''}" data-a="tbpreset" data-i="today">Today</button>
-        <button class="${t === getMonthEnd() ? 'p' : ''}" data-a="tbpreset" data-i="monthend">Month End</button>
-        <button class="${t === getFyEnd() ? 'p' : ''}" data-a="tbpreset" data-i="fyend">FY End</button>
+    `<div class="filters tb-filter-bar">
+      <div class="tb-filter-top">
+        <div class="mc-chips tb-presets">
+          <button class="${t === today() ? 'p' : ''}" data-a="tbpreset" data-i="today">Today</button>
+          <button class="${t === getMonthEnd() ? 'p' : ''}" data-a="tbpreset" data-i="monthend">Month End</button>
+          <button class="${t === getFyEnd() ? 'p' : ''}" data-a="tbpreset" data-i="fyend">FY End</button>
+        </div>
+        <div class="tb-date-wrap">
+          <label>
+            <span>As of</span>
+            <input type="date" id="tbDate" value="${t}">
+          </label>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:12px;color:var(--t2)">
-          As of <input type="date" id="tbDate" value="${t}" style="width:auto">
-        </label>
-      </div>
-      <div style="display:flex;gap:6px">
+      <div class="tb-toggle-wrap">
         <button class="${!u.all ? 'p' : ''}" data-a="tbtoggle" data-i="active">With Balance</button>
         <button class="${u.all ? 'p' : ''}" data-a="tbtoggle" data-i="all">All Accounts</button>
       </div>
-      <div style="flex:1;min-width:180px">
+      <div class="tb-search-wrap" style="width:100%">
         <input data-k="tbq" placeholder="Search account..." value="${esc(u.q || '')}">
       </div>
     </div>
@@ -404,17 +407,18 @@ const PL_CSS = `
 }
 
 /* Mobile */
-@media (max-width: 640px) {
-  .plx-filters { gap: 10px; }
-  .plx-chips { flex-wrap: nowrap; overflow-x: auto; width: 100%; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
-  .plx-chips button { flex-shrink: 0; }
-  .plx-dates { width: 100%; }
-  .plx-dates label { flex: 1; min-width: 0; }
-  .plx-dates input { width: 100%; min-width: 0; }
-  .plx-seg { display: flex; width: 100%; margin-left: 0; }
-  .plx-seg button { flex: 1; padding-left: 6px; padding-right: 6px; }
+@media (max-width: 760px) {
+  .plx-filters { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 100%; }
+  .plx-chips { display: flex; flex-wrap: nowrap; overflow-x: auto; width: 100%; gap: 6px; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .plx-chips::-webkit-scrollbar { display: none; }
+  .plx-chips button { flex-shrink: 0; white-space: nowrap; min-height: 38px; }
+  .plx-dates { display: flex; flex-direction: row; align-items: center; gap: 8px; width: 100%; }
+  .plx-dates label { flex: 1 1 50%; min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 0; }
+  .plx-dates input { width: 100%; min-width: 0; min-height: 40px; box-sizing: border-box; }
+  .plx-seg { display: flex; flex-direction: row; width: 100%; margin-left: 0; min-height: 38px; border-radius: 9px; overflow: hidden; }
+  .plx-seg button { flex: 1 1 33.33%; padding: 6px 8px; min-height: 34px; font-size: 13px; font-weight: 600; }
   .plx-kpi { padding: 10px 12px; }
-  .plx-kpi b { font-size: 16px; }
+  .plx-kpi b { font-size: clamp(14px, 4vw, 17px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .plx-card { padding: 14px; }
   .plx-table { font-size: 13px; }
   .plx-table th, .plx-table td { padding: 8px 12px; }
@@ -560,7 +564,7 @@ export function renderPl() {
     <div class="print-only" style="margin-bottom:14px;border-bottom:2px solid #0f172a;padding-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
-          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc(db.biz.name || 'BUFIN Business Ledger')}</h2>
+          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc((db.biz && db.biz.name && db.biz.name !== 'M/S Apex Scrap Traders') ? db.biz.name : 'PD ENTERPRISES')}</h2>
           ${db.biz.gstin ? `<div style="font-size:12px;color:#475569;">GSTIN: <b>${esc(db.biz.gstin)}</b></div>` : ''}
         </div>
         <div style="text-align:right;">
@@ -570,7 +574,7 @@ export function renderPl() {
       </div>
     </div>`;
 
-  const sub = `<div class="plx-sub"><span><b>${esc(db.biz.name || 'BUFIN Business Ledger')}</b></span><span>Period: <b>${plPeriod(u)}</b></span></div>`;
+  const sub = `<div class="plx-sub"><span><b>${esc((db.biz && db.biz.name && db.biz.name !== 'M/S Apex Scrap Traders') ? db.biz.name : 'PD ENTERPRISES')}</b></span><span>Period: <b>${plPeriod(u)}</b></span></div>`;
 
   const filters = `
     <div class="plx-filters plx-noprint">
@@ -958,7 +962,7 @@ export function renderBs() {
     <div class="print-only" style="margin-bottom:14px;border-bottom:2px solid #0f172a;padding-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
-          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc(db.biz.name || 'BUFIN Business Ledger')}</h2>
+          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc((db.biz && db.biz.name && db.biz.name !== 'M/S Apex Scrap Traders') ? db.biz.name : 'PD ENTERPRISES')}</h2>
           ${db.biz.gstin ? `<div style="font-size:12px;color:#475569;">GSTIN: <b>${esc(db.biz.gstin)}</b></div>` : ''}
         </div>
         <div style="text-align:right;">
@@ -995,8 +999,8 @@ export function renderBs() {
         </div>
       </div>
       <div class="bs-toggle-wrap">
-        <button class="${isStandardMode ? 'p' : ''}" data-a="bstoggle" data-i="standard" title="Reclassify overdrawn assets to liabilities per accounting standards">Standard (Reclassify Overdrafts)</button>
-        <button class="${!isStandardMode ? 'p' : ''}" data-a="bstoggle" data-i="net" title="Show direct net ledger balances">Direct Ledger View</button>
+        <button class="${isStandardMode ? 'p' : ''}" data-a="bstoggle" data-i="standard" title="Reclassify overdrawn assets to liabilities per accounting standards"><span class="bs-txt-full">Standard (Reclassify Overdrafts)</span><span class="bs-txt-mob">Standard (Overdrafts)</span></button>
+        <button class="${!isStandardMode ? 'p' : ''}" data-a="bstoggle" data-i="net" title="Show direct net ledger balances"><span class="bs-txt-full">Direct Ledger View</span><span class="bs-txt-mob">Direct Ledger</span></button>
       </div>
     </div>
     <div class="wrap" style="margin-bottom:28px;">

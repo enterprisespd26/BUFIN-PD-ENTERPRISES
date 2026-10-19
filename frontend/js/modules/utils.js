@@ -50,7 +50,7 @@ export const IC = {
 };
 
 export const ic = k => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[k] || ''}</svg>`;
-export const head = (t, btn) => `<div class="bar"><button class="menu" data-a="menu" aria-label="Menu">${ic('menu')}</button><h2>${t}</h2>${btn || ''}</div>`;
+export const head = (t, btn) => `<div class="bar"><button class="menu" data-a="menu" aria-label="Menu">${ic('menu')}</button><h2>${t}</h2>${btn ? (btn.trim().startsWith('<div') ? btn : `<div class="bar-actions">${btn}</div>`) : ''}</div>`;
 export const kpi = (l, v) => `<div class="kpi"><span>${l}</span><b>${v}</b></div>`;
 
 export const prev = d => {
