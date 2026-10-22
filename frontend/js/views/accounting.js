@@ -67,41 +67,50 @@ export function renderOpen() {
   let statusBanner = '';
   if (activeOpen && isLocked) {
     statusBanner = `
-      <div style="background:linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);border:1px solid #bbf7d0;border-left:4px solid #10b981;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(16,185,129,0.06);">
-        <div style="display:flex;align-items:center;gap:14px;">
-          <div style="width:42px;height:42px;border-radius:10px;background:#dcfce7;border:1px solid #86efac;color:#15803d;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 2px rgba(22,163,74,0.1);">
+      <div class="ob-status-card ob-locked-card">
+        <div class="ob-card-main">
+          <div class="ob-card-icon ob-icon-green">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
           </div>
-          <div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span style="color:#0f172a;font-size:15px;font-weight:700;letter-spacing:-0.2px;">Opening Balances Recorded &amp; Locked</span>
-              <span class="pill" style="font-size:10px;padding:2px 8px;border-radius:6px;background:#dcfce7;color:#15803d;border:1px solid #86efac;font-weight:700;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:4px;">
-                <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;display:inline-block;"></span>
+          <div class="ob-card-body">
+            <div class="ob-title-wrap">
+              <span class="ob-card-title">Opening Balances Recorded &amp; Locked</span>
+              <span class="ob-pill ob-pill-green">
+                <span class="ob-dot ob-dot-green"></span>
                 ACTIVE
               </span>
             </div>
-            <div style="color:#64748b;font-size:12.5px;margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span>Recorded as of <b style="color:#1e293b;">${activeOpen.date}</b></span>
-              <span style="color:#cbd5e1;">•</span>
-              <span>Journal Ref: <b style="color:#1e293b;">${activeOpen.ref}</b></span>
-              <span style="color:#cbd5e1;">•</span>
-              <span>Total Ledger Effect: <b style="color:#059669;font-weight:700;">${fmt(totalDr)}</b></span>
+            <div class="ob-meta-row">
+              <div class="ob-meta-item">
+                <span class="ob-meta-label">Recorded as of</span>
+                <b class="ob-meta-val">${activeOpen.date ? activeOpen.date.split('-').reverse().join('/') : ''}</b>
+              </div>
+              <div class="ob-meta-divider"></div>
+              <div class="ob-meta-item">
+                <span class="ob-meta-label">Journal Ref</span>
+                <b class="ob-meta-val">${activeOpen.ref}</b>
+              </div>
+              <div class="ob-meta-divider"></div>
+              <div class="ob-meta-item ob-meta-total">
+                <span class="ob-meta-label">Total Ledger Effect</span>
+                <b class="ob-meta-val ob-val-emerald">${fmt(totalDr)}</b>
+              </div>
             </div>
           </div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button type="button" class="btn sm" data-a="unlockopen" style="font-weight:600;font-size:13px;background:#ffffff;color:#1e293b;border:1px solid #cbd5e1;padding:7px 14px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:all 0.15s ease;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <div class="ob-actions-row">
+          <button type="button" class="btn sm ob-btn-edit" data-a="unlockopen">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 20h9"></path>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
             </svg>
             <span>Edit Balances</span>
           </button>
-          <button type="button" class="btn sm" data-a="revopen" style="font-weight:600;font-size:13px;background:#ffffff;color:#dc2626;border:1px solid #fecaca;padding:7px 14px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 2px rgba(220,38,38,0.05);cursor:pointer;transition:all 0.15s ease;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <button type="button" class="btn sm ob-btn-rev" data-a="revopen">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="1 4 1 10 7 10"></polyline>
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
             </svg>
@@ -111,47 +120,54 @@ export function renderOpen() {
       </div>`;
   } else if (activeOpen && !isLocked) {
     statusBanner = `
-      <div style="background:linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);border:1px solid #bfdbfe;border-left:4px solid #3b82f6;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(37,99,235,0.06);">
-        <div style="display:flex;align-items:center;gap:14px;">
-          <div style="width:42px;height:42px;border-radius:10px;background:#dbeafe;border:1px solid #93c5fd;color:#1d4ed8;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 2px rgba(37,99,235,0.1);">
+      <div class="ob-status-card ob-edit-card">
+        <div class="ob-card-main">
+          <div class="ob-card-icon ob-icon-blue">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 20h9"></path>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
             </svg>
           </div>
-          <div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span style="color:#0f172a;font-size:15px;font-weight:700;letter-spacing:-0.2px;">Editing Active Opening Balances</span>
-              <span class="pill" style="font-size:10px;padding:2px 8px;border-radius:6px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;font-weight:700;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:4px;">
-                <span style="width:6px;height:6px;border-radius:50%;background:#2563eb;display:inline-block;"></span>
+          <div class="ob-card-body">
+            <div class="ob-title-wrap">
+              <span class="ob-card-title">Editing Active Opening Balances</span>
+              <span class="ob-pill ob-pill-blue">
+                <span class="ob-dot ob-dot-blue"></span>
                 EDIT MODE
               </span>
             </div>
-            <div style="color:#475569;font-size:12.5px;margin-top:3px;">
+            <div class="ob-edit-desc">
               Modify account opening balances below. Changes will sync in-place upon review and confirmation.
             </div>
           </div>
         </div>
-        <button type="button" class="btn sm" data-a="lockopen" style="font-weight:600;font-size:13px;background:#ffffff;color:#475569;border:1px solid #cbd5e1;padding:7px 14px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:all 0.15s ease;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-          <span>Cancel Edit / Re-lock</span>
-        </button>
+        <div class="ob-actions-row">
+          <button type="button" class="btn sm ob-btn-cancel" data-a="lockopen">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Cancel Edit / Re-lock</span>
+          </button>
+        </div>
       </div>`;
   } else {
     statusBanner = `
-      <div style="background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);border:1px solid #e2e8f0;border-left:4px solid #3b82f6;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:flex-start;gap:12px;box-shadow:0 1px 3px rgba(15,23,42,0.04);">
-        <div style="width:36px;height:36px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-        </div>
-        <div style="font-size:13px;line-height:1.55;color:#334155;">
-          <b style="color:#0f172a;">Smart Opening Balances:</b> Enter initial account balances on your BUFIN start date. Standard asset and expense normal balance is <b>Debit</b>; liability, equity, and income is <b>Credit</b>. Any difference automatically balances to <b style="color:#2563eb;">Opening Balance Equity (3200)</b>.
+      <div class="ob-status-card" style="background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);border:1px solid #e2e8f0;border-left:4px solid #3b82f6;">
+        <div class="ob-card-main">
+          <div class="ob-card-icon" style="background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <div class="ob-card-body">
+            <div class="ob-card-title">Initialize Opening Ledger Balances</div>
+            <div class="ob-edit-desc">
+              Enter initial account balances on your BUFIN start date. Standard asset and expense normal balance is <b>Debit</b>; liability, equity, and income is <b>Credit</b>. Any difference automatically balances to <b style="color:#2563eb;">Opening Balance Equity (3200)</b>.
+            </div>
+          </div>
         </div>
       </div>`;
   }
@@ -171,11 +187,15 @@ export function renderOpen() {
     return `
       <tr>
         <td>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <b>${esc(an(a.code))}</b>
-            <small style="color:var(--t2);">(${a.code})</small>
-            <span class="pill" style="font-size:10px;padding:1px 6px;border-radius:4px;background:var(--mu);">${TN[a.t]}</span>
-            <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:${normBg};color:${normColor};font-weight:600;">${normLabel}</span>
+          <div class="op-acc-header" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;">
+            <div style="display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;">
+              <b>${esc(an(a.code))}</b>
+              <small style="color:var(--t2);">(${a.code})</small>
+            </div>
+            <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span class="pill" style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--mu);white-space:nowrap;flex-shrink:0;">${TN[a.t]}</span>
+              <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${normBg};color:${normColor};font-weight:600;white-space:nowrap;flex-shrink:0;">${normLabel}</span>
+            </div>
           </div>
           <div id="unorthodox_${a.code}" style="display:${showUnorthodox ? 'block' : 'none'};color:#b45309;font-size:11.5px;margin-top:3px;font-weight:500;">
             ⚠️ ${isNormD ? 'Credit balance entered for Asset account (overdraft/contra)' : 'Debit balance entered for Liability/Equity/Income account'}
@@ -323,13 +343,17 @@ export function renderGl() {
     count++;
 
     const isReversed = e.status === 'reversed';
-    const statusBadge = isReversed ? ` <span class="b wn" style="font-size:10px;padding:1px 6px;border-radius:4px;">Reversed</span>` : '';
-    const details = `${party ? `<b style="color:var(--tx)">${esc(party)}</b><br>` : ''}${esc(e.narr || '—')}${statusBadge}<br><small style="color:var(--t2)">${esc(oth)}</small>`;
+    const statusBadge = isReversed ? ` <span class="b wn" style="font-size:10px;padding:1px 6px;border-radius:4px;vertical-align:middle;margin-left:4px;">Reversed</span>` : '';
+    const details = `<div class="gl-details-block">
+      ${party ? `<div class="gl-party-name">${esc(party)}</div>` : ''}
+      <div class="gl-narr-text">${esc(e.narr || '—')}${statusBadge}</div>
+      <div class="gl-counter-wrap"><span class="gl-counter-badge">${esc(oth)}</span></div>
+    </div>`;
 
     rows += `<tr class="k" data-a="ent" data-i="${e.id}" style="${isReversed ? 'opacity:0.65;background:rgba(239,68,68,0.03);' : ''}">
       <td>${e.date}</td>
       <td><code>${esc(e.ref)}</code></td>
-      <td>${details}</td>
+      <td class="gl-details-cell">${details}</td>
       <td class="num">${l.d ? fmt(l.d) : ''}</td>
       <td class="num">${l.c ? fmt(l.c) : ''}</td>
       <td class="num" style="font-weight:600;color:${run < 0 ? '#b91c1c' : 'inherit'};">${fmt(run)}</td>
@@ -450,12 +474,17 @@ export function renderGl() {
           </tr>
         </thead>
         <tbody>
-          <tr class="tot">
-            <td colspan="5"><b>Opening balance</b> (as of ${u.f || 'period start'})</td>
-            <td class="num" style="font-weight:700;">${fmt(op)}</td>
+          <tr class="tot gl-opening-row">
+            <td colspan="5">
+              <div class="gl-op-label-wrap">
+                <span class="gl-op-title">Opening balance</span>
+                <span class="gl-op-sub">(as of ${u.f || 'period start'})</span>
+              </div>
+            </td>
+            <td class="num gl-op-val" style="font-weight:700;">${fmt(op)}</td>
           </tr>
           ${rows || `<tr><td colspan="6" class="empty">No entries for ${esc(a.name)} in this period.</td></tr>`}
-          <tr class="tot">
+          <tr class="tot gl-closing-row">
             <td colspan="3"><b>Totals / Closing Balance</b>${q ? ` (${count} of ${accountEntries.length} matched)` : ''}</td>
             <td class="num" style="font-weight:700;">${fmt(q ? matchedDr : periodDr)}</td>
             <td class="num" style="font-weight:700;">${fmt(q ? matchedCr : periodCr)}</td>
@@ -626,12 +655,16 @@ export function renderBook() {
     count++;
 
     const isReversed = e.status === 'reversed';
-    const statusBadge = isReversed ? ` <span class="b wn" style="font-size:10px;padding:1px 6px;border-radius:4px;">Reversed</span>` : '';
-    const details = `${partyNames ? `<b style="color:var(--tx)">${esc(partyNames)}</b><br>` : ''}${esc(e.narr || '—')}${statusBadge}<br><small style="color:var(--t2)">${esc(oth)}</small>`;
+    const statusBadge = isReversed ? ` <span class="b wn" style="font-size:10px;padding:1px 6px;border-radius:4px;vertical-align:middle;margin-left:4px;">Reversed</span>` : '';
+    const details = `<div class="gl-details-block">
+      ${partyNames ? `<div class="gl-party-name">${esc(partyNames)}</div>` : ''}
+      <div class="gl-narr-text">${esc(e.narr || '—')}${statusBadge}</div>
+      <div class="gl-counter-wrap"><span class="gl-counter-badge">${esc(oth)}</span></div>
+    </div>`;
     rows += `<tr class="k" data-a="ent" data-i="${e.id}" style="${isReversed ? 'opacity:0.65;background:rgba(239,68,68,0.03);' : ''}">
       <td>${e.date}</td>
       <td><code>${esc(e.ref)}</code></td>
-      <td>${details}</td>
+      <td class="gl-details-cell">${details}</td>
       <td class="num">${d ? fmt(d) : ''}</td>
       <td class="num">${c ? fmt(c) : ''}</td>
       <td class="num" style="font-weight:600;color:${run < 0 ? '#b91c1c' : 'inherit'};">${fmt(run)}</td>
@@ -663,14 +696,14 @@ export function renderBook() {
   const isThisFy = u.f === fyStart && u.t === fyEnd;
   const isAll = !u.f && !u.t;
 
-  const actions = `<div class="bar-actions" style="display:flex;gap:8px;flex-wrap:wrap">
+  const actions = `<div class="bar-actions cb-bar-actions" style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="p" data-a="newin">+ Money In</button>
     <button data-a="newout">- Money Out</button>
     <button data-a="newxfer">⇄ Transfer</button>
     <button data-a="bkcsv">Export CSV</button>
   </div>`;
 
-  return head('Cash and Bank Book', actions) +
+  return head('Cash and Bank Book', actions, 'cb-header-bar') +
     `<div class="print-only book-print-header" style="margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:10px;">
         <div>
@@ -731,12 +764,17 @@ export function renderBook() {
           </tr>
         </thead>
         <tbody>
-          <tr class="tot">
-            <td colspan="5"><b>Opening balance</b> (as of ${u.f || 'period start'})</td>
-            <td class="num" style="font-weight:700;">${fmt(op)}</td>
+          <tr class="tot book-opening-row gl-opening-row">
+            <td colspan="5">
+              <div class="gl-op-label-wrap">
+                <span class="gl-op-title">Opening balance</span>
+                <span class="gl-op-sub">(as of ${u.f || 'period start'})</span>
+              </div>
+            </td>
+            <td class="num gl-op-val" style="font-weight:700;">${fmt(op)}</td>
           </tr>
           ${rows || '<tr><td colspan="6" class="empty">No cash or bank transactions in this period.</td></tr>'}
-          <tr class="tot">
+          <tr class="tot book-closing-row gl-closing-row">
             <td colspan="3"><b>Totals / Closing Balance</b>${q ? ` (${count} of ${periodEntries.length} matched)` : ''}</td>
             <td class="num" style="font-weight:700;">${fmt(q ? matchedDr : dr)}</td>
             <td class="num" style="font-weight:700;">${fmt(q ? matchedCr : cr)}</td>

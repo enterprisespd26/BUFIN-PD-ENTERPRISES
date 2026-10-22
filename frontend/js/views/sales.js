@@ -663,6 +663,7 @@ export function renderSales() {
   const liveFigs = calcFigs(curObj);
 
   return `
+    <div class="pd-sales-page">
     ${head('Sales Invoices', `<button class="p" id="pd_head_add">${currentTab === 'new' ? 'View records' : '+ New invoice'}</button>`)}
 
     <div class="pd-nav-tabs noprint">
@@ -754,7 +755,7 @@ export function renderSales() {
       <div class="pd-card">
         <h3>Scrap items</h3>
         <div class="pd-table-wrap">
-          <table class="pd-table">
+          <table class="pd-table pd-scrap-lines-table">
             <thead>
               <tr>
                 <th style="min-width:160px">Item</th>
@@ -769,31 +770,31 @@ export function renderSales() {
             <tbody id="pd_lines">
               ${lines.map((l, i) => `
                 <tr data-line="${i}" data-prev-unit="${esc(l.u || 'kg')}">
-                  <td>
+                  <td data-label="Item">
                     <select class="pd-line-name" data-i="${i}">
                       <option value="">Custom…</option>
                       ${scrapItems.map(x => `<option value="${esc(x.n)}" ${x.n === l.n ? 'selected' : ''}>${esc(x.n)}</option>`).join('')}
                     </select>
                   </td>
-                  <td>
+                  <td data-label="HSN">
                     <input type="text" class="pd-line-hsn" data-i="${i}" value="${esc(l.h || '')}">
                   </td>
-                  <td>
+                  <td data-label="Qty">
                     <input type="number" step="any" min="0" class="pd-line-qty" data-i="${i}" value="${l.q ?? ''}">
                   </td>
-                  <td>
+                  <td data-label="Unit">
                     <select class="pd-line-unit" data-i="${i}">
                       ${['kg', 'quintal', 'ton', 'pcs'].map(u => `<option value="${u}" ${u === (l.u || 'kg') ? 'selected' : ''}>${u}</option>`).join('')}
                     </select>
                   </td>
-                  <td>
+                  <td data-label="Rate (₹)">
                     <input type="number" step="any" min="0" class="pd-line-rate" data-i="${i}" value="${l.r ?? ''}">
                   </td>
-                  <td style="text-align:right;font-weight:600">
+                  <td data-label="Amount" style="text-align:right;font-weight:600">
                     ${inr((parseFloat(l.q) || 0) * (parseFloat(l.r) || 0))}
                   </td>
-                  <td>
-                    <button type="button" class="btn red sm pd-line-del" data-i="${i}" title="Remove line">✕</button>
+                  <td data-label="Actions">
+                    <button type="button" class="btn red sm pd-line-del" data-i="${i}" title="Remove line" aria-label="Remove item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                   </td>
                 </tr>
               `).join('')}
@@ -892,7 +893,7 @@ export function renderSales() {
       </div>
 
       <div class="pd-card">
-        <div class="pd-btn-row" style="margin-bottom:12px;justify-content:space-between">
+        <div class="pd-btn-row pd-search-toolbar" style="margin-bottom:12px;justify-content:space-between">
           <input type="text" id="pd_search_q" placeholder="Search customer, invoice no., vehicle" value="${esc(salesState.q)}" style="max-width:340px">
           <button type="button" class="btn alt" id="pd_btn_csv">Export CSV</button>
         </div>
@@ -920,13 +921,13 @@ export function renderSales() {
           const pillTxt = isPaid ? 'Paid' : (isPartial ? 'Part paid' : 'Unpaid');
 
           return `<tr>
-                  <td><b>${esc(d.no)}</b></td>
-                  <td>${d.date ? d.date.split('-').reverse().join('/') : ''}</td>
-                  <td>${esc(d.c?.n || pn(d.party))}</td>
-                  <td>${esc(d.veh || '')}</td>
-                  <td style="text-align:right;font-weight:600">${fmt(d.total)}</td>
-                  <td><span class="pd-pill ${pillCls}">${pillTxt}</span></td>
-                  <td style="text-align:right">
+                  <td data-label="Invoice"><b>${esc(d.no)}</b></td>
+                  <td data-label="Date">${d.date ? d.date.split('-').reverse().join('/') : ''}</td>
+                  <td data-label="Customer">${esc(d.c?.n || pn(d.party))}</td>
+                  <td data-label="Vehicle">${esc(d.veh || '')}</td>
+                  <td data-label="Total" style="text-align:right;font-weight:600">${fmt(d.total)}</td>
+                  <td data-label="Status"><span class="pd-pill ${pillCls}">${pillTxt}</span></td>
+                  <td data-label="Actions" style="text-align:right">
                     <div class="pd-btn-row desktop-actions" style="justify-content:flex-end">
                       <button type="button" class="btn sm" data-action="view" data-no="${esc(d.no)}">View</button>
                       <button type="button" class="btn alt sm" data-action="edit" data-no="${esc(d.no)}">Edit</button>
@@ -951,7 +952,7 @@ export function renderSales() {
           These scrap items appear in the invoice dropdown to automatically fill HSN code, unit and default rate.
         </p>
         <div class="pd-table-wrap">
-          <table class="pd-table">
+          <table class="pd-table pd-scrap-catalog-table">
             <thead>
               <tr>
                 <th>Item name</th>
@@ -964,15 +965,15 @@ export function renderSales() {
             <tbody id="pd_items_body">
               ${scrapItems.map((x, i) => `
                 <tr>
-                  <td><input type="text" class="pd-item-n" data-i="${i}" value="${esc(x.n)}"></td>
-                  <td><input type="text" class="pd-item-h" data-i="${i}" value="${esc(x.h)}"></td>
-                  <td>
+                  <td data-label="Item"><input type="text" class="pd-item-n" data-i="${i}" value="${esc(x.n)}"></td>
+                  <td data-label="HSN"><input type="text" class="pd-item-h" data-i="${i}" value="${esc(x.h)}"></td>
+                  <td data-label="Unit">
                     <select class="pd-item-u" data-i="${i}">
                       ${['kg', 'quintal', 'ton', 'pcs'].map(u => `<option value="${u}" ${u === x.u ? 'selected' : ''}>${u}</option>`).join('')}
                     </select>
                   </td>
-                  <td><input type="number" step="any" class="pd-item-r" data-i="${i}" value="${x.r}"></td>
-                  <td><button type="button" class="btn red sm pd-item-del" data-i="${i}">✕</button></td>
+                  <td data-label="Rate (₹)"><input type="number" step="any" class="pd-item-r" data-i="${i}" value="${x.r}"></td>
+                  <td data-label="Actions"><button type="button" class="btn red sm pd-item-del" data-i="${i}" title="Remove item" aria-label="Remove item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -999,6 +1000,7 @@ export function renderSales() {
         ${salesState.viewNo ? renderSheet(db.docs.find(d => d.no === salesState.viewNo && d.type === 'sale') || curObj) : ''}
       </div>
     </div>
+  </div>
   `;
 }
 
@@ -1776,9 +1778,9 @@ export function bindSalesEvents() {
         const i = db.items.length - 1;
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><input type="text" class="pd-item-n" data-i="${i}" value=""></td>
-          <td><input type="text" class="pd-item-h" data-i="${i}" value="7204"></td>
-          <td>
+          <td data-label="Item"><input type="text" class="pd-item-n" data-i="${i}" value=""></td>
+          <td data-label="HSN"><input type="text" class="pd-item-h" data-i="${i}" value="7204"></td>
+          <td data-label="Unit">
             <select class="pd-item-u" data-i="${i}">
               <option value="kg" selected>kg</option>
               <option value="quintal">quintal</option>
@@ -1786,8 +1788,8 @@ export function bindSalesEvents() {
               <option value="pcs">pcs</option>
             </select>
           </td>
-          <td><input type="number" step="any" class="pd-item-r" data-i="${i}" value="0"></td>
-          <td><button type="button" class="btn red sm pd-item-del" data-i="${i}">✕</button></td>
+          <td data-label="Rate (₹)"><input type="number" step="any" class="pd-item-r" data-i="${i}" value="0"></td>
+          <td data-label="Actions"><button type="button" class="btn red sm pd-item-del" data-i="${i}" title="Remove item" aria-label="Remove item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td>
         `;
         tbody.appendChild(tr);
         bindSalesEvents();

@@ -73,9 +73,18 @@ const CSS = String.raw`
   #inv_btn_csv { width: 100%; }
   #pd_btn_csv, #u_csv { margin-left: auto !important; }
 
+  /* ---------- Main Container Clearance (Universal pb-24) ---------- */
+  main, #root > main, .main-scroll-container {
+    margin: 0 !important;
+    padding: 12px 14px calc(96px + env(safe-area-inset-bottom, 20px)) !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+
   /* ---------- Cards, grids, forms ---------- */
   .pd-card { padding: 14px !important; border-radius: 14px; max-width: 100vw !important; box-sizing: border-box !important; }
-  .pd-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; gap: 12px !important; }
+  .pd-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .pd-grid > label { width: 100% !important; min-width: 0 !important; }
   .two { grid-template-columns: 1fr !important; }
   .grid > :last-child:nth-child(odd), .grid-6 > :last-child:nth-child(odd) { grid-column: 1 / -1; }
   .grid-5 > :first-child { grid-column: 1 / -1 !important; }
@@ -93,6 +102,40 @@ const CSS = String.raw`
     margin-bottom: 12px !important;
     width: 100% !important;
     box-sizing: border-box !important;
+  }
+  .bar.cb-header-bar,
+  .bar:has(.cb-bar-actions),
+  .bar:has(.bar-actions > :nth-child(2)) {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .bar.cb-header-bar h2,
+  .bar:has(.cb-bar-actions) h2,
+  .bar:has(.bar-actions > :nth-child(2)) h2 {
+    width: 100% !important;
+    flex: none !important;
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+  }
+  .bar.cb-header-bar > div,
+  .bar.cb-header-bar .bar-actions,
+  .bar:has(.cb-bar-actions) > div,
+  .bar:has(.cb-bar-actions) .bar-actions,
+  .bar:has(.bar-actions > :nth-child(2)) > div,
+  .bar:has(.bar-actions > :nth-child(2)) .bar-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 4px !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
   }
   .bar > button.menu, button.menu {
     display: none !important;
@@ -189,34 +232,33 @@ const CSS = String.raw`
     font-size: 13px !important;
   }
 
-  /* GL, CB, PL: date pair – From/To side by side on mobile */
-  .gl-filter-bar .mc-row, .cb-filter-bar .mc-row, .plx-filters .mc-row {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
+  /* GL, CB, PL: date pair – 2-column grid on mobile */
+  .gl-filter-bar .mc-row, .cb-filter-bar .mc-row, .plx-filters .mc-row, .cb-dates {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
     gap: 8px !important;
     width: 100% !important;
-    flex-wrap: nowrap !important;
+    box-sizing: border-box !important;
   }
-  .gl-filter-bar .mc-row label, .cb-filter-bar .mc-row label, .plx-filters .mc-row label {
-    flex: 1 1 50% !important;
+  .gl-filter-bar .mc-row label, .cb-filter-bar .mc-row label, .plx-filters .mc-row label, .cb-dates label {
+    width: 100% !important;
     min-width: 0 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 5px !important;
+    gap: 6px !important;
     font-size: 12px !important;
     font-weight: 600 !important;
     color: var(--t2) !important;
     margin: 0 !important;
     white-space: nowrap !important;
   }
-  .gl-filter-bar .mc-row input[type=date], .cb-filter-bar .mc-row input[type=date], .plx-filters .mc-row input[type=date] {
+  .gl-filter-bar .mc-row input[type=date], .cb-filter-bar .mc-row input[type=date], .plx-filters .mc-row input[type=date], .cb-dates input[type=date] {
     flex: 1 1 auto !important;
     min-width: 0 !important;
     width: 100% !important;
     min-height: 40px !important;
     padding: 4px 6px !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
     box-sizing: border-box !important;
   }
 
@@ -417,7 +459,7 @@ const CSS = String.raw`
   /* =========================================================
      TABLES  ->  labelled cards  (class added by JS: table.mcard)
      ========================================================= */
-  .mc-wrap { overflow: visible !important; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; margin: 0 0 6px !important; }
+  .mc-wrap { overflow: visible !important; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 0 calc(100px + env(safe-area-inset-bottom, 24px)) !important; margin: 0 0 6px !important; }
 
   table.mcard, table.mcard tbody, table.mcard tfoot { display: block !important; width: 100% !important; border: 0 !important; background: transparent !important; }
   table.mcard thead, table.mcard tr.mc-head { display: none !important; }
@@ -435,7 +477,7 @@ const CSS = String.raw`
     font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .35px; }
   table.mcard td.mc-empty { display: none !important; }
 
-  table.mcard td.mc-title { order: -1; display: flex !important; align-items: center !important; justify-content: space-between !important; text-align: left !important; font-size: 15px; font-weight: 700; color: var(--tx, var(--m-ink));
+  table.mcard td.mc-title { order: -1; display: flex !important; flex-direction: column !important; align-items: stretch !important; justify-content: flex-start !important; text-align: left !important; font-size: 15px; font-weight: 700; color: var(--tx, var(--m-ink));
     padding: 6px 0 10px !important; border-bottom: 1px solid var(--bd, var(--m-line)) !important; margin-bottom: 4px !important; }
   table.mcard td.mc-title::before, table.mcard td.mc-span::before, table.mcard td.mc-actions::before { display: none !important; }
   table.mcard td.mc-title select, table.mcard td.mc-title input { width: 100% !important; min-height: 44px !important; font-size: 15px !important; font-weight: 600 !important; padding: 8px 12px !important; border-radius: 8px !important; border: 1px solid var(--bd, #cbd5e1) !important; box-sizing: border-box !important; background: #fff !important; }
@@ -443,12 +485,54 @@ const CSS = String.raw`
   table.mcard td.mc-span { display: block !important; text-align: left !important; font-weight: 700; padding: 12px 0 !important; border-bottom: 0 !important; }
   table.mcard td.mc-span.empty { text-align: center !important; color: var(--t2, var(--m-mute)); font-weight: 500; padding: 22px 0 !important; }
 
-  table.mcard td.mc-amt { font-weight: 700; color: var(--tx, var(--m-ink)); }
-  table.mcard td.mc-cell input, table.mcard td.mc-cell select { flex: 1 1 60% !important; max-width: 65% !important; width: auto !important; min-height: 44px !important; padding: 8px 12px !important; font-size: 14px !important; border-radius: 8px !important; border: 1px solid var(--bd, #cbd5e1) !important; box-sizing: border-box !important; text-align: right !important; background: #fff !important; }
+  table.mcard td.mc-amt, table.mcard td.mc-cell[data-label="Amount"] { font-weight: 700; color: var(--tx, var(--m-ink)); text-align: right !important; width: 100% !important; }
+  table.mcard td.mc-cell input, table.mcard td.mc-cell select { flex: 1 1 60% !important; max-width: 65% !important; width: auto !important; min-height: 44px !important; padding: 8px 12px !important; font-size: 14px !important; border-radius: 8px !important; border: 1px solid var(--bd, #cbd5e1) !important; box-sizing: border-box !important; text-align: right !important; text-align-last: right !important; background: #fff !important; }
 
-  table.mcard td.mc-actions { display: flex !important; justify-content: flex-end !important; align-items: center !important; flex-wrap: wrap; gap: 8px; padding: 10px 0 4px !important; border-top: 1px solid var(--bd, var(--m-line)) !important; border-bottom: 0 !important; margin-top: 4px !important; }
-  table.mcard td.mc-actions button, table.mcard .pd-item-del, table.mcard .pd-del { min-height: 44px !important; min-width: 44px !important; padding: 8px 18px !important; font-size: 15px !important; font-weight: 700 !important; border-radius: 8px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; box-sizing: border-box !important; }
-  table.mcard td.mc-actions .pd-btn-row { justify-content: flex-end; }
+  table.mcard td.mc-actions { display: flex !important; width: 100% !important; justify-content: flex-end !important; align-items: center !important; padding: 10px 0 4px !important; border-top: 1px solid var(--bd, #e2e8f0) !important; border-bottom: 0 !important; margin-top: 6px !important; box-sizing: border-box !important; }
+  table.mcard td.mc-actions button, table.mcard td.mc-actions .pd-line-del, table.mcard .pd-item-del, table.mcard .pd-del { min-height: 40px !important; height: 40px !important; min-width: 44px !important; padding: 0 16px !important; font-size: 14px !important; font-weight: 700 !important; border-radius: 8px !important; background: #fef2f2 !important; border: 1px solid #fecaca !important; color: #dc2626 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; box-sizing: border-box !important; }
+  table.mcard td.mc-actions .pd-btn-row { justify-content: flex-end; width: 100%; }
+
+  /* Full-Screen Mobile Modal Dialogs & Fixed Drawer */
+  dialog {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: auto 0 0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 18px 16px 0 !important;
+    max-height: 85vh !important;
+    max-height: 85dvh !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 10001 !important;
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-bottom: none !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25) !important;
+  }
+  body:has(dialog[open]) #tab {
+    display: none !important;
+  }
+  dialog form {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+  }
+  dialog form > .row:last-child,
+  dialog .modal-actions {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: var(--sf, #ffffff) !important;
+    padding: 14px 0 calc(20px + env(safe-area-inset-bottom, 16px)) !important;
+    margin-top: 16px !important;
+    border-top: 1px solid var(--bd, #e2e8f0) !important;
+    z-index: 20 !important;
+    display: flex !important;
+    gap: 10px !important;
+    justify-content: flex-end !important;
+  }
 
   /* Tables that cannot become cards (statements, 2-column lists) stay real tables, just tidy */
   .mc-wrap-plain { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
@@ -457,6 +541,779 @@ const CSS = String.raw`
   table.mc-plain tbody, table.mc-plain tfoot { display: table-row-group !important; }
   table.mc-plain tr { display: table-row !important; }
   table.mc-plain th, table.mc-plain td { display: table-cell !important; padding: 10px 12px !important; font-size: 13px; vertical-align: top; }
+
+  /* ================= Sales Module Mobile Polish (/#/sales) ================= */
+  /* 1. Compact 2x2 Grid for Top Summary Metrics */
+  .pd-stats {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+  .pd-stats div {
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    background: var(--sf, #ffffff) !important;
+    border: 1px solid var(--bd, #e2e8f0) !important;
+    box-sizing: border-box !important;
+  }
+  .pd-stats span {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: var(--t2, #64748b) !important;
+    margin-bottom: 2px !important;
+  }
+  .pd-stats b {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: var(--tx, #0f172a) !important;
+    margin-top: 2px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.3 !important;
+  }
+
+  /* 2. Search & Export CSV Toolbar Alignment */
+  .pd-search-toolbar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-bottom: 12px !important;
+    flex-wrap: nowrap !important;
+  }
+  .pd-search-toolbar #pd_search_q,
+  .pd-search-toolbar input[type="text"] {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 12px !important;
+    font-size: 13.5px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--bd, #cbd5e1) !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+  .pd-search-toolbar #pd_btn_csv,
+  .pd-search-toolbar button {
+    flex: 0 0 auto !important;
+    flex-shrink: 0 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--bd, #cbd5e1) !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* 3. Sales Record Card Layout & Action Menu Polish */
+  .pd-table-wrap.responsive-cards table.mcard tr,
+  .pd-table-wrap.responsive-cards .pd-table tbody tr {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 14px 14px 10px !important;
+    margin-bottom: 12px !important;
+    border-radius: 12px !important;
+    background: var(--sf, #fff) !important;
+    border: 1px solid var(--bd, #e2e8f0) !important;
+    box-sizing: border-box !important;
+  }
+  .pd-table-wrap.responsive-cards table.mcard td.mc-title,
+  .pd-table-wrap.responsive-cards .pd-table tbody td:first-child {
+    padding-right: 44px !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 2px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: var(--tx, #0f172a) !important;
+    border: none !important;
+    border-bottom: 1px solid var(--bd, #e2e8f0) !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+  }
+  .pd-table-wrap.responsive-cards table.mcard td.mc-cell,
+  .pd-table-wrap.responsive-cards .pd-table tbody td:not(:first-child):not(:last-child) {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 6px 0 !important;
+    border: none !important;
+    border-bottom: 1px dashed rgba(226, 232, 240, 0.7) !important;
+    font-size: 13.5px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .pd-table-wrap.responsive-cards table.mcard td.mc-cell::before,
+  .pd-table-wrap.responsive-cards .pd-table tbody td:not(:first-child):not(:last-child)::before {
+    content: attr(data-label) !important;
+    flex: 0 0 auto !important;
+    text-align: left !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
+    font-size: 11.5px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.35px !important;
+  }
+  .pd-table-wrap.responsive-cards table.mcard td.mc-cell,
+  .pd-table-wrap.responsive-cards table.mcard td.mc-cell *,
+  .pd-table-wrap.responsive-cards .pd-table tbody td:not(:first-child):not(:last-child) {
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    text-align: right !important;
+  }
+  .pd-table-wrap.responsive-cards table.mcard td.mc-actions,
+  .pd-table-wrap.responsive-cards .pd-table tbody td:last-child {
+    display: contents !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 0 !important;
+  }
+  .pd-table-wrap.responsive-cards .pd-more-btn {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    border-radius: 8px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: #64748b !important;
+    font-size: 18px !important;
+    cursor: pointer !important;
+    z-index: 5 !important;
+    padding: 0 !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
+  }
+  .pd-table-wrap.responsive-cards .pd-more-btn:hover,
+  .pd-table-wrap.responsive-cards .pd-more-btn:active {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+
+  /* 4. Scrap Items Form 2-Column Grid (Tab 1 Lines & Tab 3 Catalog) */
+  .pd-scrap-lines-table,
+  .pd-scrap-catalog-table {
+    display: block !important;
+    width: 100% !important;
+    border: none !important;
+    background: transparent !important;
+  }
+  .pd-scrap-lines-table thead,
+  .pd-scrap-catalog-table thead {
+    display: none !important;
+  }
+  .pd-scrap-lines-table tbody,
+  .pd-scrap-catalog-table tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+  /* 4. Scrap Items Form 2-Column Grid (Tab 1 Lines & Tab 3 Catalog) */
+  .pd-scrap-lines-table,
+  .pd-scrap-catalog-table {
+    display: block !important;
+    width: 100% !important;
+    border: none !important;
+    background: transparent !important;
+  }
+  .pd-scrap-lines-table thead,
+  .pd-scrap-catalog-table thead {
+    display: none !important;
+  }
+  .pd-scrap-lines-table tbody,
+  .pd-scrap-catalog-table tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+  .pd-scrap-lines-table tbody tr,
+  .pd-scrap-catalog-table tbody tr,
+  table.mcard.pd-scrap-lines-table tbody tr,
+  table.mcard.pd-scrap-catalog-table tbody tr {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px 12px !important;
+    position: relative !important;
+    padding: 14px !important;
+    margin-bottom: 14px !important;
+    border-radius: 14px !important;
+    background: #ffffff !important;
+    border: 1px solid var(--bd, #e2e8f0) !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  }
+  .pd-scrap-lines-table tbody tr td:first-child,
+  .pd-scrap-catalog-table tbody tr td:first-child,
+  table.mcard.pd-scrap-lines-table td.mc-title,
+  table.mcard.pd-scrap-catalog-table td.mc-title {
+    grid-column: 1 / -1 !important;
+    order: 1 !important;
+    padding: 0 50px 0 0 !important;
+    margin: 0 0 2px 0 !important;
+    border: none !important;
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .pd-scrap-lines-table tbody tr td:first-child select,
+  .pd-scrap-catalog-table tbody tr td:first-child input,
+  table.mcard.pd-scrap-lines-table td.mc-title select,
+  table.mcard.pd-scrap-catalog-table td.mc-title input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    font-size: 14.5px !important;
+    font-weight: 600 !important;
+    color: var(--tx, #0f172a) !important;
+    padding: 8px 12px !important;
+    border-radius: 9px !important;
+    border: 1px solid var(--bd, #cbd5e1) !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    text-align: left !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  }
+  .pd-scrap-lines-table tbody tr td:last-child,
+  .pd-scrap-catalog-table tbody tr td:last-child,
+  table.mcard.pd-scrap-lines-table td.mc-actions,
+  table.mcard.pd-scrap-catalog-table td.mc-actions {
+    display: contents !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 0 !important;
+  }
+  .pd-scrap-lines-table .pd-line-del,
+  .pd-scrap-catalog-table .pd-item-del {
+    position: absolute !important;
+    top: 14px !important;
+    right: 14px !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    border-radius: 9px !important;
+    background: #fef2f2 !important;
+    border: 1px solid #fee2e2 !important;
+    color: #ef4444 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 10 !important;
+    cursor: pointer !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease !important;
+  }
+  .pd-scrap-lines-table .pd-line-del:hover,
+  .pd-scrap-catalog-table .pd-item-del:hover {
+    background: #fee2e2 !important;
+    border-color: #fecaca !important;
+    color: #dc2626 !important;
+  }
+  .pd-scrap-lines-table .pd-line-del:active,
+  .pd-scrap-catalog-table .pd-item-del:active {
+    background: #fecaca !important;
+    transform: scale(0.95) !important;
+  }
+  .pd-scrap-lines-table .pd-line-del svg,
+  .pd-scrap-catalog-table .pd-item-del svg {
+    width: 16px !important;
+    height: 16px !important;
+    stroke: currentColor !important;
+    pointer-events: none !important;
+  }
+  .pd-scrap-lines-table tbody tr td:not(:first-child):not(:last-child):not(:nth-child(6)),
+  .pd-scrap-catalog-table tbody tr td:not(:first-child):not(:last-child),
+  table.mcard.pd-scrap-lines-table td.mc-cell:not(:nth-child(6)),
+  table.mcard.pd-scrap-catalog-table td.mc-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
+    padding: 0 !important;
+    border: none !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+  }
+  .pd-scrap-lines-table tbody tr td:not(:first-child):not(:last-child):not(:nth-child(6))::before,
+  .pd-scrap-catalog-table tbody tr td:not(:first-child):not(:last-child)::before,
+  table.mcard.pd-scrap-lines-table td.mc-cell:not(:nth-child(6))::before,
+  table.mcard.pd-scrap-catalog-table td.mc-cell::before {
+    content: attr(data-label) !important;
+    flex: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    text-align: left !important;
+    color: #64748b !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.4px !important;
+    margin-bottom: 2px !important;
+  }
+  .pd-scrap-lines-table tbody tr td:not(:first-child):not(:last-child):not(:nth-child(6)) input,
+  .pd-scrap-lines-table tbody tr td:not(:first-child):not(:last-child):not(:nth-child(6)) select,
+  .pd-scrap-catalog-table tbody tr td:not(:first-child):not(:last-child) input,
+  .pd-scrap-catalog-table tbody tr td:not(:first-child):not(:last-child) select,
+  table.mcard.pd-scrap-lines-table td.mc-cell:not(:nth-child(6)) input,
+  table.mcard.pd-scrap-lines-table td.mc-cell:not(:nth-child(6)) select,
+  table.mcard.pd-scrap-catalog-table td.mc-cell input,
+  table.mcard.pd-scrap-catalog-table td.mc-cell select {
+    flex: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: var(--tx, #0f172a) !important;
+    border-radius: 9px !important;
+    border: 1px solid var(--bd, #cbd5e1) !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+    text-align-last: left !important;
+    background: #ffffff !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  }
+  .pd-scrap-lines-table tbody tr td input:focus,
+  .pd-scrap-lines-table tbody tr td select:focus,
+  .pd-scrap-catalog-table tbody tr td input:focus,
+  .pd-scrap-catalog-table tbody tr td select:focus {
+    border-color: #3b82f6 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+  }
+  .pd-scrap-catalog-table tbody tr td:nth-child(2),
+  table.mcard.pd-scrap-catalog-table td:nth-child(2) {
+    order: 2 !important;
+    grid-column: 1 !important;
+  }
+  .pd-scrap-catalog-table tbody tr td:nth-child(3),
+  table.mcard.pd-scrap-catalog-table td:nth-child(3) {
+    order: 3 !important;
+    grid-column: 2 !important;
+  }
+  .pd-scrap-catalog-table tbody tr td:nth-child(4),
+  table.mcard.pd-scrap-catalog-table td:nth-child(4) {
+    order: 4 !important;
+    grid-column: 1 !important;
+  }
+  .pd-scrap-lines-table tbody tr td:nth-child(2),
+  table.mcard.pd-scrap-lines-table td:nth-child(2) {
+    order: 2 !important;
+    grid-column: 1 !important;
+  }
+  .pd-scrap-lines-table tbody tr td:nth-child(4),
+  table.mcard.pd-scrap-lines-table td:nth-child(4) {
+    order: 3 !important;
+    grid-column: 2 !important;
+  }
+  .pd-scrap-lines-table tbody tr td:nth-child(3),
+  table.mcard.pd-scrap-lines-table td:nth-child(3) {
+    order: 4 !important;
+    grid-column: 1 !important;
+  }
+  .pd-scrap-lines-table tbody tr td:nth-child(5),
+  table.mcard.pd-scrap-lines-table td:nth-child(5) {
+    order: 5 !important;
+    grid-column: 2 !important;
+  }
+  .pd-scrap-lines-table tbody tr td:nth-child(6),
+  table.mcard.pd-scrap-lines-table td.mc-cell:nth-child(6) {
+    order: 6 !important;
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: #f8fafc !important;
+    padding: 10px 14px !important;
+    margin-top: 4px !important;
+    border: 1px dashed #cbd5e1 !important;
+    border-radius: 9px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: var(--tx, #0f172a) !important;
+    box-sizing: border-box !important;
+  }
+  .pd-scrap-lines-table tbody tr td:nth-child(6)::before,
+  table.mcard.pd-scrap-lines-table td.mc-cell:nth-child(6)::before {
+    content: "Line Amount" !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.4px !important;
+    margin-bottom: 0 !important;
+    width: auto !important;
+  }
+
+  #pd_add_line, #pd_btn_add_item {
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 16px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    border-radius: 9px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* 5. Safe Area Bottom Scroll Padding */
+  .pd-sales-page,
+  .pd-sales-page #pd-tab-new,
+  .pd-sales-page #pd-tab-rec,
+  .pd-sales-page #pd-tab-itm,
+  .pd-sales-page #pd-tab-view {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 24px)) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ================= Opening Balances Status Banner Card ================= */
+  .ob-status-card {
+    border-radius: 14px !important;
+    padding: 14px 14px 12px !important;
+    margin-bottom: 16px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  .ob-locked-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%) !important;
+    border: 1px solid #bbf7d0 !important;
+    border-left: 4px solid #10b981 !important;
+  }
+  .ob-edit-card {
+    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%) !important;
+    border: 1px solid #bfdbfe !important;
+    border-left: 4px solid #3b82f6 !important;
+  }
+  .ob-card-main {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+  .ob-card-icon {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  }
+  .ob-icon-green {
+    background: #dcfce7 !important;
+    border: 1px solid #86efac !important;
+    color: #15803d !important;
+  }
+  .ob-icon-blue {
+    background: #dbeafe !important;
+    border: 1px solid #93c5fd !important;
+    color: #1d4ed8 !important;
+  }
+  .ob-card-body {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+  .ob-title-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+  .ob-card-title {
+    color: #0f172a !important;
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.2px !important;
+    line-height: 1.25 !important;
+  }
+  .ob-pill {
+    font-size: 10px !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+  .ob-pill-green {
+    background: #dcfce7 !important;
+    color: #15803d !important;
+    border: 1px solid #86efac !important;
+  }
+  .ob-pill-blue {
+    background: #dbeafe !important;
+    color: #1e40af !important;
+    border: 1px solid #93c5fd !important;
+  }
+  .ob-dot {
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+  }
+  .ob-dot-green {
+    background: #16a34a !important;
+  }
+  .ob-dot-blue {
+    background: #2563eb !important;
+  }
+  .ob-meta-row {
+    margin-top: 8px !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+    border: 1px solid rgba(187, 247, 208, 0.8) !important;
+    border-radius: 8px !important;
+    padding: 8px 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 4px !important;
+  }
+  .ob-meta-divider {
+    display: none !important;
+  }
+  .ob-meta-item {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    font-size: 12px !important;
+  }
+  .ob-meta-label {
+    color: #64748b !important;
+    font-weight: 500 !important;
+  }
+  .ob-meta-val {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+  }
+  .ob-val-emerald {
+    color: #059669 !important;
+    font-weight: 700 !important;
+  }
+  .ob-edit-desc {
+    color: #475569 !important;
+    font-size: 12px !important;
+    margin-top: 4px !important;
+    line-height: 1.4 !important;
+  }
+  .ob-actions-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-top: 2px !important;
+  }
+  .ob-btn-edit, .ob-btn-rev, .ob-btn-cancel {
+    width: 100% !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 0 8px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    border-radius: 9px !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+  }
+  .ob-btn-edit {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+  }
+  .ob-btn-edit:hover, .ob-btn-edit:active {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+  }
+  .ob-btn-rev {
+    background: #ffffff !important;
+    color: #dc2626 !important;
+    border: 1px solid #fecaca !important;
+    box-shadow: 0 1px 2px rgba(220, 38, 38, 0.05) !important;
+  }
+  .ob-btn-rev:hover, .ob-btn-rev:active {
+    background: #fef2f2 !important;
+    border-color: #f87171 !important;
+  }
+  .ob-btn-cancel {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+  }
+
+  /* General Ledger & Cash Book Opening Balance Summary Row */
+  table.mcard tr.tot.gl-opening-row {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+    border: 1px solid #cbd5e1 !important;
+    border-left: 4px solid #3b82f6 !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    margin: 6px 0 12px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+    box-sizing: border-box !important;
+    min-height: 48px !important;
+    width: 100% !important;
+  }
+  table.mcard tr.tot.gl-opening-row td {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    font-size: 13.5px !important;
+  }
+  table.mcard tr.tot.gl-opening-row td:first-child {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    max-width: calc(100% - 100px) !important;
+    display: flex !important;
+    align-items: center !important;
+    text-align: left !important;
+  }
+  table.mcard tr.tot.gl-opening-row td:first-child .gl-op-label-wrap {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+  table.mcard tr.tot.gl-opening-row td:first-child .gl-op-title {
+    font-weight: 700 !important;
+    font-size: 14.5px !important;
+    color: #0f172a !important;
+    white-space: nowrap !important;
+  }
+  table.mcard tr.tot.gl-opening-row td:first-child .gl-op-sub {
+    font-size: 12px !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
+    white-space: nowrap !important;
+  }
+  table.mcard tr.tot.gl-opening-row td:last-child {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 80px !important;
+    text-align: right !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    color: #0f172a !important;
+    margin-left: auto !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+  }
+  table.mcard tr.tot.gl-opening-row td::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* Closing Balance Row */
+  table.mcard tr.tot.gl-closing-row {
+    display: flex !important;
+    flex-direction: column !important;
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    margin: 12px 0 24px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+    gap: 4px !important;
+  }
+  table.mcard tr.tot.gl-closing-row td:first-child {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    padding-bottom: 6px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  table.mcard tr.tot.gl-closing-row td:first-child::before {
+    display: none !important;
+  }
+
+  /* Details Block in Mobile Cards */
+  .gl-details-block {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    width: 100% !important;
+  }
+  .gl-party-name {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    line-height: 1.3 !important;
+  }
+  .gl-narr-text {
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+    line-height: 1.4 !important;
+    margin-top: 2px !important;
+  }
+  .gl-counter-wrap {
+    margin-top: 3px !important;
+  }
+  .gl-counter-badge {
+    font-size: 11px !important;
+    color: #475569 !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    padding: 3px 8px !important;
+    display: inline-block !important;
+    width: fit-content !important;
+    max-width: 100% !important;
+    line-height: 1.35 !important;
+    word-break: break-word !important;
+  }
 }
 `;
 
