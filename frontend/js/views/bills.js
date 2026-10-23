@@ -389,7 +389,7 @@ export function renderBills() {
     `}
 
     <!-- TAB 1: ADD / EDIT BILL -->
-    <div id="pd-tab-bill-new" style="display:${currentTab === 'new' ? 'block' : 'none'}">
+    <div id="pd-tab-bill-new" class="pd-tab-new-wrap pb-28" style="display:${currentTab === 'new' ? 'block' : 'none'};padding-bottom:7rem;">
       <div class="pd-card">
         ${billsState.editId ? `
           <div style="display:flex;justify-content:space-between;align-items:center;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
@@ -410,20 +410,20 @@ export function renderBills() {
         `}
 
         <!-- EXISTING PARTY SELECTION -->
-        <div class="pd-party-selector" style="background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
-          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
-            <div style="flex:1;min-width:260px;">
-              <label class="pd-label" style="font-weight:600;color:var(--tx);margin-bottom:6px;">
+        <div class="pd-party-selector" style="background:#f8fafc;border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:20px;">
+          <div class="pd-supplier-box-wrap">
+            <div class="pd-supplier-select-col">
+              <label class="pd-label" for="u_sel_supplier" style="font-weight:600;color:var(--tx);margin-bottom:6px;display:block;">
                 Select Existing Supplier
               </label>
-              <select id="u_sel_supplier" style="width:100%;padding:8px 12px;border:1px solid var(--bd);border-radius:6px;background:#fff;font-size:14px;font-weight:500;">
+              <select id="u_sel_supplier" style="width:100%;min-height:44px;padding:8px 12px;border:1px solid var(--bd);border-radius:8px;background:#fff;font-size:14px;font-weight:500;">
                 <option value="">-- Choose from existing suppliers --</option>
                 ${suppliers.map(p => `<option value="${p.id}" ${p.id === activeSupplierId ? 'selected' : ''}>${esc(p.name)}${p.phone ? ' (' + esc(p.phone) + ')' : ''}${p.state ? ' · ' + esc(p.state) : ''}</option>`).join('')}
                 <option value="__NEW__">➕ + Add New Supplier...</option>
               </select>
             </div>
-            <div style="display:flex;align-items:flex-end;padding-top:18px;">
-              <button type="button" class="p" id="u_btn_new_sup" style="padding:8px 16px;font-size:13px;font-weight:600;white-space:nowrap;">
+            <div class="pd-supplier-btn-wrap">
+              <button type="button" class="btn p pd-supplier-add-btn" id="u_btn_new_sup">
                 + Add Supplier
               </button>
             </div>
@@ -511,9 +511,13 @@ export function renderBills() {
           listHTML: billFilePillsHTML(billsState.files)
         })}
 
-        <div class="pd-btn-row" style="margin-top:18px">
-          <button type="button" class="btn p" id="u_save">${billsState.editId ? 'Update Purchase Bill' : 'Save purchase bill'}</button>
-          <button type="button" class="btn alt" id="${billsState.editId ? 'u_btn_cancel_bottom' : 'u_clr'}">${billsState.editId ? 'Cancel' : 'Clear'}</button>
+        <div class="pd-bill-actions-row">
+          <button type="button" class="pd-bill-btn-clear" id="${billsState.editId ? 'u_btn_cancel_bottom' : 'u_clr'}">
+            ${billsState.editId ? 'Cancel' : 'Clear'}
+          </button>
+          <button type="button" class="pd-bill-btn-save" id="u_save">
+            ${billsState.editId ? 'Update Purchase Bill' : 'Save purchase bill'}
+          </button>
         </div>
       </div>
     </div>

@@ -59,7 +59,8 @@ export function injectAttachmentStyles() {
   .bf-att-ico{width:34px;height:34px;border-radius:9px;background:#eff6ff;color:var(--bf-pri);display:grid;place-items:center}
   .bf-att-title b{display:block;font-size:13.5px;color:var(--bf-ink);font-weight:650}
   .bf-att-title small{display:block;font-size:12px;color:var(--bf-mut);margin-top:1px}
-  .bf-att-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .bf-att-actions{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+  .bf-att-actions .bf-btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:10px;font-size:13.5px;font-weight:600}
   .bf-att-body{padding:14px 16px}
   .bf-att-empty{display:flex;align-items:center;gap:12px;padding:14px;border:1.5px dashed #cbd5e1;border-radius:10px;
     color:var(--bf-mut);font-size:12.5px;background:#fcfdff}
@@ -127,6 +128,9 @@ export function injectAttachmentStyles() {
   .bf-cam-foot.review{grid-template-columns:1fr 1fr}
 
   @media(max-width:640px){
+    .bf-att-head{display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:12px 14px}
+    .bf-att-actions{display:grid !important;grid-template-columns:1fr 1fr !important;gap:10px !important;width:100% !important;margin-top:2px}
+    .bf-att-actions .bf-btn{width:100% !important;min-height:44px !important;height:44px !important;justify-content:center !important;display:inline-flex !important;align-items:center !important;padding:0 10px !important;font-size:13px !important;border-radius:10px !important;box-sizing:border-box !important}
     .bf-cam-ov{padding:0}
     .bf-cam{max-width:100vw;width:100vw;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;border-radius:0;border:none}
     .bf-cam-head{padding:10px 14px}
