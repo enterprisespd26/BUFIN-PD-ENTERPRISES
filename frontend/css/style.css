@@ -2468,76 +2468,457 @@ aside.open ~ #ov {
   }
 }
 
-/* 2. Horizontally Scrollable Filter Pill Bar */
+/* 2. Summary Metric Cards Grid */
+.loan-summary-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 16px !important;
+  margin-bottom: 24px !important;
+}
+.loan-summary-grid .kpi {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important; /* border border-slate-200/80 */
+  border-radius: 12px !important; /* rounded-xl */
+  padding: 16px !important; /* p-4 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important; /* shadow-sm */
+  transition: all 0.2s ease-in-out !important;
+}
+.loan-summary-grid .kpi:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important; /* hover:shadow-md */
+}
+.loan-summary-grid .kpi span {
+  font-size: 0.8125rem !important; /* 13px */
+  font-weight: 500 !important;
+  color: #64748b !important; /* text-slate-500 */
+  display: block !important;
+  margin-bottom: 6px !important;
+}
+.loan-summary-grid .kpi b {
+  font-size: 1.5rem !important; /* 24px */
+  font-weight: 700 !important;
+  color: #0f172a !important; /* text-slate-900 */
+  display: block !important;
+  font-variant-numeric: tabular-nums !important;
+}
+@media (max-width: 900px) {
+  .loan-summary-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+@media (max-width: 480px) {
+  .loan-summary-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+/* 3. Filter Bar & Search Bar Flex Row */
 .loan-filters-toolbar {
   display: flex !important;
-  flex-direction: column !important;
-  gap: 10px !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  margin-bottom: 16px !important;
   width: 100% !important;
-  margin-bottom: 14px !important;
+  box-sizing: border-box !important;
 }
 .loan-filter-pills {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  padding: 4px 2px !important;
-  width: 100% !important;
-  -webkit-overflow-scrolling: touch !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-.loan-filter-pills::-webkit-scrollbar {
-  display: none !important;
-}
-.loan-filter-pills .loan-pill-btn {
   flex: 0 0 auto !important;
-  flex-shrink: 0 !important;
-  white-space: nowrap !important;
-  min-height: 38px !important;
-  height: 38px !important;
-  padding: 0 16px !important;
-  font-size: 13.5px !important;
-  font-weight: 600 !important;
-  border-radius: 9px !important;
+}
+.loan-pill-btn {
+  padding: 6px 16px !important;
+  font-size: 0.8125rem !important; /* 13px */
+  font-weight: 500 !important;
+  border-radius: 9999px !important;
+  transition: all 0.15s ease-in-out !important;
+  height: 36px !important;
+  min-height: 36px !important;
   box-sizing: border-box !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.loan-pill-btn.on,
+.loan-pill-btn.p {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border: 1px solid #2563eb !important;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2) !important;
+}
+.loan-pill-btn.alt {
+  background-color: #ffffff !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+.loan-pill-btn.alt:hover {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.loan-search-wrap {
+  position: relative !important;
+  width: 320px !important;
+  max-width: 100% !important;
+  flex: 0 0 auto !important;
+}
+.loan-search-ico {
+  position: absolute !important;
+  left: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: #94a3b8 !important;
+  pointer-events: none !important;
 }
 .loan-search-input {
   width: 100% !important;
-  max-width: 100% !important;
-  min-height: 44px !important;
-  height: 44px !important;
-  padding: 0 14px !important;
-  font-size: 14px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 14px 0 36px !important;
+  font-size: 0.875rem !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 9px !important;
-  border: 1px solid var(--bd, #cbd5e1) !important;
+  color: #0f172a !important;
   box-sizing: border-box !important;
+  transition: all 0.15s ease !important;
 }
-@media (min-width: 641px) {
+.loan-search-input:focus {
+  outline: none !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+@media (max-width: 760px) {
   .loan-filters-toolbar {
-    flex-direction: row !important;
-    justify-content: space-between !important;
-    align-items: center !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
   }
   .loan-filter-pills {
-    width: auto !important;
-    flex: 0 0 auto !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    padding-bottom: 4px !important;
   }
-  .loan-search-input {
-    width: 280px !important;
-    margin-left: auto !important;
+  .loan-search-wrap {
+    width: 100% !important;
   }
 }
 
-/* 3. Card Footer Action Bar (No text overlap, stacked / 2-row layout) */
-.loan-action-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  flex-wrap: nowrap;
+/* 4. Structured Fintech Loans Table */
+.loan-table-wrap {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  margin-bottom: 20px !important;
+  overflow-x: auto !important;
+  box-sizing: border-box !important;
 }
+@media (min-width: 769px) {
+  .loan-table-wrap {
+    overflow: visible !important;
+  }
+}
+.loan-table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  table-layout: fixed !important;
+}
+.loan-table thead tr {
+  background-color: #f8fafc !important; /* bg-slate-50 */
+}
+.loan-table th.loan-th {
+  background-color: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #e2e8f0 !important; /* border-y border-slate-200 */
+  font-size: 0.75rem !important; /* text-xs */
+  font-weight: 600 !important; /* font-semibold */
+  color: #64748b !important; /* text-slate-500 */
+  text-transform: uppercase !important; /* uppercase */
+  letter-spacing: 0.05em !important; /* tracking-wider */
+  padding: 12px 16px !important; /* py-3 px-4 */
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+}
+.loan-table th.loan-th.text-left {
+  text-align: left !important;
+}
+.loan-table th.loan-th.text-center {
+  text-align: center !important;
+}
+.loan-table th.loan-th.text-right {
+  text-align: right !important;
+}
+.loan-table th.loan-th.num {
+  text-align: right !important;
+}
+
+/* Row Styling */
+.loan-table tbody tr.loan-row {
+  background-color: #ffffff !important; /* bg-white */
+  border-bottom: 1px solid #e2e8f0 !important; /* border-b border-slate-200 */
+  transition: background-color 0.15s ease-in-out !important;
+}
+.loan-table tbody tr.loan-row:hover {
+  background-color: rgba(248, 250, 252, 0.8) !important; /* hover:bg-slate-50/80 */
+}
+.loan-table tbody tr.loan-row td {
+  padding: 14px 16px !important; /* py-4 px-4 */
+  border-bottom: 1px solid #e2e8f0 !important;
+  vertical-align: middle !important;
+  color: #1e293b !important;
+  font-size: 0.875rem !important;
+  box-sizing: border-box !important;
+}
+.loan-table tbody tr.loan-row:last-child td {
+  border-bottom: none !important;
+}
+
+/* Typography & Subtitles */
+.loan-name-title {
+  display: block !important;
+  font-size: 0.875rem !important; /* text-sm */
+  font-weight: 600 !important; /* font-semibold */
+  color: #0f172a !important; /* text-slate-900 */
+  text-decoration: none !important;
+  line-height: 1.35 !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  transition: color 0.15s ease !important;
+}
+.loan-name-title:hover {
+  color: #2563eb !important;
+}
+.loan-party-subtitle {
+  font-size: 0.75rem !important; /* text-xs */
+  color: #64748b !important; /* text-slate-500 */
+  margin-top: 3px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.loan-ref-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  color: #475569 !important;
+}
+
+/* Numeric Values Alignment */
+.loan-td-principal {
+  font-weight: 500 !important;
+  color: #334155 !important;
+  font-size: 0.875rem !important;
+  font-variant-numeric: tabular-nums !important;
+  text-align: right !important;
+}
+.loan-td-balance {
+  font-weight: 700 !important;
+  font-size: 0.875rem !important;
+  font-variant-numeric: tabular-nums !important;
+  text-align: right !important;
+}
+.loan-td-balance.text-rose-600 {
+  color: #e11d48 !important; /* text-rose-600 */
+}
+.loan-td-balance.text-emerald-600 {
+  color: #059669 !important; /* text-emerald-600 */
+}
+.loan-td-balance.text-slate-400 {
+  color: #94a3b8 !important; /* text-slate-400 */
+}
+.loan-td-due {
+  white-space: nowrap !important;
+  font-size: 0.8125rem !important;
+  color: #475569 !important;
+}
+.loan-due-overdue {
+  color: #e11d48 !important;
+  font-weight: 600 !important;
+}
+
+/* Pill Badges (Type & Status) */
+.loan-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 3px 10px !important;
+  border-radius: 9999px !important;
+  font-size: 0.75rem !important; /* 12px */
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  line-height: 1.25 !important;
+}
+.loan-pill.pill-borrowed {
+  background-color: #eff6ff !important; /* bg-blue-50 */
+  color: #1d4ed8 !important; /* text-blue-700 */
+  border: 1px solid #bfdbfe !important; /* border-blue-200 */
+}
+.loan-pill.pill-lent {
+  background-color: #fef3c7 !important; /* bg-amber-50 */
+  color: #b45309 !important; /* text-amber-700 */
+  border: 1px solid #fde68a !important; /* border-amber-200 */
+}
+.loan-pill.pill-active {
+  background-color: #ecfdf5 !important; /* bg-emerald-50 */
+  color: #047857 !important; /* text-emerald-700 */
+  border: 1px solid #a7f3d0 !important; /* border-emerald-200 */
+}
+.loan-pill.pill-closed {
+  background-color: #f1f5f9 !important; /* bg-slate-100 */
+  color: #475569 !important; /* text-slate-600 */
+  border: 1px solid #cbd5e1 !important; /* border-slate-300 */
+}
+.loan-pill.pill-overdue {
+  background-color: #fff1f2 !important; /* bg-rose-50 */
+  color: #be123c !important; /* text-rose-700 */
+  border: 1px solid #fecdd3 !important; /* border-rose-200 */
+}
+
+/* 5. Desktop Action Buttons & Dropdown Menu */
+.loan-actions-desktop {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  width: 100% !important;
+  white-space: nowrap !important;
+}
+.loan-btn-primary {
+  background-color: #2563eb !important; /* bg-blue-600 */
+  color: #ffffff !important;
+  font-size: 0.75rem !important; /* text-xs */
+  font-weight: 500 !important; /* font-medium */
+  padding: 8px 14px !important; /* py-2 px-3.5 */
+  border-radius: 8px !important; /* rounded-lg */
+  border: 1px solid #2563eb !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; /* shadow-sm */
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease-in-out !important;
+}
+.loan-btn-primary:hover {
+  background-color: #1d4ed8 !important; /* hover:bg-blue-700 */
+  border-color: #1d4ed8 !important;
+}
+.loan-btn-secondary {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important; /* border-slate-300 */
+  color: #334155 !important; /* text-slate-700 */
+  font-size: 0.75rem !important; /* text-xs */
+  font-weight: 500 !important; /* font-medium */
+  padding: 8px 12px !important; /* py-2 px-3 */
+  border-radius: 8px !important; /* rounded-lg */
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease-in-out !important;
+}
+.loan-btn-secondary:hover {
+  background-color: #f1f5f9 !important; /* hover:bg-slate-100 */
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+.loan-more-wrap {
+  position: relative !important;
+  display: inline-flex !important;
+}
+.loan-btn-more {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  border-radius: 8px !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #ffffff !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease-in-out !important;
+  padding: 0 !important;
+}
+.loan-btn-more:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+.loan-dropdown-menu {
+  position: absolute !important;
+  right: 0 !important;
+  top: calc(100% + 4px) !important;
+  z-index: 100 !important;
+  min-width: 140px !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+  padding: 4px !important;
+  display: none;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+.loan-more-wrap.is-open .loan-dropdown-menu {
+  display: flex !important;
+}
+.loan-dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 8px 12px !important;
+  font-size: 0.75rem !important; /* 12px */
+  font-weight: 500 !important;
+  color: #334155 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: background-color 0.1s ease !important;
+  white-space: nowrap !important;
+}
+.loan-dropdown-item:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+.loan-dropdown-item.red {
+  color: #dc2626 !important;
+}
+.loan-dropdown-item.red:hover {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+}
+
+/* Visibility Toggle for Desktop vs Mobile */
+.loan-action-footer {
+  display: none !important;
+}
+@media (max-width: 760px) {
+  .loan-actions-desktop {
+    display: none !important;
+  }
+  .loan-action-footer {
+    display: flex !important;
+  }
+}
+
+/* Legacy Card Footer Support */
 .loan-action-row {
   display: flex;
   align-items: center;
