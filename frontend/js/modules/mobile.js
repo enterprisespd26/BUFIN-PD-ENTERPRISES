@@ -489,7 +489,7 @@ const CSS = String.raw`
   table.mcard td.mc-cell input, table.mcard td.mc-cell select { flex: 1 1 60% !important; max-width: 65% !important; width: auto !important; min-height: 44px !important; padding: 8px 12px !important; font-size: 14px !important; border-radius: 8px !important; border: 1px solid var(--bd, #cbd5e1) !important; box-sizing: border-box !important; text-align: right !important; text-align-last: right !important; background: #fff !important; }
 
   table.mcard td.mc-actions { display: flex !important; width: 100% !important; justify-content: flex-end !important; align-items: center !important; padding: 10px 0 4px !important; border-top: 1px solid var(--bd, #e2e8f0) !important; border-bottom: 0 !important; margin-top: 6px !important; box-sizing: border-box !important; }
-  table.mcard td.mc-actions button, table.mcard td.mc-actions .pd-line-del, table.mcard .pd-item-del, table.mcard .pd-del { min-height: 40px !important; height: 40px !important; min-width: 44px !important; padding: 0 16px !important; font-size: 14px !important; font-weight: 700 !important; border-radius: 8px !important; background: #fef2f2 !important; border: 1px solid #fecaca !important; color: #dc2626 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; box-sizing: border-box !important; }
+  table.mcard td.mc-actions:not(.loan-card-actions):not(:has(.loan-action-footer)) button:not(.btn):not(.p):not(.alt), table.mcard td.mc-actions .pd-line-del, table.mcard .pd-item-del, table.mcard .pd-del { min-height: 40px !important; height: 40px !important; min-width: 44px !important; padding: 0 16px !important; font-size: 14px !important; font-weight: 700 !important; border-radius: 8px !important; background: #fef2f2 !important; border: 1px solid #fecaca !important; color: #dc2626 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; box-sizing: border-box !important; }
   table.mcard td.mc-actions .pd-btn-row { justify-content: flex-end; width: 100%; }
 
   /* Full-Screen Mobile Modal Dialogs & Fixed Drawer */
@@ -616,6 +616,267 @@ const CSS = String.raw`
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+  }
+
+  /* 2b. Purchase Records Toolbar (Mobile: Title & Export CSV on row 1, Search on row 2) */
+  .pd-records-toolbar {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    align-items: center !important;
+    gap: 10px 8px !important;
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+  .pd-records-toolbar .pd-records-title {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    margin: 0 !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: var(--tx, #0f172a) !important;
+    line-height: 1.25 !important;
+  }
+  .pd-records-toolbar .pd-records-csv,
+  .pd-records-toolbar #u_csv {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    margin: 0 0 0 auto !important;
+    justify-self: end !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 14px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--bd, #cbd5e1) !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .pd-records-toolbar .pd-records-search,
+  .pd-records-toolbar #u_s {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 14px !important;
+    font-size: 14px !important;
+    border-radius: 9px !important;
+    border: 1px solid var(--bd, #cbd5e1) !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+
+  /* ========================================================
+     LOANS MODULE MOBILE REFINEMENTS
+     ======================================================== */
+  .pb-28,
+  .loan-page {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 24px)) !important;
+    box-sizing: border-box !important;
+  }
+
+  .shrink-0 {
+    flex-shrink: 0 !important;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  /* 1. Header Action Bar Alignment */
+  .bar.loan-header-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    width: 100% !important;
+    margin-bottom: 14px !important;
+    box-sizing: border-box !important;
+  }
+  .bar.loan-header-bar h2 {
+    font-size: clamp(20px, 5.5vw, 24px) !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    color: var(--tx, #0f172a) !important;
+  }
+  .bar.loan-header-bar .loan-btn-register {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 16px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    border-radius: 9px !important;
+    background: var(--ac, #2563eb) !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2) !important;
+  }
+  @media (max-width: 360px) {
+    .bar.loan-header-bar {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 8px !important;
+    }
+    .bar.loan-header-bar .loan-btn-register {
+      width: 100% !important;
+    }
+  }
+
+  /* 2. Horizontally Scrollable Filter Pill Bar */
+  .loan-filters-toolbar {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+    margin-bottom: 14px !important;
+  }
+  .loan-filter-pills {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 4px 2px !important;
+    width: 100% !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .loan-filter-pills::-webkit-scrollbar {
+    display: none !important;
+  }
+  .loan-filter-pills .loan-pill-btn {
+    flex: 0 0 auto !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 16px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    border-radius: 9px !important;
+    box-sizing: border-box !important;
+  }
+  .loan-search-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    padding: 0 14px !important;
+    font-size: 14px !important;
+    border-radius: 9px !important;
+    border: 1px solid var(--bd, #cbd5e1) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 3. Card Footer Action Bar (No text overlap, stacked / 2-row layout) */
+  table.mcard td.loan-card-actions,
+  table.mcard td.mc-actions:has(.loan-action-footer) {
+    display: block !important;
+    width: 100% !important;
+    padding: 12px 0 4px !important;
+    border-top: 1px solid var(--bd, #e2e8f0) !important;
+    border-bottom: 0 !important;
+    margin-top: 8px !important;
+    box-sizing: border-box !important;
+  }
+  .loan-action-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .loan-action-footer .loan-btn-repay,
+  table.mcard td.mc-actions .loan-btn-repay {
+    width: 100% !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 0 16px !important;
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    background: var(--ac, #2563eb) !important;
+    border: 1px solid var(--ac, #2563eb) !important;
+    border-radius: 9px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2) !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .loan-action-footer .loan-btn-repay:hover,
+  table.mcard td.mc-actions .loan-btn-repay:hover {
+    background: #1d4ed8 !important;
+  }
+  .loan-action-row {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .loan-action-row::-webkit-scrollbar {
+    display: none !important;
+  }
+  .loan-action-row button,
+  table.mcard td.mc-actions .loan-action-row button {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 8px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+  .loan-action-row .loan-btn-view,
+  table.mcard td.mc-actions .loan-action-row .loan-btn-view,
+  .loan-action-row .loan-btn-edit,
+  table.mcard td.mc-actions .loan-action-row .loan-btn-edit {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid var(--bd, #cbd5e1) !important;
+  }
+  .loan-action-row .loan-btn-view:hover,
+  .loan-action-row .loan-btn-edit:hover {
+    background: #f8fafc !important;
+  }
+  .loan-action-row .loan-btn-del,
+  table.mcard td.mc-actions .loan-action-row .loan-btn-del {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+    border: 1px solid #fecaca !important;
+  }
+  .loan-action-row .loan-btn-del:hover {
+    background: #fee2e2 !important;
   }
 
   /* 3. Sales Record Card Layout & Action Menu Polish */
@@ -745,6 +1006,17 @@ const CSS = String.raw`
     display: block !important;
     width: 100% !important;
   }
+  .pd-scrap-catalog-wrap,
+  #pd-tab-itm .pd-table-wrap,
+  .mc-wrap:has(.pd-scrap-catalog-table) {
+    padding: 0 !important;
+    padding-bottom: 0 !important;
+    margin: 8px 0 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
   .pd-scrap-lines-table tbody tr,
   .pd-scrap-catalog-table tbody tr,
   table.mcard.pd-scrap-lines-table tbody tr,
@@ -754,12 +1026,16 @@ const CSS = String.raw`
     gap: 10px 12px !important;
     position: relative !important;
     padding: 14px !important;
-    margin-bottom: 14px !important;
+    margin-bottom: 12px !important;
     border-radius: 14px !important;
     background: #ffffff !important;
     border: 1px solid var(--bd, #e2e8f0) !important;
     box-sizing: border-box !important;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  }
+  .pd-scrap-catalog-table tbody tr:last-child,
+  table.mcard.pd-scrap-catalog-table tbody tr:last-child {
+    margin-bottom: 0 !important;
   }
   .pd-scrap-lines-table tbody tr td:first-child,
   .pd-scrap-catalog-table tbody tr td:first-child,
@@ -974,26 +1250,45 @@ const CSS = String.raw`
     width: auto !important;
   }
 
-  #pd_add_line, #pd_btn_add_item {
-    height: 42px !important;
-    min-height: 42px !important;
+  #pd_add_line, #pd_btn_add_item, #pd_btn_save_items {
+    height: 44px !important;
+    min-height: 44px !important;
     padding: 0 16px !important;
-    font-size: 13.5px !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
     border-radius: 9px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Scrap Items Action Button Placement */
+  .pd-scrap-actions-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+    margin-top: 14px !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .pd-scrap-actions-row #pd_btn_add_item,
+  .pd-scrap-actions-row #pd_btn_save_items {
+    width: 100% !important;
+    margin: 0 !important;
   }
 
   /* 5. Safe Area Bottom Scroll Padding */
-  .pd-sales-page,
+  .pd-sales-page {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 24px)) !important;
+    box-sizing: border-box !important;
+  }
   .pd-sales-page #pd-tab-new,
   .pd-sales-page #pd-tab-rec,
   .pd-sales-page #pd-tab-itm,
   .pd-sales-page #pd-tab-view {
-    padding-bottom: calc(112px + env(safe-area-inset-bottom, 24px)) !important;
-    box-sizing: border-box !important;
+    padding-bottom: 0 !important;
   }
 
   /* ================= Opening Balances Status Banner Card ================= */

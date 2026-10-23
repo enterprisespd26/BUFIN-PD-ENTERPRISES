@@ -806,6 +806,32 @@
   }
 }
 
+/* Purchase Records Toolbar Desktop */
+.pd-records-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.pd-records-toolbar .pd-records-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tx, #0f172a);
+  flex: 0 0 auto;
+}
+.pd-records-toolbar .pd-records-search {
+  order: 2;
+  width: 280px;
+  max-width: 100%;
+  margin-left: auto;
+}
+.pd-records-toolbar .pd-records-csv {
+  order: 3;
+  flex: 0 0 auto;
+}
+
 /* Mobile: under 640px */
 @media (max-width: 640px) {
   /* 1. Compact 2x2 Grid for Top Summary Metrics */
@@ -883,7 +909,73 @@
     justify-content: center !important;
   }
 
+  /* 2b. Purchase Records Toolbar (Mobile: Title & Export CSV on row 1, Search on row 2) */
+  .pd-records-toolbar {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    align-items: center !important;
+    gap: 10px 8px !important;
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+  .pd-records-toolbar .pd-records-title {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    margin: 0 !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: var(--tx, #0f172a) !important;
+    line-height: 1.25 !important;
+  }
+  .pd-records-toolbar .pd-records-csv,
+  .pd-records-toolbar #u_csv {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    margin: 0 0 0 auto !important;
+    justify-self: end !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 14px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--bd, #cbd5e1) !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .pd-records-toolbar .pd-records-search,
+  .pd-records-toolbar #u_s {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 14px !important;
+    font-size: 14px !important;
+    border-radius: 9px !important;
+    border: 1px solid var(--bd, #cbd5e1) !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+
   /* 4. Scrap Items Form 2-Column Grid (Tab 1 Lines & Tab 3 Catalog) */
+  .pd-scrap-catalog-wrap,
+  #pd-tab-itm .pd-table-wrap,
+  .mc-wrap:has(.pd-scrap-catalog-table) {
+    padding: 0 !important;
+    padding-bottom: 0 !important;
+    margin: 8px 0 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
   .pd-scrap-lines-table,
   .pd-scrap-catalog-table {
     display: block !important;
@@ -907,12 +999,15 @@
     gap: 10px 12px !important;
     position: relative !important;
     padding: 14px !important;
-    margin-bottom: 14px !important;
+    margin-bottom: 12px !important;
     border-radius: 14px !important;
     background: #ffffff !important;
     border: 1px solid var(--bd, #e2e8f0) !important;
     box-sizing: border-box !important;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  }
+  .pd-scrap-catalog-table tbody tr:last-child {
+    margin-bottom: 0 !important;
   }
   .pd-scrap-lines-table tbody tr td:first-child,
   .pd-scrap-catalog-table tbody tr td:first-child {
@@ -1108,26 +1203,45 @@
     width: auto !important;
   }
 
-  #pd_add_line, #pd_btn_add_item {
-    height: 42px !important;
-    min-height: 42px !important;
+  #pd_add_line, #pd_btn_add_item, #pd_btn_save_items {
+    height: 44px !important;
+    min-height: 44px !important;
     padding: 0 16px !important;
-    font-size: 13.5px !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
     border-radius: 9px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Scrap Items Action Button Placement */
+  .pd-scrap-actions-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+    margin-top: 14px !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .pd-scrap-actions-row #pd_btn_add_item,
+  .pd-scrap-actions-row #pd_btn_save_items {
+    width: 100% !important;
+    margin: 0 !important;
   }
 
   /* 5. Safe Area Bottom Scroll Padding */
-  .pd-sales-page,
+  .pd-sales-page {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 24px)) !important;
+    box-sizing: border-box !important;
+  }
   .pd-sales-page #pd-tab-new,
   .pd-sales-page #pd-tab-rec,
   .pd-sales-page #pd-tab-itm,
   .pd-sales-page #pd-tab-view {
-    padding-bottom: calc(112px + env(safe-area-inset-bottom, 24px)) !important;
-    box-sizing: border-box !important;
+    padding-bottom: 0 !important;
   }
   .pd-invoice-modal-overlay {
     padding: 8px;

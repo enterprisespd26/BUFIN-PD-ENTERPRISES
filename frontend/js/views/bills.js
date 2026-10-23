@@ -528,12 +528,10 @@ export function renderBills() {
       </div>
 
       <div class="pd-card">
-        <div class="pd-btn-row" style="margin-bottom:12px;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-          <h3 style="margin:0">Purchase records</h3>
-          <div class="pd-btn-row" style="align-items:center;gap:8px">
-            <input type="text" id="u_s" placeholder="Search supplier / bill no / material" value="${esc(billsState.q)}" style="width:260px;max-width:100%">
-            <button type="button" class="btn alt sm" id="u_csv">Export CSV</button>
-          </div>
+        <div class="pd-records-toolbar">
+          <h3 class="pd-records-title">Purchase records</h3>
+          <input type="text" id="u_s" class="pd-records-search" placeholder="Search supplier / bill no / material" value="${esc(billsState.q)}">
+          <button type="button" class="btn alt sm pd-records-csv" id="u_csv">Export CSV</button>
         </div>
 
         <div class="pd-table-wrap responsive-cards">

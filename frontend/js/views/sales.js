@@ -664,7 +664,7 @@ export function renderSales() {
 
   return `
     <div class="pd-sales-page">
-    ${head('Sales Invoices', `<button class="p" id="pd_head_add">${currentTab === 'new' ? 'View records' : '+ New invoice'}</button>`)}
+    ${head('Sales Invoices', `<button class="p" id="pd_head_add">${currentTab === 'new' ? 'View records' : (currentTab === 'itm' ? '+ Add item' : '+ New invoice')}</button>`)}
 
     <div class="pd-nav-tabs noprint">
       <button type="button" class="${currentTab === 'new' && !salesState.editNo ? 'on' : ''}" data-st="new">
@@ -951,7 +951,7 @@ export function renderSales() {
         <p style="color:var(--t2);margin-top:-6px;font-size:13px">
           These scrap items appear in the invoice dropdown to automatically fill HSN code, unit and default rate.
         </p>
-        <div class="pd-table-wrap">
+        <div class="pd-table-wrap pd-scrap-catalog-wrap">
           <table class="pd-table pd-scrap-catalog-table">
             <thead>
               <tr>
@@ -979,7 +979,7 @@ export function renderSales() {
             </tbody>
           </table>
         </div>
-        <div class="pd-btn-row">
+        <div class="pd-btn-row pd-scrap-actions-row">
           <button type="button" class="btn alt" id="pd_btn_add_item">+ Add item</button>
           <button type="button" class="btn p" id="pd_btn_save_items">Save items</button>
         </div>
@@ -1009,13 +1009,25 @@ export function bindSalesEvents() {
   const container = $('#v');
   if (!container) return;
 
-  // Top-Right Header Button (+ New invoice / View records)
+  // Top-Right Header Button (+ New invoice / View records / + Add item)
   const headAddBtn = $('#pd_head_add');
   if (headAddBtn) {
     headAddBtn.onclick = () => {
-      if (salesState.tab === 'new') {
+      if (salesState.tab === 'itm') {
+        const addItemBtn = $('#pd_btn_add_item');
+        if (addItemBtn) {
+          addItemBtn.click();
+        } else {
+          if (!db.items) db.items = [];
+          db.items.push({ n: '', h: '7204', u: 'kg', r: 0 });
+          container.innerHTML = renderSales();
+          bindSalesEvents();
+        }
+      } else if (salesState.tab === 'new') {
         salesState.tab = 'rec';
         salesState.editNo = null;
+        container.innerHTML = renderSales();
+        bindSalesEvents();
       } else {
         salesState.tab = 'new';
         salesState.editNo = null;
@@ -1023,9 +1035,9 @@ export function bindSalesEvents() {
         salesState.lines = [];
         salesState.paymentReceived = false;
         salesState.newNo = nextInvNo();
+        container.innerHTML = renderSales();
+        bindSalesEvents();
       }
-      container.innerHTML = renderSales();
-      bindSalesEvents();
     };
   }
 
@@ -1793,6 +1805,11 @@ export function bindSalesEvents() {
         `;
         tbody.appendChild(tr);
         bindSalesEvents();
+        const newInp = tr.querySelector('.pd-item-n');
+        if (newInp) {
+          newInp.focus();
+          newInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
     };
   }

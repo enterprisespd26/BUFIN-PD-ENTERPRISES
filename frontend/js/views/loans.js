@@ -16,12 +16,15 @@ export function renderLoans() {
   const pathLoanId = pathPart.startsWith('loans/') ? pathPart.slice(6) : urlParams.get('id');
   const activeLoanId = pathLoanId || loansState.activeLoanId;
 
+  let body = '';
   if (activeLoanId) {
     const loan = db.loans.find(x => x.id === activeLoanId);
-    if (loan) return renderLoanDetail(loan);
+    body = loan ? renderLoanDetail(loan) : renderLoansDashboard();
+  } else {
+    body = renderLoansDashboard();
   }
 
-  return renderLoansDashboard();
+  return `<div class="loan-page pb-28">${body}</div>`;
 }
 
 function renderLoansDashboard() {
@@ -48,18 +51,18 @@ function renderLoansDashboard() {
     return (name + ' ' + party + ' ' + ref).toLowerCase().includes(q);
   }).slice().reverse();
 
-  return head('Loans', `<button class="p" data-a="newloan">+ Register loan</button>`) +
+  return head('Loans', `<button class="p loan-btn-register shrink-0" data-a="newloan">+ Register loan</button>`, 'loan-header-bar') +
     `<div class="grid">
       ${kpi('Total Borrowed Outstanding', fmt(totalBorrowedOut))}
       ${kpi('Total Lent Outstanding', fmt(totalLentOut))}
       ${kpi('Active Loans Count', activeCount)}
       ${kpi('Overdue Loans Count', overdueCount)}
     </div>
-    <div class="filters" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        ${[['all', 'All'], ['taken', 'Borrowed'], ['given', 'Lent'], ['active', 'Active'], ['closed', 'Closed']].map(x => `<button class="${f === x[0] ? 'p' : ''}" data-a="lf" data-i="${x[0]}">${x[1]}</button>`).join('')}
+    <div class="filters loan-filters-toolbar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div class="loan-filter-pills flex items-center gap-2 overflow-x-auto no-scrollbar py-1 w-full -webkit-overflow-scrolling-touch">
+        ${[['all', 'All'], ['taken', 'Borrowed'], ['given', 'Lent'], ['active', 'Active'], ['closed', 'Closed']].map(x => `<button type="button" class="loan-pill-btn shrink-0 ${f === x[0] ? 'p on' : 'alt'}" data-a="lf" data-i="${x[0]}">${x[1]}</button>`).join('')}
       </div>
-      <input data-k="lq" placeholder="Search loan name, party, reference..." value="${esc(loansState.q || '')}" style="width:260px;max-width:100%;">
+      <input data-k="lq" class="loan-search-input" placeholder="Search loan name, party, reference..." value="${esc(loansState.q || '')}">
     </div>` +
     (filteredLoans.length
       ? `<div class="wrap"><table>
@@ -96,11 +99,15 @@ function renderLoansDashboard() {
                 <td class="num" style="font-weight:700;color:${o > 0 ? (l.dir === 'taken' ? 'var(--rd,#dc2626)' : 'var(--ok,#16a34a)') : 'var(--t2,#64748b)'}">${fmt(o)}</td>
                 <td>${l.due ? (isOverdue ? `<span style="color:var(--rd);font-weight:600;">${l.due} ⚠️</span>` : l.due) : '-'}</td>
                 <td><span class="b ${s[1]}">${s[0]}</span></td>
-                <td style="text-align:right;white-space:nowrap;" onclick="event.stopPropagation()">
-                  ${o > 0 ? `<button class="p sm" data-a="repay" data-i="${l.id}" style="padding:4px 8px;font-size:12px;margin-right:4px;">Record Payment / EMI</button>` : ''}
-                  <button class="btn alt sm" data-a="viewloan" data-i="${l.id}" style="padding:4px 8px;font-size:12px;margin-right:4px;">View Statement</button>
-                  <button class="btn alt sm" data-a="editloan" data-i="${l.id}" style="padding:4px 8px;font-size:12px;margin-right:4px;">Edit</button>
-                  <button class="btn alt sm" data-a="delloan" data-i="${l.id}" style="padding:4px 8px;font-size:12px;color:var(--rd);">Delete</button>
+                <td class="loan-card-actions" onclick="event.stopPropagation()">
+                  <div class="loan-action-footer">
+                    ${o > 0 ? `<button type="button" class="btn p sm loan-btn-repay" data-a="repay" data-i="${l.id}">Record Payment / EMI</button>` : ''}
+                    <div class="loan-action-row">
+                      <button type="button" class="btn alt sm loan-btn-view" data-a="viewloan" data-i="${l.id}">View Statement</button>
+                      <button type="button" class="btn alt sm loan-btn-edit" data-a="editloan" data-i="${l.id}">Edit</button>
+                      <button type="button" class="btn alt sm red loan-btn-del" data-a="delloan" data-i="${l.id}">Delete</button>
+                    </div>
+                  </div>
                 </td>
               </tr>`;
             }).join('')}
