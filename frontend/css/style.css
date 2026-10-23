@@ -2713,5 +2713,516 @@ aside.open ~ #ov {
   }
 }
 
+/* ==========================================================================
+   Transfer Money (Contra Voucher) Modal Redesign
+   Modern, crisp, professional fintech aesthetic
+   ========================================================================== */
 
+/* Modal Backdrop & Container */
+dialog.xfer-dialog::backdrop,
+dialog:has(.xfer-form)::backdrop {
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
 
+@media (min-width: 769px) {
+  dialog.xfer-dialog,
+  dialog:has(.xfer-form) {
+    max-width: 32rem !important; /* max-w-lg (512px) */
+    width: 100% !important;
+    border-radius: 1rem !important; /* rounded-2xl (16px) */
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important; /* shadow-2xl */
+    border: 1px solid #f1f5f9 !important; /* border-slate-100 */
+    padding: 1.5rem !important; /* p-6 (24px) */
+    background: #ffffff !important;
+    margin: auto !important;
+  }
+}
+
+/* Modal Title */
+dialog.xfer-dialog h3,
+dialog:has(.xfer-form) h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.015em;
+  margin: 0 0 1.25rem 0;
+  padding-right: 2.75rem;
+}
+
+/* Modal Close Button */
+dialog.xfer-dialog .dlg-close,
+dialog:has(.xfer-form) .dlg-close {
+  top: 1rem;
+  right: 1rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0.5rem; /* p-2 */
+  border-radius: 9999px; /* rounded-full */
+  border: 1px solid transparent;
+  background: transparent;
+  color: #64748b; /* text-slate-500 */
+  box-shadow: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+dialog.xfer-dialog .dlg-close:hover,
+dialog:has(.xfer-form) .dlg-close:hover {
+  background-color: #f1f5f9; /* hover:bg-slate-100 */
+  color: #334155; /* hover:text-slate-700 */
+  border-color: #e2e8f0;
+  transform: none;
+}
+dialog.xfer-dialog .dlg-close svg,
+dialog:has(.xfer-form) .dlg-close svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  stroke-width: 2;
+}
+
+/* Form Layout & Grid */
+.xfer-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.xfer-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem; /* gap-4 */
+}
+
+@media (min-width: 640px) {
+  .xfer-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* grid-cols-2 */
+  }
+}
+
+.xfer-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.xfer-field.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Field Labels */
+.xfer-label {
+  display: block;
+  font-size: 0.75rem !important; /* text-xs */
+  font-weight: 600 !important; /* font-semibold */
+  text-transform: uppercase !important; /* uppercase */
+  letter-spacing: 0.05em !important; /* tracking-wider */
+  color: #475569 !important; /* text-slate-600 */
+  margin-bottom: 0.375rem !important; /* mb-1.5 */
+}
+
+.xfer-label-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.xfer-label-icon {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.xfer-req {
+  color: #ef4444;
+  margin-left: 2px;
+  font-weight: 700;
+}
+
+/* Input & Select Wrappers */
+.xfer-input-wrap,
+.xfer-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.xfer-input-prefix-icon {
+  position: absolute;
+  left: 0.875rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.xfer-input-prefix-currency {
+  position: absolute;
+  left: 0.875rem;
+  color: #64748b;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.xfer-input {
+  width: 100%;
+  border: 1px solid #cbd5e1; /* border-slate-300 */
+  border-radius: 0.5rem; /* rounded-lg */
+  padding: 0.625rem 0.875rem; /* py-2.5 px-3.5 */
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #0f172a;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  box-sizing: border-box;
+  transition: all 0.15s ease-in-out;
+}
+
+.xfer-input.with-prefix-icon {
+  padding-left: 2.5rem;
+}
+
+.xfer-input.with-prefix-currency {
+  padding-left: 2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.xfer-input:focus {
+  outline: none;
+  border-color: #3b82f6; /* focus:ring-blue-500 */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+}
+
+/* Select Styling */
+.xfer-select-wrap select.xfer-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1; /* border-slate-300 */
+  border-radius: 0.5rem; /* rounded-lg */
+  padding: 0.625rem 2.25rem 0.625rem 0.875rem; /* py-2.5 px-3.5 */
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #0f172a;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.xfer-select-wrap select.xfer-select:focus {
+  outline: none;
+  border-color: #3b82f6; /* focus:ring-blue-500 */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+}
+
+.xfer-select-chevron {
+  position: absolute;
+  right: 0.75rem;
+  color: #64748b;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Live Balances Alignment */
+.xfer-balance-hint {
+  font-size: 0.75rem !important; /* text-xs */
+  font-weight: 500 !important; /* font-medium */
+  color: #64748b !important; /* text-slate-500 */
+  margin-top: 0.25rem !important; /* mt-1 */
+  line-height: 1.25;
+}
+
+.xfer-balance-hint b {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Auto-Detected Transfer Scenario Card */
+.xfer-scenario-banner {
+  grid-column: 1 / -1;
+  border-radius: 0.75rem; /* rounded-xl */
+  padding: 0.875rem; /* p-3.5 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.xfer-scenario-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.xfer-scenario-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0.5rem; /* p-2 */
+  border-radius: 0.5rem; /* rounded badge */
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.xfer-scenario-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.xfer-scenario-text {
+  min-width: 0;
+}
+
+.xfer-scenario-title {
+  display: block;
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 600; /* font-semibold */
+  line-height: 1.25;
+}
+
+.xfer-scenario-desc {
+  font-size: 0.75rem; /* text-xs */
+  line-height: 1.25;
+  margin-top: 0.125rem;
+}
+
+.xfer-scenario-pill {
+  font-size: 0.75rem; /* text-xs */
+  font-weight: 600; /* font-semibold */
+  padding: 0.25rem 0.625rem; /* px-2.5 py-1 */
+  border-radius: 9999px; /* rounded-full */
+  white-space: nowrap;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.08); /* shadow-sm */
+  flex-shrink: 0;
+}
+
+/* Scenario A: Cash Deposit (bg-emerald-50/80 border-emerald-200/80) */
+.xfer-scenario-banner.xfer-scenario-deposit {
+  background: rgba(236, 253, 245, 0.8);
+  border: 1px solid rgba(167, 243, 208, 0.8);
+}
+.xfer-scenario-icon.xfer-scenario-deposit {
+  background-color: #d1fae5; /* bg-emerald-100 */
+  color: #047857; /* text-emerald-700 */
+}
+.xfer-scenario-banner.xfer-scenario-deposit .xfer-scenario-title {
+  color: #022c22; /* text-emerald-950 */
+}
+.xfer-scenario-banner.xfer-scenario-deposit .xfer-scenario-desc {
+  color: #047857; /* text-emerald-700 */
+}
+.xfer-scenario-pill.xfer-scenario-deposit {
+  background-color: #059669; /* bg-emerald-600 */
+  color: #ffffff;
+}
+
+/* Scenario B: Cash Withdrawal */
+.xfer-scenario-banner.xfer-scenario-withdrawal {
+  background: rgba(239, 246, 255, 0.8);
+  border: 1px solid rgba(191, 219, 254, 0.8);
+}
+.xfer-scenario-icon.xfer-scenario-withdrawal {
+  background-color: #dbeafe; /* bg-blue-100 */
+  color: #1d4ed8; /* text-blue-700 */
+}
+.xfer-scenario-banner.xfer-scenario-withdrawal .xfer-scenario-title {
+  color: #172554; /* text-blue-950 */
+}
+.xfer-scenario-banner.xfer-scenario-withdrawal .xfer-scenario-desc {
+  color: #1d4ed8; /* text-blue-700 */
+}
+.xfer-scenario-pill.xfer-scenario-withdrawal {
+  background-color: #2563eb; /* bg-blue-600 */
+  color: #ffffff;
+}
+
+/* Scenario C: Bank Transfer */
+.xfer-scenario-banner.xfer-scenario-transfer {
+  background: rgba(245, 243, 255, 0.8);
+  border: 1px solid rgba(221, 214, 254, 0.8);
+}
+.xfer-scenario-icon.xfer-scenario-transfer {
+  background-color: #ede9fe; /* bg-violet-100 */
+  color: #6d28d9; /* text-violet-700 */
+}
+.xfer-scenario-banner.xfer-scenario-transfer .xfer-scenario-title {
+  color: #2e1065; /* text-violet-950 */
+}
+.xfer-scenario-banner.xfer-scenario-transfer .xfer-scenario-desc {
+  color: #6d28d9; /* text-violet-700 */
+}
+.xfer-scenario-pill.xfer-scenario-transfer {
+  background-color: #7c3aed; /* bg-violet-600 */
+  color: #ffffff;
+}
+
+/* Scenario: Invalid */
+.xfer-scenario-banner.xfer-scenario-invalid {
+  background: rgba(254, 242, 242, 0.85);
+  border: 1px solid rgba(254, 202, 202, 0.85);
+}
+.xfer-scenario-icon.xfer-scenario-invalid {
+  background-color: #ffe4e6; /* bg-rose-100 */
+  color: #be123c; /* text-rose-700 */
+}
+.xfer-scenario-banner.xfer-scenario-invalid .xfer-scenario-title {
+  color: #4c0519; /* text-rose-950 */
+}
+.xfer-scenario-banner.xfer-scenario-invalid .xfer-scenario-desc {
+  color: #be123c; /* text-rose-700 */
+}
+.xfer-scenario-pill.xfer-scenario-invalid {
+  background-color: #e11d48; /* bg-rose-600 */
+  color: #ffffff;
+}
+
+/* Balance Overdraft Warning Banner */
+.xfer-bal-warning {
+  grid-column: 1 / -1;
+  background: rgba(254, 242, 242, 0.95);
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  color: #991b1b;
+  box-sizing: border-box;
+}
+
+.xfer-warning-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.xfer-warning-icon {
+  display: flex;
+  align-items: center;
+  color: #dc2626;
+  flex-shrink: 0;
+}
+
+.xfer-overdraft-label {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #7f1d1d;
+  cursor: pointer;
+  user-select: none;
+}
+
+.xfer-checkbox {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.25rem;
+  accent-color: #dc2626;
+  cursor: pointer;
+}
+
+/* Notes Textarea */
+.xfer-textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  font-family: inherit;
+  color: #0f172a;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  resize: vertical;
+  min-height: 4.5rem;
+  box-sizing: border-box;
+  transition: all 0.15s ease-in-out;
+}
+
+.xfer-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+}
+
+/* Modal Action Buttons */
+dialog.xfer-dialog form > .row:last-child,
+dialog:has(.xfer-form) form > .row:last-child {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.75rem !important;
+  margin-top: 1.25rem !important;
+  padding-top: 1rem !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+dialog.xfer-dialog form #mCancel,
+dialog:has(.xfer-form) form #mCancel {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important; /* border-slate-300 */
+  color: #334155 !important; /* text-slate-700 */
+  font-size: 0.875rem !important;
+  font-weight: 500 !important; /* font-medium */
+  padding: 0.625rem 1.25rem !important; /* py-2.5 px-5 */
+  border-radius: 0.5rem !important; /* rounded-lg */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+dialog.xfer-dialog form #mCancel:hover,
+dialog:has(.xfer-form) form #mCancel:hover {
+  background-color: #f8fafc !important; /* hover:bg-slate-50 */
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+dialog.xfer-dialog form #sb,
+dialog:has(.xfer-form) form #sb {
+  background-color: #2563eb !important; /* bg-blue-600 */
+  border: 1px solid #1d4ed8 !important;
+  color: #ffffff !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important; /* font-medium */
+  padding: 0.625rem 1.25rem !important; /* py-2.5 px-5 */
+  border-radius: 0.5rem !important; /* rounded-lg */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; /* shadow-sm */
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+dialog.xfer-dialog form #sb:hover:not(:disabled),
+dialog:has(.xfer-form) form #sb:hover:not(:disabled) {
+  background-color: #1d4ed8 !important; /* hover:bg-blue-700 */
+  border-color: #1e40af !important;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.25), 0 2px 4px -2px rgba(37, 99, 235, 0.25) !important;
+}
+
+dialog.xfer-dialog form #sb:disabled,
+dialog:has(.xfer-form) form #sb:disabled {
+  opacity: 0.5 !important; /* disabled:opacity-50 */
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}

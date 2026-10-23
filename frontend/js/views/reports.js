@@ -1,4 +1,4 @@
-import { esc, fmt, today, head, kpi, toast } from '../modules/utils.js';
+import { esc, fmt, today, head, kpi, toast, downloadCSV } from '../modules/utils.js';
 import { db, TN, acc, net, sgn } from '../modules/state.js';
 
 export const reportsState = {
@@ -253,15 +253,7 @@ export function exportTbCsv() {
   ]);
 
   const csv = rows.map(r => r.map(f => '"' + String(f ?? '').replace(/"/g, '""') + '"').join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `trial_balance_${t}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  downloadCSV(csv, `trial_balance_${t}`);
   toast('Trial Balance CSV exported');
 }
 
@@ -860,15 +852,7 @@ export function exportPlCsv() {
   rows.push(['Net Profit / (Loss)', '', (np / 100).toFixed(2)]);
 
   const csv = rows.map(r => r.map(f => '"' + String(f ?? '').replace(/"/g, '""') + '"').join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `profit_loss_${u.f || 'start'}_to_${u.t}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  downloadCSV(csv, `profit_loss_${u.f || 'start'}_to_${u.t}`);
   toast('P&L CSV exported');
 }
 
@@ -1125,14 +1109,6 @@ export function exportBsCsv() {
   rows.push(['TOTAL LIABILITIES + EQUITY', '', '', (totalLiabAndEquity / 100).toFixed(2), isBalanced ? 'In Equilibrium' : `Difference: ${((Math.abs(totalAssets - totalLiabAndEquity)) / 100).toFixed(2)}`]);
 
   const csv = rows.map(r => r.map(f => '"' + String(f ?? '').replace(/"/g, '""') + '"').join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `balance_sheet_${t}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  downloadCSV(csv, `balance_sheet_${t}`);
   toast('Balance Sheet CSV exported');
 }

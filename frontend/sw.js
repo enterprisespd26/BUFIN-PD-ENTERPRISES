@@ -1,5 +1,5 @@
 // BUFIN Service Worker - Offline Caching & App Shell Acceleration
-const CACHE_NAME = 'bufin-v4.8-cache';
+const CACHE_NAME = 'bufin-v5.0-cache';
 
 const PRECACHE_ASSETS = [
   '/',

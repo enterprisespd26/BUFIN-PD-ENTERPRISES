@@ -122,4 +122,24 @@ export function toWebpThumbnail(url, width = 200) {
   return url;
 }
 
+/**
+ * Direct browser CSV file download helper
+ */
+export const downloadCSV = (csvData, filename = 'export') => {
+  const baseName = String(filename || 'export').replace(/\.csv$/i, '');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const downloadName = baseName.endsWith(dateStr) ? `${baseName}.csv` : `${baseName}_${dateStr}.csv`;
+  const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', downloadName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
+if (typeof window !== 'undefined') {
+  window.downloadCSV = downloadCSV;
+}

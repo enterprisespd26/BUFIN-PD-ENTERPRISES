@@ -1,4 +1,4 @@
-import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid } from './utils.js';
+import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid, downloadCSV } from './utils.js';
 import { db, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity } from './state.js';
 import { modal, closeM, form, fld, sel, opts, accOpts, partyOpts } from './components.js';
 
@@ -1982,64 +1982,152 @@ export function newTransferForm() {
   const defaultFrom = '1000'; // Cash in Hand
   const defaultTo = cashAccounts.find(a => a.code !== defaultFrom)?.code || '1010'; // Bank Account
 
+  const svgIcons = {
+    bank: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-bank"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/></svg>`,
+    wallet: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>`,
+    transfer: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right-left"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>`,
+    warning: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+  };
+
   form('Transfer Money (Contra Voucher)',
-    `<div class="two">
-      ${fld('date', 'Date *', 'date', today(), 1)}
-      ${fld('amt', 'Transfer Amount (₹) *', 'number', '', 1, 'min="0.01" step="any" placeholder="0.00" id="xfer_amt"')}
-      
-      <!-- Transfer Type Badge Indicator -->
-      <div id="xfer_type_banner" style="grid-column: 1 / -1; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:10px 14px; font-size:13px; display:flex; align-items:center; justify-content:space-between;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span id="xfer_type_icon" style="font-size:18px;">🏦</span>
-          <div>
-            <b id="xfer_type_title" style="color:#047857;">Scenario A: Cash Deposit (Cash → Bank)</b>
-            <div id="xfer_type_desc" style="font-size:11.5px; color:#065f46; margin-top:1px;">Depositing cash from counter/drawer into bank account</div>
+    `<div class="xfer-form">
+      <div class="xfer-form-grid">
+        <!-- Date Field -->
+        <div class="xfer-field">
+          <label class="xfer-label" for="xfer_date">
+            Date <span class="xfer-req">*</span>
+          </label>
+          <div class="xfer-input-wrap">
+            <span class="xfer-input-prefix-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </span>
+            <input type="date" name="date" id="xfer_date" class="xfer-input with-prefix-icon" value="${today()}" required>
           </div>
         </div>
-        <span id="xfer_type_tag" style="background:#047857; color:#fff; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:99px; text-transform:uppercase;">Contra</span>
-      </div>
 
-      <!-- From Account -->
-      <div style="display:flex; flex-direction:column; gap:4px;">
-        <label>From Account (Source / Credit) *
-          <select name="from" id="xfer_from" required>
-            ${cashAccounts.map(a => `<option value="${a.code}"${a.code === defaultFrom ? ' selected' : ''}>${esc(a.name)} (${a.code})</option>`).join('')}
-          </select>
-        </label>
-        <div id="xfer_from_bal" style="font-size:12px; color:var(--t2); padding-left:2px;">
-          Available Balance: <b>₹0.00</b>
+        <!-- Transfer Amount Field -->
+        <div class="xfer-field">
+          <label class="xfer-label" for="xfer_amt">
+            Transfer Amount (₹) <span class="xfer-req">*</span>
+          </label>
+          <div class="xfer-input-wrap">
+            <span class="xfer-input-prefix-currency" aria-hidden="true">₹</span>
+            <input type="number" name="amt" id="xfer_amt" class="xfer-input with-prefix-currency" min="0.01" step="any" placeholder="0.00" required>
+          </div>
+        </div>
+
+        <!-- Auto-Detected Transfer Scenario Card -->
+        <div id="xfer_type_banner" class="xfer-scenario-banner xfer-scenario-deposit">
+          <div class="xfer-scenario-left">
+            <div id="xfer_type_icon" class="xfer-scenario-icon xfer-scenario-deposit">
+              ${svgIcons.bank}
+            </div>
+            <div class="xfer-scenario-text">
+              <b id="xfer_type_title" class="xfer-scenario-title">Scenario A: Cash Deposit (Cash → Bank)</b>
+              <div id="xfer_type_desc" class="xfer-scenario-desc">Depositing cash from counter/drawer into bank account</div>
+            </div>
+          </div>
+          <span id="xfer_type_tag" class="xfer-scenario-pill xfer-scenario-deposit">Deposit</span>
+        </div>
+
+        <!-- From Account Dropdown -->
+        <div class="xfer-field">
+          <label class="xfer-label" for="xfer_from">
+            From Account (Source / Credit) <span class="xfer-req">*</span>
+          </label>
+          <div class="xfer-select-wrap">
+            <select name="from" id="xfer_from" class="xfer-select" required>
+              ${cashAccounts.map(a => `<option value="${a.code}"${a.code === defaultFrom ? ' selected' : ''}>${esc(a.name)} (${a.code})</option>`).join('')}
+            </select>
+            <span class="xfer-select-chevron" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </span>
+          </div>
+          <div id="xfer_from_bal" class="xfer-balance-hint">
+            Available Balance: <b>₹0.00</b>
+          </div>
+        </div>
+
+        <!-- To Account Dropdown -->
+        <div class="xfer-field">
+          <label class="xfer-label" for="xfer_to">
+            To Account (Destination / Debit) <span class="xfer-req">*</span>
+          </label>
+          <div class="xfer-select-wrap">
+            <select name="to" id="xfer_to" class="xfer-select" required>
+              ${cashAccounts.map(a => `<option value="${a.code}"${a.code === defaultTo ? ' selected' : ''}>${esc(a.name)} (${a.code})</option>`).join('')}
+            </select>
+            <span class="xfer-select-chevron" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </span>
+          </div>
+          <div id="xfer_to_bal" class="xfer-balance-hint">
+            Current Balance: <b>₹0.00</b>
+          </div>
+        </div>
+
+        <!-- Live Balance Warning if Amount > Available Balance -->
+        <div id="xfer_bal_warning" class="xfer-bal-warning" style="display:none;">
+          <div class="xfer-warning-header">
+            <span class="xfer-warning-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </span>
+            <b id="xfer_warning_text">Amount exceeds available balance.</b>
+          </div>
+          <label class="xfer-overdraft-label">
+            <input type="checkbox" name="allow_overdraft" id="xfer_allow_overdraft" value="1" class="xfer-checkbox">
+            <span>Allow negative balance / overdraft transfer</span>
+          </label>
+        </div>
+
+        <!-- Reference No Field -->
+        <div class="xfer-field full-width">
+          <label class="xfer-label" for="xfer_ref">
+            Reference No. (UTR / Cheque / Txn ID)
+          </label>
+          <div class="xfer-input-wrap">
+            <span class="xfer-input-prefix-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" x2="20" y1="9" y2="9"/>
+                <line x1="4" x2="20" y1="15" y2="15"/>
+                <line x1="10" x2="8" y1="3" y2="21"/>
+                <line x1="16" x2="14" y1="3" y2="21"/>
+              </svg>
+            </span>
+            <input type="text" name="ref" id="xfer_ref" class="xfer-input with-prefix-icon" placeholder="e.g. UTR / Cheque / ATM ID">
+          </div>
+        </div>
+
+        <!-- Notes / Narration Field -->
+        <div class="xfer-field full-width">
+          <label class="xfer-label" for="xfer_desc">
+            <span class="xfer-label-inner">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="xfer-label-icon">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" x2="8" y1="13" y2="13"/>
+                <line x1="16" x2="8" y1="17" y2="17"/>
+                <line x1="10" x2="8" y1="9" y2="9"/>
+              </svg>
+              Notes / Narration
+            </span>
+          </label>
+          <textarea name="desc" id="xfer_desc" class="xfer-textarea" rows="2" placeholder="Optional notes (e.g. Counter cash deposit to SBI, ATM withdrawal for petty cash)..."></textarea>
         </div>
       </div>
-
-      <!-- To Account -->
-      <div style="display:flex; flex-direction:column; gap:4px;">
-        <label>To Account (Destination / Debit) *
-          <select name="to" id="xfer_to" required>
-            ${cashAccounts.map(a => `<option value="${a.code}"${a.code === defaultTo ? ' selected' : ''}>${esc(a.name)} (${a.code})</option>`).join('')}
-          </select>
-        </label>
-        <div id="xfer_to_bal" style="font-size:12px; color:var(--t2); padding-left:2px;">
-          Current Balance: <b>₹0.00</b>
-        </div>
-      </div>
-
-      <!-- Live Balance Warning if Amount > Available Balance -->
-      <div id="xfer_bal_warning" style="grid-column: 1 / -1; display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; font-size:12.5px; color:#991b1b;">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span>⚠️</span>
-          <b id="xfer_warning_text">Amount exceeds available balance.</b>
-        </div>
-        <label style="margin-top:6px; font-size:12px; font-weight:normal; display:flex; align-items:center; gap:6px; color:#7f1d1d; cursor:pointer;">
-          <input type="checkbox" name="allow_overdraft" id="xfer_allow_overdraft" value="1">
-          <span>Allow negative balance / overdraft transfer</span>
-        </label>
-      </div>
-
-      ${fld('ref', 'Reference No. (UTR / Cheque / Txn ID)', 'text', '', 0, 'placeholder="e.g. UTR / Cheque / ATM ID" id="xfer_ref"')}
-      
-      <label style="grid-column: 1 / -1;">Notes / Narration
-        <textarea name="desc" id="xfer_desc" rows="2" placeholder="Optional notes (e.g. Counter cash deposit to SBI, ATM withdrawal for petty cash)..."></textarea>
-      </label>
     </div>`,
     v => {
       const a = P(v.amt);
@@ -2098,6 +2186,16 @@ export function newTransferForm() {
     },
     'Confirm Transfer',
     () => {
+      const dlg = $('#dlg');
+      if (dlg) {
+        dlg.classList.add('xfer-dialog');
+        const cleanup = () => {
+          dlg.classList.remove('xfer-dialog');
+          dlg.removeEventListener('close', cleanup);
+        };
+        dlg.addEventListener('close', cleanup, { once: true });
+      }
+
       const fromSel = $('#xfer_from');
       const toSel = $('#xfer_to');
       const amtInput = $('#xfer_amt');
@@ -2111,6 +2209,26 @@ export function newTransferForm() {
       const balWarning = $('#xfer_bal_warning');
       const warningText = $('#xfer_warning_text');
 
+      function setScenario(theme, iconSvg, title, desc, tagText) {
+        if (typeBanner) {
+          typeBanner.className = `xfer-scenario-banner xfer-scenario-${theme}`;
+        }
+        if (typeIcon) {
+          typeIcon.className = `xfer-scenario-icon xfer-scenario-${theme}`;
+          typeIcon.innerHTML = iconSvg;
+        }
+        if (typeTitle) {
+          typeTitle.textContent = title;
+        }
+        if (typeDesc) {
+          typeDesc.textContent = desc;
+        }
+        if (typeTag) {
+          typeTag.className = `xfer-scenario-pill xfer-scenario-${theme}`;
+          typeTag.textContent = tagText;
+        }
+      }
+
       function updateTransferState() {
         if (!fromSel || !toSel) return;
         const fromCode = fromSel.value;
@@ -2121,38 +2239,26 @@ export function newTransferForm() {
         const toBal = net(toCode);
         if (fromBalEl) {
           const isNeg = fromBal < 0;
-          fromBalEl.innerHTML = `Available Balance: <b style="color:${isNeg ? '#dc2626' : '#0f5132'}">${fmt(fromBal)}</b>`;
+          fromBalEl.innerHTML = `Available Balance: <b style="color:${isNeg ? '#dc2626' : '#059669'}">${fmt(fromBal)}</b>`;
         }
         if (toBalEl) {
           const isNeg = toBal < 0;
-          toBalEl.innerHTML = `Current Balance: <b style="color:${isNeg ? '#dc2626' : '#0f5132'}">${fmt(toBal)}</b>`;
+          toBalEl.innerHTML = `Current Balance: <b style="color:${isNeg ? '#dc2626' : '#059669'}">${fmt(toBal)}</b>`;
         }
 
         // Self-transfer check
         if (fromCode === toCode) {
-          if (typeBanner) {
-            typeBanner.style.background = '#fef2f2';
-            typeBanner.style.borderColor = '#fecaca';
-          }
-          if (typeTitle) {
-            typeTitle.style.color = '#b91c1c';
-            typeTitle.textContent = 'Invalid: Same Account Selected';
-          }
-          if (typeDesc) {
-            typeDesc.style.color = '#7f1d1d';
-            typeDesc.textContent = 'Please choose two different accounts for From and To.';
-          }
-          if (typeIcon) typeIcon.textContent = '⚠️';
-          if (typeTag) {
-            typeTag.style.background = '#b91c1c';
-            typeTag.textContent = 'Invalid';
-          }
+          setScenario(
+            'invalid',
+            svgIcons.warning,
+            'Invalid: Same Account Selected',
+            'Please choose two different accounts for From and To.',
+            'Invalid'
+          );
           if (balWarning) balWarning.style.display = 'none';
           const sb = $('#sb') || document.querySelector('#f button[type="submit"]') || document.querySelector('#f button.p');
           if (sb) {
             sb.disabled = true;
-            sb.style.opacity = '0.55';
-            sb.style.cursor = 'not-allowed';
             sb.title = 'Cannot transfer to the same account';
           }
           return;
@@ -2166,61 +2272,31 @@ export function newTransferForm() {
 
         if (isFromCash && !isToCash) {
           // Scenario A: Cash Deposit (Cash to Bank)
-          if (typeBanner) {
-            typeBanner.style.background = '#ecfdf5';
-            typeBanner.style.borderColor = '#a7f3d0';
-          }
-          if (typeTitle) {
-            typeTitle.style.color = '#047857';
-            typeTitle.textContent = 'Scenario A: Cash Deposit (Cash → Bank)';
-          }
-          if (typeDesc) {
-            typeDesc.style.color = '#065f46';
-            typeDesc.textContent = 'Depositing cash from counter/drawer into bank account';
-          }
-          if (typeIcon) typeIcon.textContent = '🏦';
-          if (typeTag) {
-            typeTag.style.background = '#047857';
-            typeTag.textContent = 'Deposit';
-          }
+          setScenario(
+            'deposit',
+            svgIcons.bank,
+            'Scenario A: Cash Deposit (Cash → Bank)',
+            'Depositing cash from counter/drawer into bank account',
+            'Deposit'
+          );
         } else if (!isFromCash && isToCash) {
           // Scenario B: Cash Withdrawal (Bank to Cash)
-          if (typeBanner) {
-            typeBanner.style.background = '#eff6ff';
-            typeBanner.style.borderColor = '#bfdbfe';
-          }
-          if (typeTitle) {
-            typeTitle.style.color = '#1d4ed8';
-            typeTitle.textContent = 'Scenario B: Cash Withdrawal (Bank → Cash)';
-          }
-          if (typeDesc) {
-            typeDesc.style.color = '#1e40af';
-            typeDesc.textContent = 'Withdrawing cash from ATM/bank for office petty cash';
-          }
-          if (typeIcon) typeIcon.textContent = '🏧';
-          if (typeTag) {
-            typeTag.style.background = '#1d4ed8';
-            typeTag.textContent = 'Withdrawal';
-          }
+          setScenario(
+            'withdrawal',
+            svgIcons.wallet,
+            'Scenario B: Cash Withdrawal (Bank → Cash)',
+            'Withdrawing cash from ATM/bank for office petty cash',
+            'Withdrawal'
+          );
         } else {
           // Scenario C: Bank-to-Bank Transfer
-          if (typeBanner) {
-            typeBanner.style.background = '#faf5ff';
-            typeBanner.style.borderColor = '#e9d5ff';
-          }
-          if (typeTitle) {
-            typeTitle.style.color = '#7e22ce';
-            typeTitle.textContent = 'Scenario C: Bank-to-Bank Transfer';
-          }
-          if (typeDesc) {
-            typeDesc.style.color = '#6b21a8';
-            typeDesc.textContent = 'Moving funds internally between company bank accounts';
-          }
-          if (typeIcon) typeIcon.textContent = '🔄';
-          if (typeTag) {
-            typeTag.style.background = '#7e22ce';
-            typeTag.textContent = 'Bank Transfer';
-          }
+          setScenario(
+            'transfer',
+            svgIcons.transfer,
+            'Scenario C: Bank-to-Bank Transfer',
+            'Moving funds internally between company bank accounts',
+            'Bank Transfer'
+          );
         }
 
         // Balance check warning & button disabling
@@ -2239,8 +2315,6 @@ export function newTransferForm() {
             if (overdraftLabel) overdraftLabel.style.display = 'none';
             if (sb) {
               sb.disabled = true;
-              sb.style.opacity = '0.55';
-              sb.style.cursor = 'not-allowed';
               sb.title = 'Insufficient balance in Cash in Hand';
             }
           } else {
@@ -2251,15 +2325,11 @@ export function newTransferForm() {
             if (!allowOverdraft) {
               if (sb) {
                 sb.disabled = true;
-                sb.style.opacity = '0.55';
-                sb.style.cursor = 'not-allowed';
                 sb.title = 'Transfer amount exceeds available bank balance';
               }
             } else {
               if (sb) {
                 sb.disabled = false;
-                sb.style.opacity = '1';
-                sb.style.cursor = 'pointer';
                 sb.title = '';
               }
             }
@@ -2269,8 +2339,6 @@ export function newTransferForm() {
           if (sb) {
             const isValid = enterAmt > 0 && fromCode !== toCode;
             sb.disabled = !isValid;
-            sb.style.opacity = isValid ? '1' : '0.55';
-            sb.style.cursor = isValid ? 'pointer' : 'not-allowed';
             sb.title = isValid ? '' : (enterAmt <= 0 ? 'Enter transfer amount' : 'Invalid accounts');
           }
         }
@@ -2710,10 +2778,7 @@ export function exportLoanCsv(id) {
     ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
   }).join('\n');
 
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([h + rows], { type: 'text/csv' }));
-  a.download = `loan_statement_${l.ref}_${today()}.csv`;
-  a.click();
+  downloadCSV(h + rows, `loan_statement_${l.ref}`);
   toast('Loan statement CSV exported');
 }
 
@@ -2928,10 +2993,12 @@ export function showCsvModal() {
       e.status
     ].join(','));
   });
-  modal(`<h3>CSV export</h3><textarea rows="14" id="ta" readonly>${esc(r.join('\n'))}</textarea><div class="row"><button id="copyBtn">Copy</button><button id="closeCsvBtn">Close</button></div>`);
-  $('#copyBtn').onclick = () => { $('#ta').select(); document.execCommand('copy'); toast('Copied'); };
-  $('#closeCsvBtn').onclick = closeM;
+  downloadCSV(r.join('\n'), 'all_transactions');
+  toast('Transactions CSV exported');
 }
+
+export const exportTransactionsCsv = showCsvModal;
+
 
 export function showBackupModal() {
   modal(`<h3>Backup</h3><p>Copy this text and keep it somewhere safe.</p><textarea rows="10" id="ta" readonly>${esc(JSON.stringify(db))}</textarea><div class="row"><button id="copyBtn">Copy</button><button id="closeBkpBtn">Close</button></div>`);

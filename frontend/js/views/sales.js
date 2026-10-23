@@ -1,4 +1,4 @@
-import { $, $$, esc, fmt, head, toast, today, uid, P, convertRate, debounce as _utilsDebounce } from '../modules/utils.js';
+import { $, $$, esc, fmt, head, toast, today, uid, P, convertRate, downloadCSV, debounce as _utilsDebounce } from '../modules/utils.js';
 import { db, save, post, reverse, out, dstat, pn, isC, isS } from '../modules/state.js';
 import { partyForm, markSalePaid } from '../modules/actions.js';
 import { showActionSheet } from '../modules/components.js';
@@ -1661,11 +1661,8 @@ export function bindSalesEvents() {
         ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
       }).join('\n');
 
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([header + body], { type: 'text/csv' }));
-      a.download = 'sales_invoices_' + today() + '.csv';
-      a.click();
-      toast('CSV exported');
+      downloadCSV(header + body, 'sales_invoices');
+      toast('Sales Invoices CSV exported');
     };
   }
 

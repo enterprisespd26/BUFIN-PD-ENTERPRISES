@@ -1,4 +1,4 @@
-import { $, $$, esc, fmt, head, kpi, toast, today, uid, P, convertRate, debounce as _utilsDebounce } from '../modules/utils.js';
+import { $, $$, esc, fmt, head, kpi, toast, today, uid, P, convertRate, downloadCSV, debounce as _utilsDebounce } from '../modules/utils.js';
 import { db, save, post, reverse, out, dstat, pn, isS, net, checkCashLiquidity } from '../modules/state.js';
 import { partyForm, markBillPaid, showDoc, isIntraState } from '../modules/actions.js';
 import { showActionSheet } from '../modules/components.js';
@@ -1344,11 +1344,8 @@ export function bindBillsEvents() {
         ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
       }).join('\n');
 
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([h + b], { type: 'text/csv' }));
-      a.download = 'purchase_bills_' + today() + '.csv';
-      a.click();
-      toast('CSV exported');
+      downloadCSV(h + b, 'purchase_bills');
+      toast('Purchase Bills CSV exported');
     };
   }
 
@@ -1606,11 +1603,7 @@ export function bindBillsEvents() {
         `"${(s.bills || []).map(b => b.ref).join(', ').replace(/"/g, '""')}"`
       ].join(',')).join('\n');
 
-      const blob = new Blob([headers + rows], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `Inventory_Stock_${today()}.csv`;
-      a.click();
+      downloadCSV(headers + rows, 'inventory_stock');
       toast('Inventory CSV exported');
     };
   }

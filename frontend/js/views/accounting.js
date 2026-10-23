@@ -1,4 +1,4 @@
-import { esc, fmt, today, prev, head, kpi, toast } from '../modules/utils.js';
+import { esc, fmt, today, prev, head, kpi, toast, downloadCSV } from '../modules/utils.js';
 import { db, TN, SYS, acc, an, net, sgn, cashAcc, pn, sortEntries } from '../modules/state.js';
 import { entTable, accOpts } from '../modules/components.js';
 
@@ -571,15 +571,7 @@ export function exportGlCsv() {
   rows.push([u.t || today(), '', 'Totals / Closing Balance', '', '', (periodDr / 100).toFixed(2), (periodCr / 100).toFixed(2), (closingBalance / 100).toFixed(2)]);
 
   const csv = rows.map(r => r.map(f => '"' + String(f ?? '').replace(/"/g, '""') + '"').join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `general_ledger_${a.code}_${u.f || 'all'}_to_${u.t || 'all'}_${today()}.csv`;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
+  downloadCSV(csv, `general_ledger_${a.code}_${u.f || 'all'}_to_${u.t || 'all'}`);
   toast(`GL for ${a.name} exported`);
 }
 
@@ -875,15 +867,7 @@ export function exportBookCsv() {
   rows.push([u.t || today(), '', 'Totals / Closing Balance', '', '', (totIn / 100).toFixed(2), (totOut / 100).toFixed(2), (run / 100).toFixed(2)]);
 
   const csv = rows.map(r => r.map(f => '"' + String(f ?? '').replace(/"/g, '""') + '"').join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `cash_and_bank_book_${today()}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  downloadCSV(csv, 'cash_and_bank_book');
   toast('Cash & Bank Book CSV exported');
 }
 
