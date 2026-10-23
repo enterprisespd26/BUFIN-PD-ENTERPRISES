@@ -71,98 +71,99 @@ function renderLoansDashboard() {
       </div>
     </div>` +
     (filteredLoans.length
-      ? `<div class="wrap loan-table-wrap">
-          <table class="loan-table">
-            <colgroup>
-              <col class="col-loan-name" style="width: 25%; min-width: 190px;">
-              <col class="col-loan-type" style="width: 10%; min-width: 95px;">
-              <col class="col-loan-principal" style="width: 13%; min-width: 120px;">
-              <col class="col-loan-balance" style="width: 14%; min-width: 130px;">
-              <col class="col-loan-due" style="width: 11%; min-width: 105px;">
-              <col class="col-loan-status" style="width: 9%; min-width: 85px;">
-              <col class="col-loan-actions" style="width: 18%; min-width: 200px;">
-            </colgroup>
-            <thead>
-              <tr>
-                <th class="loan-th text-left">Loan Name & Party</th>
-                <th class="loan-th text-center">Type</th>
-                <th class="loan-th num text-right">Principal Amount</th>
-                <th class="loan-th num text-right">Outstanding Balance</th>
-                <th class="loan-th text-left">Next Due Date</th>
-                <th class="loan-th text-center">Status</th>
-                <th class="loan-th text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredLoans.map(l => {
-                const s = lstat(l);
-                const o = Math.max(0, l.principal - l.repaid);
-                const partyName = l.partyName || pn(l.party) || 'Unknown Party';
-                const isOverdue = s[0] === 'Overdue';
-                return `<tr class="k loan-row" data-a="viewloan" data-i="${l.id}">
-                  <td class="loan-td-name">
-                    <a href="#/loans/${l.id}" class="loan-name-title" title="${esc(l.name || l.ref)}">
-                      ${esc(l.name || l.ref)}
-                    </a>
-                    <div class="loan-party-subtitle">
-                      ${esc(partyName)} · <span class="loan-ref-code">${esc(l.ref)}</span>
-                    </div>
-                  </td>
-                  <td class="loan-td-type text-center">
-                    ${l.dir === 'taken'
-                      ? `<span class="loan-pill pill-borrowed">Borrowed</span>`
-                      : `<span class="loan-pill pill-lent">Lent</span>`}
-                  </td>
-                  <td class="loan-td-principal num text-right">${fmt(l.principal)}</td>
-                  <td class="loan-td-balance num text-right ${o > 0 ? (l.dir === 'taken' ? 'text-rose-600' : 'text-emerald-600') : 'text-slate-400'}">
-                    ${fmt(o)}
-                  </td>
-                  <td class="loan-td-due">
-                    ${l.due ? (isOverdue ? `<span class="loan-due-overdue">${l.due} ⚠️</span>` : `<span class="loan-due-normal">${l.due}</span>`) : `<span class="text-slate-400">–</span>`}
-                  </td>
-                  <td class="loan-td-status text-center">
-                    <span class="loan-pill pill-${s[0].toLowerCase()}">${s[0]}</span>
-                  </td>
-                  <td class="loan-card-actions text-right" onclick="event.stopPropagation()">
-                    <!-- Desktop Action Group -->
-                    <div class="loan-actions-desktop">
-                      ${o > 0 ? `
-                        <button type="button" class="loan-btn-primary loan-btn-repay" data-a="repay" data-i="${l.id}">
-                          Record Payment / EMI
-                        </button>
-                      ` : ''}
-                      <button type="button" class="loan-btn-secondary loan-btn-view" data-a="viewloan" data-i="${l.id}">
-                        View Statement
-                      </button>
-                      
-                      <!-- Compact More Actions (Edit & Delete) -->
-                      <div class="loan-more-wrap">
-                        <button type="button" class="loan-btn-more" title="More options" aria-label="More options" onclick="event.stopPropagation(); const wrap = this.closest('.loan-more-wrap'); const wasOpen = wrap.classList.contains('is-open'); document.querySelectorAll('.loan-more-wrap.is-open').forEach(w => w.classList.remove('is-open')); if (!wasOpen) wrap.classList.add('is-open');">
-                          ⋮
-                        </button>
-                        <div class="loan-dropdown-menu">
-                          <button type="button" class="loan-dropdown-item" data-a="editloan" data-i="${l.id}" onclick="this.closest('.loan-more-wrap').classList.remove('is-open')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                            </svg>
-                            <span>Edit Loan</span>
+      ? `<div class="wrap loan-table-wrap w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-4 md:p-6">
+          <div class="w-full overflow-x-auto">
+            <table class="loan-table w-full">
+              <colgroup>
+                <col class="col-loan-name" style="width: 25%; min-width: 190px;">
+                <col class="col-loan-type" style="width: 10%; min-width: 95px;">
+                <col class="col-loan-principal" style="width: 13%; min-width: 120px;">
+                <col class="col-loan-balance" style="width: 14%; min-width: 130px;">
+                <col class="col-loan-due" style="width: 11%; min-width: 105px;">
+                <col class="col-loan-status" style="width: 9%; min-width: 85px;">
+                <col class="col-loan-actions" style="width: 18%; min-width: 200px;">
+              </colgroup>
+              <thead>
+                <tr class="grid grid-cols-[2fr_0.8fr_1fr_1.2fr_1fr_0.8fr_auto] gap-3 px-4 w-full">
+                  <th class="loan-th text-left">Loan Name & Party</th>
+                  <th class="loan-th text-center">Type</th>
+                  <th class="loan-th num text-right">Principal Amount</th>
+                  <th class="loan-th num text-right">Outstanding Balance</th>
+                  <th class="loan-th text-left">Next Due Date</th>
+                  <th class="loan-th text-center">Status</th>
+                  <th class="loan-th text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredLoans.map(l => {
+                  const s = lstat(l);
+                  const o = Math.max(0, l.principal - l.repaid);
+                  const partyName = l.partyName || pn(l.party) || 'Unknown Party';
+                  const isOverdue = s[0] === 'Overdue';
+                  return `<tr class="k loan-row grid grid-cols-[2fr_0.8fr_1fr_1.2fr_1fr_0.8fr_auto] gap-3 px-4 w-full" data-a="viewloan" data-i="${l.id}">
+                    <td class="loan-td-name">
+                      <a href="#/loans/${l.id}" class="loan-name-title" title="${esc(l.name || l.ref)}">
+                        ${esc(l.name || l.ref)}
+                      </a>
+                      <div class="loan-party-subtitle">
+                        ${esc(partyName)} · <span class="loan-ref-code">${esc(l.ref)}</span>
+                      </div>
+                    </td>
+                    <td class="loan-td-type text-center">
+                      ${l.dir === 'taken'
+                        ? `<span class="loan-pill pill-borrowed">Borrowed</span>`
+                        : `<span class="loan-pill pill-lent">Lent</span>`}
+                    </td>
+                    <td class="loan-td-principal num text-right">${fmt(l.principal)}</td>
+                    <td class="loan-td-balance num text-right ${o > 0 ? (l.dir === 'taken' ? 'text-rose-600' : 'text-emerald-600') : 'text-slate-400'}">
+                      ${fmt(o)}
+                    </td>
+                    <td class="loan-td-due">
+                      ${l.due ? (isOverdue ? `<span class="loan-due-overdue">${l.due} ⚠️</span>` : `<span class="loan-due-normal">${l.due}</span>`) : `<span class="text-slate-400">–</span>`}
+                    </td>
+                    <td class="loan-td-status text-center">
+                      <span class="loan-pill pill-${s[0].toLowerCase()}">${s[0]}</span>
+                    </td>
+                    <td class="loan-card-actions text-right flex items-center justify-end gap-2 shrink-0 pr-2">
+                      <!-- Desktop Action Group -->
+                      <div class="loan-actions-desktop flex items-center justify-end gap-2 shrink-0 pr-2">
+                        ${o > 0 ? `
+                          <button type="button" class="loan-btn-primary loan-btn-repay shrink-0" data-a="repay" data-i="${l.id}" title="Record Payment / EMI" onclick="if (window.ACTIONS && window.ACTIONS.repay) { window.ACTIONS.repay('${l.id}'); event.stopPropagation(); }">
+                            Record Payment / EMI
                           </button>
-                          <button type="button" class="loan-dropdown-item red" data-a="delloan" data-i="${l.id}" onclick="this.closest('.loan-more-wrap').classList.remove('is-open')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                              <line x1="10" y1="11" x2="10" y2="17"></line>
-                              <line x1="14" y1="11" x2="14" y2="17"></line>
-                            </svg>
-                            <span>Delete Loan</span>
+                        ` : ''}
+                        <button type="button" class="loan-btn-secondary loan-btn-view shrink-0" data-a="viewloan" data-i="${l.id}" title="View Statement" onclick="if (window.ACTIONS && window.ACTIONS.viewloan) { window.ACTIONS.viewloan('${l.id}'); event.stopPropagation(); }">
+                          View Statement
+                        </button>
+                        
+                        <!-- Compact More Actions (Edit & Delete) -->
+                        <div class="loan-more-wrap shrink-0">
+                          <button type="button" class="loan-btn-more shrink-0" title="More options" aria-label="More options" onclick="event.stopPropagation(); const wrap = this.closest('.loan-more-wrap'); const wasOpen = wrap.classList.contains('is-open'); document.querySelectorAll('.loan-more-wrap.is-open').forEach(w => w.classList.remove('is-open')); if (!wasOpen) { const rect = wrap.getBoundingClientRect(); const tableWrap = wrap.closest('.loan-table-wrap'); const spaceBelow = tableWrap ? (tableWrap.getBoundingClientRect().bottom - rect.bottom) : 200; if (spaceBelow < 120) wrap.classList.add('drop-up'); else wrap.classList.remove('drop-up'); wrap.classList.add('is-open'); }">
+                            ⋮
                           </button>
+                          <div class="loan-dropdown-menu">
+                            <button type="button" class="loan-dropdown-item" data-a="editloan" data-i="${l.id}" onclick="this.closest('.loan-more-wrap').classList.remove('is-open'); if (window.ACTIONS && window.ACTIONS.editloan) { window.ACTIONS.editloan('${l.id}'); event.stopPropagation(); }">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                              </svg>
+                              <span>Edit Loan</span>
+                            </button>
+                            <button type="button" class="loan-dropdown-item red" data-a="delloan" data-i="${l.id}" onclick="this.closest('.loan-more-wrap').classList.remove('is-open'); if (window.ACTIONS && window.ACTIONS.delloan) { window.ACTIONS.delloan('${l.id}'); event.stopPropagation(); }">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                              </svg>
+                              <span>Delete Loan</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <!-- Mobile Action Footer -->
-                    <div class="loan-action-footer">
-                      ${o > 0 ? `<button type="button" class="btn p sm loan-btn-repay" data-a="repay" data-i="${l.id}">Record Payment / EMI</button>` : ''}
+                      <!-- Mobile Action Footer -->
+                      <div class="loan-action-footer">
+                        ${o > 0 ? `<button type="button" class="btn p sm loan-btn-repay" data-a="repay" data-i="${l.id}">Record Payment / EMI</button>` : ''}
                       <div class="loan-action-row">
                         <button type="button" class="btn alt sm loan-btn-view" data-a="viewloan" data-i="${l.id}">View Statement</button>
                         <button type="button" class="btn alt sm loan-btn-edit" data-a="editloan" data-i="${l.id}">Edit</button>
@@ -174,7 +175,8 @@ function renderLoansDashboard() {
               }).join('')}
             </tbody>
           </table>
-        </div>`
+        </div>
+      </div>`
       : `<div class="wrap loan-table-wrap"><div class="empty" style="padding:40px 20px;text-align:center;color:#64748b;">No loans found. Register each loan separately; every loan keeps its own ledger statement.</div></div>`) +
     `<div class="loan-ledger-check" style="font-size:12px;color:#64748b;margin-top:8px;">Ledger check: ${ok ? 'loan balances match ledger accounts 2100 / 1400.' : 'loan balances differ from ledger accounts 2100 / 1400 (manual journals can cause this).'}</div>`;
 }

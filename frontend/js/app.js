@@ -1229,6 +1229,10 @@ const ACTIONS = {
   }
 };
 
+if (typeof window !== 'undefined') {
+  window.ACTIONS = ACTIONS;
+}
+
 document.addEventListener('click', e => {
   const closeBtn = e.target.closest('.dlg-close, .universal-close-btn');
   if (closeBtn && !closeBtn.classList.contains('drawer-close-btn') && closeBtn.id !== 'pd_modal_close' && closeBtn.id !== 'bfClose' && closeBtn.id !== 'bfVx') {

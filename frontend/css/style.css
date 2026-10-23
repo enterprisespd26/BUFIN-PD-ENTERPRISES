@@ -2436,13 +2436,23 @@ aside.open ~ #ov {
   width: 100% !important;
   margin-bottom: 14px !important;
   box-sizing: border-box !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+.bar.loan-header-bar .menu {
+  display: none !important;
 }
 .bar.loan-header-bar h2 {
-  font-size: clamp(20px, 5.5vw, 24px) !important;
+  font-size: 24px !important;
   font-weight: 700 !important;
   margin: 0 !important;
+  padding: 0 !important;
   white-space: nowrap !important;
   color: var(--tx, #0f172a) !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  line-height: 1.25 !important;
+  flex: 0 0 auto !important;
 }
 .bar.loan-header-bar .loan-btn-register {
   white-space: nowrap !important;
@@ -2609,76 +2619,160 @@ aside.open ~ #ov {
   }
 }
 
-/* 4. Structured Fintech Loans Table */
+/* 4. Structured Fintech Loans Table with Explicit CSS Grid Columns */
 .loan-table-wrap {
-  background-color: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-  margin-bottom: 20px !important;
-  overflow-x: auto !important;
-  box-sizing: border-box !important;
-}
-@media (min-width: 769px) {
-  .loan-table-wrap {
-    overflow: visible !important;
-  }
-}
-.loan-table {
   width: 100% !important;
-  border-collapse: separate !important;
-  border-spacing: 0 !important;
-  table-layout: fixed !important;
-}
-.loan-table thead tr {
-  background-color: #f8fafc !important; /* bg-slate-50 */
-}
-.loan-table th.loan-th {
-  background-color: #f8fafc !important;
-  border-top: 1px solid #e2e8f0 !important;
-  border-bottom: 1px solid #e2e8f0 !important; /* border-y border-slate-200 */
-  font-size: 0.75rem !important; /* text-xs */
-  font-weight: 600 !important; /* font-semibold */
-  color: #64748b !important; /* text-slate-500 */
-  text-transform: uppercase !important; /* uppercase */
-  letter-spacing: 0.05em !important; /* tracking-wider */
-  padding: 12px 16px !important; /* py-3 px-4 */
-  white-space: nowrap !important;
-  vertical-align: middle !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  border-radius: 16px !important; /* rounded-2xl */
+  border: 1px solid #e2e8f0 !important; /* border-slate-200 */
+  background-color: #ffffff !important; /* bg-white */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important; /* shadow-sm */
+  margin-bottom: 20px !important;
   box-sizing: border-box !important;
-}
-.loan-table th.loan-th.text-left {
-  text-align: left !important;
-}
-.loan-table th.loan-th.text-center {
-  text-align: center !important;
-}
-.loan-table th.loan-th.text-right {
-  text-align: right !important;
-}
-.loan-table th.loan-th.num {
-  text-align: right !important;
+  -webkit-overflow-scrolling: touch !important;
+  min-height: 220px !important;
+  padding: 16px !important; /* p-4 */
 }
 
-/* Row Styling */
-.loan-table tbody tr.loan-row {
-  background-color: #ffffff !important; /* bg-white */
-  border-bottom: 1px solid #e2e8f0 !important; /* border-b border-slate-200 */
-  transition: background-color 0.15s ease-in-out !important;
+@media (min-width: 768px) {
+  .loan-table-wrap {
+    padding: 24px !important; /* md:p-6 */
+  }
 }
-.loan-table tbody tr.loan-row:hover {
-  background-color: rgba(248, 250, 252, 0.8) !important; /* hover:bg-slate-50/80 */
+
+.loan-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
 }
-.loan-table tbody tr.loan-row td {
-  padding: 14px 16px !important; /* py-4 px-4 */
-  border-bottom: 1px solid #e2e8f0 !important;
-  vertical-align: middle !important;
-  color: #1e293b !important;
-  font-size: 0.875rem !important;
-  box-sizing: border-box !important;
+
+.loan-table colgroup {
+  display: none !important;
 }
-.loan-table tbody tr.loan-row:last-child td {
-  border-bottom: none !important;
+
+@media (min-width: 769px) {
+  .loan-table {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  .loan-table thead,
+  .loan-table tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+  .loan-table thead tr,
+  .loan-table tbody tr.loan-row {
+    display: grid !important;
+    grid-template-columns: 2fr 0.8fr 1fr 1.2fr 1fr 0.8fr auto !important;
+    gap: 12px !important; /* gap-3 */
+    align-items: center !important;
+    width: 100% !important;
+    padding: 0 16px !important; /* px-4 */
+    box-sizing: border-box !important;
+  }
+  .loan-table thead tr {
+    background-color: #f8fafc !important; /* bg-slate-50 */
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    margin-bottom: 4px !important;
+  }
+  .loan-table th.loan-th {
+    background-color: transparent !important;
+    border: none !important;
+    font-size: 0.75rem !important; /* text-xs */
+    font-weight: 600 !important; /* font-semibold */
+    color: #64748b !important; /* text-slate-500 */
+    text-transform: uppercase !important; /* uppercase */
+    letter-spacing: 0.05em !important; /* tracking-wider */
+    padding: 12px 0 !important; /* py-3 */
+    white-space: nowrap !important; /* whitespace-nowrap */
+    overflow: hidden !important; /* overflow-hidden */
+    text-overflow: ellipsis !important; /* text-ellipsis */
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    line-height: 1.2 !important;
+  }
+  .loan-table th.loan-th.text-left {
+    text-align: left !important;
+  }
+  .loan-table th.loan-th.text-center {
+    text-align: center !important;
+  }
+  .loan-table th.loan-th.text-right,
+  .loan-table th.loan-th.num {
+    text-align: right !important;
+  }
+
+  /* Row Styling */
+  .loan-table tbody tr.loan-row {
+    background-color: #ffffff !important; /* bg-white */
+    border-bottom: 1px solid #e2e8f0 !important; /* border-b border-slate-200 */
+    transition: background-color 0.15s ease-in-out !important;
+    cursor: pointer !important;
+    position: relative !important;
+    overflow: visible !important;
+  }
+  .loan-table tbody tr.loan-row:hover {
+    background-color: rgba(248, 250, 252, 0.7) !important; /* hover:bg-slate-50/70 */
+  }
+  .loan-table tbody tr.loan-row:last-child {
+    border-bottom: none !important;
+  }
+  .loan-table tbody tr.loan-row td {
+    padding: 16px 0 !important; /* py-4 */
+    border: none !important;
+    color: #1e293b !important;
+    font-size: 0.875rem !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Explicit Column Alignments & Flex Constraints */
+  .loan-td-name {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+  .loan-td-type {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .loan-td-principal {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums !important;
+    white-space: nowrap !important;
+  }
+  .loan-td-balance {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums !important;
+    white-space: nowrap !important;
+  }
+  .loan-td-due {
+    text-align: left !important;
+    white-space: nowrap !important;
+  }
+  .loan-td-status {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .loan-card-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    padding-right: 8px !important; /* pr-2 */
+    min-width: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+  }
 }
 
 /* Typography & Subtitles */
@@ -2689,12 +2783,9 @@ aside.open ~ #ov {
   color: #0f172a !important; /* text-slate-900 */
   text-decoration: none !important;
   line-height: 1.35 !important;
-  white-space: normal !important;
+  white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  display: -webkit-box !important;
-  -webkit-line-clamp: 2 !important;
-  -webkit-box-orient: vertical !important;
   transition: color 0.15s ease !important;
 }
 .loan-name-title:hover {
@@ -2789,9 +2880,13 @@ aside.open ~ #ov {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: flex-end !important;
-  gap: 8px !important;
-  width: 100% !important;
+  gap: 8px !important; /* gap-2 */
+  flex-shrink: 0 !important;
+  padding-right: 8px !important; /* pr-2 */
   white-space: nowrap !important;
+  position: relative !important;
+  z-index: 20 !important;
+  overflow: visible !important;
 }
 .loan-btn-primary {
   background-color: #2563eb !important; /* bg-blue-600 */
@@ -2803,10 +2898,11 @@ aside.open ~ #ov {
   border: 1px solid #2563eb !important;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; /* shadow-sm */
   cursor: pointer !important;
-  white-space: nowrap !important;
+  white-space: nowrap !important; /* whitespace-nowrap */
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  flex-shrink: 0 !important;
   transition: all 0.15s ease-in-out !important;
 }
 .loan-btn-primary:hover {
@@ -2822,10 +2918,11 @@ aside.open ~ #ov {
   padding: 8px 12px !important; /* py-2 px-3 */
   border-radius: 8px !important; /* rounded-lg */
   cursor: pointer !important;
-  white-space: nowrap !important;
+  white-space: nowrap !important; /* whitespace-nowrap */
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  flex-shrink: 0 !important;
   transition: all 0.15s ease-in-out !important;
 }
 .loan-btn-secondary:hover {
@@ -2836,45 +2933,63 @@ aside.open ~ #ov {
 .loan-more-wrap {
   position: relative !important;
   display: inline-flex !important;
+  flex-shrink: 0 !important;
+  overflow: visible !important;
 }
 .loan-btn-more {
   width: 32px !important;
   height: 32px !important;
   min-width: 32px !important;
   min-height: 32px !important;
-  border-radius: 8px !important;
+  border-radius: 8px !important; /* rounded-lg */
   border: 1px solid #cbd5e1 !important;
   background-color: #ffffff !important;
-  color: #475569 !important;
+  color: #64748b !important; /* text-slate-500 */
   cursor: pointer !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  flex-shrink: 0 !important;
   transition: all 0.15s ease-in-out !important;
-  padding: 0 !important;
+  padding: 8px !important; /* p-2 */
+  font-size: 14px !important;
+  line-height: 1 !important;
 }
 .loan-btn-more:hover {
-  background-color: #f1f5f9 !important;
+  background-color: #f1f5f9 !important; /* hover:bg-slate-100 */
   border-color: #94a3b8 !important;
   color: #0f172a !important;
 }
 .loan-dropdown-menu {
   position: absolute !important;
   right: 0 !important;
-  top: calc(100% + 4px) !important;
-  z-index: 100 !important;
-  min-width: 140px !important;
-  background-color: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
-  padding: 4px !important;
+  top: 100% !important; /* top-full */
+  margin-top: 4px !important; /* mt-1 */
+  z-index: 50 !important; /* z-50 */
+  width: 192px !important; /* w-48 */
+  min-width: 192px !important;
+  background-color: #ffffff !important; /* bg-white */
+  border: 1px solid #e2e8f0 !important; /* border border-slate-200 */
+  border-radius: 12px !important; /* rounded-xl */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important; /* shadow-xl */
+  padding: 6px !important; /* py-1.5 */
   display: none;
   flex-direction: column !important;
   gap: 2px !important;
+  pointer-events: auto !important; /* pointer-events-auto */
+  box-sizing: border-box !important;
 }
 .loan-more-wrap.is-open .loan-dropdown-menu {
   display: flex !important;
+}
+.loan-more-wrap.drop-up .loan-dropdown-menu,
+.loan-table tbody tr:last-child .loan-dropdown-menu,
+.loan-table tbody tr:only-child .loan-dropdown-menu {
+  top: auto !important;
+  bottom: 100% !important;
+  margin-top: 0 !important;
+  margin-bottom: 4px !important;
+  box-shadow: 0 -20px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04) !important;
 }
 .loan-dropdown-item {
   display: flex !important;
