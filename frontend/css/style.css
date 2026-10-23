@@ -3842,3 +3842,339 @@ dialog:has(.xfer-form) form #sb:disabled {
   }
 }
 
+/* ==========================================================================
+   Sales Invoices Module Modernization (Desktop Icons, Mobile Drawer & Modal)
+   ========================================================================== */
+
+/* 1. Desktop Records Table: Sleek Lucide Icon Action Buttons */
+.sales-desktop-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 4px !important; /* flex items-center justify-end gap-1 */
+  flex-wrap: nowrap !important;
+}
+
+.sales-icon-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  padding: 8px !important; /* p-2 */
+  border-radius: 8px !important; /* rounded-lg */
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #475569 !important; /* text-slate-600 */
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sales-icon-btn svg {
+  pointer-events: none !important;
+  width: 17px !important;
+  height: 17px !important;
+  display: block !important;
+}
+
+/* View: Eye SVG icon */
+.sales-icon-btn.sales-btn-view:hover {
+  color: #2563eb !important; /* hover:text-blue-600 */
+  background-color: #eff6ff !important; /* hover:bg-blue-50 */
+  border-color: #dbeafe !important;
+}
+
+/* Edit: Pencil SVG icon */
+.sales-icon-btn.sales-btn-edit:hover {
+  color: #d97706 !important; /* hover:text-amber-600 */
+  background-color: #fffbeb !important; /* hover:bg-amber-50 */
+  border-color: #fef3c7 !important;
+}
+
+/* Mark Paid: CheckCircle2 SVG icon */
+.sales-icon-btn.sales-btn-pay:hover {
+  color: #059669 !important; /* hover:text-emerald-600 */
+  background-color: #ecfdf5 !important; /* hover:bg-emerald-50 */
+  border-color: #a7f3d0 !important;
+}
+
+/* Delete: Trash2 SVG icon */
+.sales-icon-btn.sales-btn-del:hover {
+  color: #e11d48 !important; /* hover:text-rose-600 */
+  background-color: #fff1f2 !important; /* hover:bg-rose-50 */
+  border-color: #fecdd3 !important;
+}
+
+/* 2. Mobile Action Drawer: Modern Card Buttons & Styling */
+.action-sheet-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-height: 48px !important;
+  padding: 14px 16px !important;
+  border-radius: 12px !important;
+  font-size: 0.875rem !important; /* text-sm: 14px */
+  text-align: left !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.action-sheet-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 22px !important;
+  height: 22px !important;
+  flex-shrink: 0 !important;
+}
+
+.action-sheet-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+
+/* View & Edit Invoice */
+.action-sheet-item.sheet-item-view,
+.action-sheet-item.sheet-item-edit {
+  background: #f8fafc !important; /* bg-slate-50 */
+  border: 1px solid #e2e8f0 !important; /* border-slate-200 */
+  color: #1e293b !important; /* text-slate-800 */
+  font-weight: 500 !important;
+}
+
+.action-sheet-item.sheet-item-view:hover,
+.action-sheet-item.sheet-item-edit:hover {
+  background: #f1f5f9 !important; /* hover:bg-slate-100 */
+  color: #0f172a !important;
+}
+
+.action-sheet-item.sheet-item-view .action-sheet-icon,
+.action-sheet-item.sheet-item-edit .action-sheet-icon {
+  color: #475569 !important;
+}
+
+/* Mark as Paid */
+.action-sheet-item.sheet-item-pay {
+  background: rgba(236, 253, 245, 0.8) !important; /* bg-emerald-50/80 */
+  border: 1px solid #a7f3d0 !important; /* border-emerald-200 */
+  color: #065f46 !important; /* text-emerald-800 */
+  font-weight: 600 !important;
+}
+
+.action-sheet-item.sheet-item-pay:hover {
+  background: #d1fae5 !important; /* hover:bg-emerald-100 */
+  color: #064e3b !important;
+}
+
+.action-sheet-item.sheet-item-pay .action-sheet-icon {
+  color: #059669 !important; /* text-emerald-600 */
+}
+
+/* Delete Invoice */
+.action-sheet-item.sheet-item-delete,
+.action-sheet-item.danger {
+  background: rgba(255, 241, 242, 0.8) !important; /* bg-rose-50/80 */
+  border: 1px solid #fecdd3 !important; /* border-rose-200 */
+  color: #be123c !important; /* text-rose-700 */
+  font-weight: 600 !important;
+}
+
+.action-sheet-item.sheet-item-delete:hover,
+.action-sheet-item.danger:hover {
+  background: #ffe4e6 !important; /* hover:bg-rose-100 */
+  color: #9f1239 !important;
+}
+
+.action-sheet-item.sheet-item-delete .action-sheet-icon,
+.action-sheet-item.danger .action-sheet-icon {
+  color: #e11d48 !important; /* text-rose-600 */
+}
+
+/* Action Sheet Cancel Button */
+.action-sheet-cancel {
+  margin-top: 8px !important;
+  width: 100% !important;
+}
+
+.sheet-cancel-btn,
+.action-sheet-cancel-btn {
+  background: #f1f5f9 !important; /* bg-slate-100 */
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important; /* text-slate-700 */
+  font-weight: 500 !important;
+  font-size: 0.875rem !important; /* text-sm */
+  padding: 14px 16px !important; /* py-3.5 */
+  border-radius: 12px !important; /* rounded-xl */
+  width: 100% !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.sheet-cancel-btn:hover,
+.action-sheet-cancel-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* 3. Redesigned Fintech Summary Card ("Mark Sales Invoice Paid" Modal) */
+.sale-pay-summary-card {
+  background: #f8fafc !important; /* bg-slate-50 */
+  border: 1px solid rgba(226, 232, 240, 0.8) !important; /* border-slate-200/80 */
+  border-radius: 16px !important; /* rounded-2xl */
+  padding: 16px !important; /* p-4 */
+  margin-bottom: 20px !important; /* mb-5 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important; /* shadow-sm */
+  box-sizing: border-box !important;
+}
+
+.sale-pay-header-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.sale-pay-cust-name {
+  font-weight: 700 !important;
+  font-size: 1rem !important; /* text-base */
+  color: #0f172a !important; /* text-slate-900 */
+  line-height: 1.3 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.sale-pay-status-badge {
+  flex-shrink: 0 !important;
+  font-size: 0.75rem !important; /* text-xs */
+  font-weight: 600 !important;
+  padding: 4px 10px !important; /* py-1 px-2.5 */
+  border-radius: 9999px !important; /* rounded-full */
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.sale-pay-status-unpaid {
+  background-color: #ffe4e6 !important; /* bg-rose-100 */
+  color: #be123c !important; /* text-rose-700 */
+  border: 1px solid #fecdd3 !important;
+}
+
+.sale-pay-status-part {
+  background-color: #fef3c7 !important; /* bg-amber-100 */
+  color: #b45309 !important; /* text-amber-700 */
+  border: 1px solid #fde68a !important;
+}
+
+.sale-pay-details-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px 16px !important;
+  padding: 12px 0 10px 0 !important;
+}
+
+.sale-pay-detail-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+.sale-pay-label {
+  font-size: 0.6875rem !important; /* text-xs label */
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  font-weight: 600 !important;
+  color: #64748b !important; /* text-slate-500 */
+}
+
+.sale-pay-val {
+  font-size: 0.8125rem !important; /* 13px */
+  color: #334155 !important; /* text-slate-700 */
+  line-height: 1.4 !important;
+}
+
+.sale-pay-ref {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+}
+
+.sale-pay-date {
+  font-weight: 600 !important;
+  color: #334155 !important;
+}
+
+.sale-pay-items {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.sale-pay-veh {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+.sale-pay-footer-box {
+  background: #ffffff !important; /* bg-white */
+  border: 1px solid #e2e8f0 !important; /* border-slate-200 */
+  border-radius: 12px !important; /* rounded-xl */
+  padding: 12px 14px !important; /* p-3 */
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-top: 10px !important; /* mt-2.5 */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+.sale-pay-total-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.sale-pay-total-label {
+  font-size: 0.75rem !important; /* text-xs */
+  color: #64748b !important; /* text-slate-500 */
+  font-weight: 500 !important;
+}
+
+.sale-pay-total-val {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+}
+
+.sale-pay-bal-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 2px !important;
+}
+
+.sale-pay-bal-label {
+  font-size: 0.75rem !important; /* text-xs */
+  font-weight: 600 !important;
+  color: #e11d48 !important; /* text-rose-600 */
+}
+
+.sale-pay-bal-val {
+  font-size: 0.9375rem !important; /* text-sm/base font-bold */
+  font-weight: 700 !important;
+  color: #e11d48 !important; /* text-rose-600 */
+}
+

@@ -673,20 +673,62 @@ export function markSalePaid(docOrId, onComplete) {
 
   const customerName = d.c?.n || pn(d.party) || 'Customer';
   const invNo = d.no || 'INV';
-  const itemSummary = d.lines && d.lines.length
+  const itemsText = d.lines && d.lines.length
     ? d.lines.map(l => l.n + (l.q ? ' (' + l.q + ' ' + (l.u || 'kg') + ')' : '')).join(', ')
     : (d.desc || 'Scrap sale');
-  const detailsStr = `${itemSummary}${d.veh ? ' · Veh: ' + d.veh : ''}`;
+  const vehicleText = d.veh || '—';
+  const detailsStr = `${itemsText}${d.veh ? ' · Veh: ' + d.veh : ''}`;
   const defaultNotes = `${detailsStr} - Invoice ${invNo}`;
 
+  const rawDate = d.date || today();
+  let formattedDate = rawDate;
+  try {
+    const parts = rawDate.split('-');
+    if (parts.length === 3) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const mIdx = parseInt(parts[1], 10) - 1;
+      const mName = months[mIdx] || parts[1];
+      formattedDate = `${parseInt(parts[2], 10)} ${mName} ${parts[0]}`;
+    }
+  } catch (e) { }
+
+  const isPartial = currentPaid > 0 && balPaisa > 0;
+  const statusLabel = isPartial ? 'Part paid' : 'Unpaid';
+  const statusClass = isPartial ? 'sale-pay-status-part' : 'sale-pay-status-unpaid';
+
   form('Mark Sales Invoice Paid',
-    `<div style="background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.6">
-      <div><b>Customer:</b> ${esc(customerName)}</div>
-      <div><b>Invoice No:</b> <code>${esc(invNo)}</code> · <b>Invoice Date:</b> ${d.date || today()}</div>
-      <div><b>Items / Vehicle:</b> ${esc(detailsStr)}</div>
-      <div style="margin-top:6px;font-size:14px;color:var(--tx)">
-        <b>Total Invoice:</b> ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })} · 
-        <b style="color:#0f5132">Balance Due:</b> <span style="font-weight:700;color:#0f5132">₹${(balPaisa / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+    `<div class="sale-pay-summary-card">
+      <div class="sale-pay-header-row">
+        <div class="sale-pay-cust-name">${esc(customerName)}</div>
+        <span class="sale-pay-status-badge ${statusClass}">${statusLabel}</span>
+      </div>
+      <div class="sale-pay-details-grid">
+        <div class="sale-pay-detail-item">
+          <span class="sale-pay-label">Invoice Ref</span>
+          <span class="sale-pay-val sale-pay-ref font-mono">${esc(invNo)}</span>
+        </div>
+        <div class="sale-pay-detail-item">
+          <span class="sale-pay-label">Date</span>
+          <span class="sale-pay-val sale-pay-date">${esc(formattedDate)}</span>
+        </div>
+        <div class="sale-pay-detail-item">
+          <span class="sale-pay-label">Items</span>
+          <span class="sale-pay-val sale-pay-items" title="${esc(itemsText)}">${esc(itemsText)}</span>
+        </div>
+        <div class="sale-pay-detail-item">
+          <span class="sale-pay-label">Vehicle</span>
+          <span class="sale-pay-val sale-pay-veh font-mono">${esc(vehicleText)}</span>
+        </div>
+      </div>
+      <div class="sale-pay-footer-box">
+        <div class="sale-pay-total-wrap">
+          <span class="sale-pay-total-label">Total Invoice Amount</span>
+          <span class="sale-pay-total-val">₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+        </div>
+        <div class="sale-pay-bal-wrap">
+          <span class="sale-pay-bal-label">Balance Due</span>
+          <span class="sale-pay-bal-val">₹${(balPaisa / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+        </div>
       </div>
     </div>
     <div class="two">

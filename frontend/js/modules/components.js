@@ -81,14 +81,14 @@ export function showActionSheet(title, subtitle, items) {
     </div>
     <div class="action-sheet-list">
       ${items.map((item, idx) => `
-        <button type="button" class="action-sheet-item ${item.danger ? 'danger' : ''} ${item.primary ? 'p' : ''}" data-sheet-idx="${idx}">
+        <button type="button" class="action-sheet-item ${item.variant ? 'sheet-item-' + item.variant : ''} ${item.danger ? 'danger' : ''} ${item.primary ? 'p' : ''}" data-sheet-idx="${idx}">
           ${item.icon ? `<span class="action-sheet-icon">${item.icon}</span>` : ''}
           <span class="action-sheet-text">${esc(item.label)}</span>
         </button>
       `).join('')}
     </div>
     <div class="action-sheet-cancel">
-      <button type="button" class="btn alt sheet-cancel-btn">Cancel</button>
+      <button type="button" class="btn alt sheet-cancel-btn action-sheet-cancel-btn">Cancel</button>
     </div>
   `;
   modal(content);

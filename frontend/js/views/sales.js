@@ -928,11 +928,21 @@ export function renderSales() {
                   <td data-label="Total" style="text-align:right;font-weight:600">${fmt(d.total)}</td>
                   <td data-label="Status"><span class="pd-pill ${pillCls}">${pillTxt}</span></td>
                   <td data-label="Actions" style="text-align:right">
-                    <div class="pd-btn-row desktop-actions" style="justify-content:flex-end">
-                      <button type="button" class="btn sm" data-action="view" data-no="${esc(d.no)}">View</button>
-                      <button type="button" class="btn alt sm" data-action="edit" data-no="${esc(d.no)}">Edit</button>
-                      ${!isPaid && !d.cancelled ? `<button type="button" class="btn alt sm" data-action="pay" data-no="${esc(d.no)}">Mark paid</button>` : ''}
-                      <button type="button" class="btn red sm" data-action="del" data-no="${esc(d.no)}">Delete</button>
+                    <div class="pd-btn-row desktop-actions sales-desktop-actions" style="justify-content:flex-end">
+                      <button type="button" class="sales-icon-btn sales-btn-view" data-action="view" data-no="${esc(d.no)}" title="View Invoice" aria-label="View Invoice">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      </button>
+                      <button type="button" class="sales-icon-btn sales-btn-edit" data-action="edit" data-no="${esc(d.no)}" title="Edit Invoice" aria-label="Edit Invoice">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                      </button>
+                      ${!isPaid && !d.cancelled ? `
+                        <button type="button" class="sales-icon-btn sales-btn-pay" data-action="pay" data-no="${esc(d.no)}" title="Mark as Paid" aria-label="Mark as Paid">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                        </button>
+                      ` : ''}
+                      <button type="button" class="sales-icon-btn sales-btn-del" data-action="del" data-no="${esc(d.no)}" title="Delete Invoice" aria-label="Delete Invoice">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                      </button>
                     </div>
                     <button type="button" class="pd-more-btn" data-action="more" data-no="${esc(d.no)}" data-id="${esc(d.id)}" title="Actions" aria-label="Actions">⋮</button>
                   </td>
@@ -1679,12 +1689,14 @@ export function bindSalesEvents() {
         const sheetItems = [
           {
             label: 'View Invoice',
-            icon: '👁️',
+            variant: 'view',
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
             onClick: () => showInvoicePreviewModal(doc)
           },
           {
             label: 'Edit Invoice',
-            icon: '✏️',
+            variant: 'edit',
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`,
             onClick: () => {
               salesState.tab = 'new';
               salesState.editNo = no;
@@ -1698,7 +1710,8 @@ export function bindSalesEvents() {
         if (!isPaid && !doc.cancelled) {
           sheetItems.push({
             label: 'Mark as Paid',
-            icon: '💵',
+            variant: 'pay',
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>`,
             onClick: () => {
               markSalePaid(doc, () => {
                 container.innerHTML = renderSales();
@@ -1709,8 +1722,9 @@ export function bindSalesEvents() {
         }
         sheetItems.push({
           label: 'Delete Invoice',
-          icon: '🗑️',
+          variant: 'delete',
           danger: true,
+          icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
           onClick: () => {
             if (confirm(`Are you sure you want to delete invoice ${no}?`)) {
               if (doc.je) {
