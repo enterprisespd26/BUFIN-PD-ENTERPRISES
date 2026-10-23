@@ -2021,20 +2021,6 @@ export function newTransferForm() {
           </div>
         </div>
 
-        <!-- Auto-Detected Transfer Scenario Card -->
-        <div id="xfer_type_banner" class="xfer-scenario-banner xfer-scenario-deposit">
-          <div class="xfer-scenario-left">
-            <div id="xfer_type_icon" class="xfer-scenario-icon xfer-scenario-deposit">
-              ${svgIcons.bank}
-            </div>
-            <div class="xfer-scenario-text">
-              <b id="xfer_type_title" class="xfer-scenario-title">Scenario A: Cash Deposit (Cash → Bank)</b>
-              <div id="xfer_type_desc" class="xfer-scenario-desc">Depositing cash from counter/drawer into bank account</div>
-            </div>
-          </div>
-          <span id="xfer_type_tag" class="xfer-scenario-pill xfer-scenario-deposit">Deposit</span>
-        </div>
-
         <!-- From Account Dropdown -->
         <div class="xfer-field">
           <label class="xfer-label" for="xfer_from">
@@ -2073,6 +2059,20 @@ export function newTransferForm() {
           <div id="xfer_to_bal" class="xfer-balance-hint">
             Current Balance: <b>₹0.00</b>
           </div>
+        </div>
+
+        <!-- Auto-Detected Transfer Scenario Card -->
+        <div id="xfer_type_banner" class="xfer-scenario-banner xfer-scenario-deposit">
+          <div class="xfer-scenario-left">
+            <div id="xfer_type_icon" class="xfer-scenario-icon xfer-scenario-deposit">
+              ${svgIcons.bank}
+            </div>
+            <div class="xfer-scenario-text">
+              <b id="xfer_type_title" class="xfer-scenario-title">Scenario A: Cash Deposit (Cash → Bank)</b>
+              <div id="xfer_type_desc" class="xfer-scenario-desc">Depositing cash from counter/drawer into bank account</div>
+            </div>
+          </div>
+          <span id="xfer_type_tag" class="xfer-scenario-pill xfer-scenario-deposit">Deposit</span>
         </div>
 
         <!-- Live Balance Warning if Amount > Available Balance -->
