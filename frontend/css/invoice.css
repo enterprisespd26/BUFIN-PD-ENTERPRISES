@@ -295,13 +295,16 @@
   line-height: 1.45;
 }
 
-.sheet table {
+.sheet table,
+.pd-sheet-table {
   width: 100%;
   margin: 12px 0;
   border-collapse: collapse;
+  border-bottom: 2px solid #121c22 !important;
 }
 
-.sheet th {
+.sheet th,
+.pd-sheet-table th {
   background: #121c22 !important;
   color: #ffffff !important;
   font-size: 12px;
@@ -310,10 +313,23 @@
   border: 1px solid #99aaaa;
 }
 
-.sheet td {
+.sheet td,
+.pd-sheet-table td {
   border: 1px solid #99aaaa;
   padding: 6px 8px;
   font-size: 12px;
+}
+
+/* Solid black closing line at the end of item list */
+.sheet table tbody tr:last-child td,
+.sheet table tr:last-child td,
+.pd-sheet-table tbody tr:last-child td,
+.pd-sheet-table tr.pd-last-item-row td,
+.pd-last-item-row td,
+.pd-invoice-card .sheet table tbody tr:last-child td,
+.pd-invoice-card .sheet table tr:last-child td,
+.pd-invoice-card .sheet table tr.pd-last-item-row td {
+  border-bottom: 2px solid #121c22 !important;
 }
 
 .sheet .tot {

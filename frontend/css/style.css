@@ -442,7 +442,7 @@ th {
   background: var(--mu);
 }
 
-tr:last-child td {
+table:not(.sheet table):not(.pd-sheet-table) tr:last-child td {
   border-bottom: 0;
 }
 

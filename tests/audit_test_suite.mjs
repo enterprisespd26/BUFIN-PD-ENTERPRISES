@@ -65,7 +65,7 @@ import { db, setDb, post, checkCashLiquidity, net, dstat, out, sgn, acc, reverse
 import { getInventoryStock } from '../frontend/js/views/bills.js';
 import { taxSplit } from '../frontend/js/modules/actions.js';
 import { saveAttachments, getAttachments } from '../frontend/js/modules/attachments.js';
-import { detectHsnCode } from '../frontend/js/views/sales.js';
+import { detectHsnCode, renderSheet } from '../frontend/js/views/sales.js';
 
 // Reset database helper
 function resetTestDb() {
@@ -319,6 +319,19 @@ test('TC-SALES-05: Auto-generate HSN codes based on item/material name and elimi
     resolvedHsn = autoHsn;
   }
   assert.equal(resolvedHsn, '6305', 'Legacy item "gbg" stuck with 7204 must resolve to 6305');
+});
+
+test('TC-SALES-06: Invoice items table closing black line at end of item list', () => {
+  resetTestDb();
+  const html = renderSheet({
+    no: 'PD/2627/0001',
+    date: '2026-10-11',
+    lines: [
+      { n: 'Copper scrap', h: '7404', q: 100, u: 'kg', r: 60 }
+    ]
+  });
+  assert.ok(html.includes('class="pd-sheet-table"'), 'Invoice table must include class pd-sheet-table');
+  assert.ok(html.includes('class="pd-last-item-row"'), 'Last row of item list must have class pd-last-item-row for closing border');
 });
 
 // ========================================================

@@ -253,7 +253,9 @@ export function renderSheet(o) {
   if (f.isPaid) {
     termsTxt = termsTxt.replace(/^\s*1\.\s*Payment within[^\n]*/mi, '1. Full payment received upon dispatch.');
   }
-  const rows = (o.lines || []).map((l, i) => `<tr>
+  const rows = (o.lines || []).map((l, i) => {
+    const isLast = i === (o.lines.length - 1);
+    return `<tr${isLast ? ' class="pd-last-item-row"' : ''}>
     <td>${i + 1}</td>
     <td>${esc(l.n)}</td>
     <td>${esc(l.h || '')}</td>
@@ -261,7 +263,8 @@ export function renderSheet(o) {
     <td>${esc(l.u || 'kg')}</td>
     <td class="r">${(+l.r).toFixed(2)}</td>
     <td class="r">${((l.q || 0) * (l.r || 0)).toFixed(2)}</td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 
   const taxRowsHtml = f.m === 'intra'
     ? `<div><span>CGST @ ${(f.rt / 2)}%</span><span>${inr(f.half)}</span></div><div><span>SGST @ ${(f.rt / 2)}%</span><span>${inr(f.half)}</span></div>`
@@ -299,7 +302,7 @@ export function renderSheet(o) {
           Place of supply: ${esc(o.c?.s || s.state || 'Odisha')}
         </div>
       </div>
-      <div class="tbl-scroll"><table>
+      <div class="tbl-scroll"><table class="pd-sheet-table">
         <thead>
           <tr>
             <th>#</th>
@@ -485,6 +488,9 @@ export function mkPdf(o) {
     });
     y += h;
   });
+
+  // Solid black closing line at the end of item list
+  p.setDrawColor(18, 28, 34).setLineWidth(0.4).line(M, y, M + IW, y);
 
   const rows = [['Subtotal', R(f.sub)]];
   if (f.disc) rows.push(['Discount', '- ' + R(f.disc)], ['Taxable value', R(f.tx)]);
@@ -2436,9 +2442,10 @@ ${$('#pd-sheet-css')?.textContent || ''}
 .ttl { text-align: center; font-weight: 700; font-size: 16px; letter-spacing: 1px; margin: 14px 0 10px; color: #121c22; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .box { border: 1px solid #99aaaa; padding: 8px 10px; min-height: 80px; border-radius: 4px; font-size: 12px; line-height: 1.45; }
-table { width: 100%; margin: 12px 0; border-collapse: collapse; }
+table { width: 100%; margin: 12px 0; border-collapse: collapse; border-bottom: 2px solid #121c22 !important; }
 th { background: #121c22 !important; color: #ffffff !important; font-size: 12px; font-weight: 600; padding: 6px 8px; border: 1px solid #99aaaa; text-align: left; }
 td { border: 1px solid #99aaaa; padding: 6px 8px; font-size: 12px; }
+tr:last-child td, tr.pd-last-item-row td { border-bottom: 2px solid #121c22 !important; }
 .r { text-align: right; }
 .tot { margin-left: auto; max-width: 300px; margin-top: 10px; }
 .tot div { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
