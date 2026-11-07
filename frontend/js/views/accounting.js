@@ -246,11 +246,9 @@ export function renderOpen() {
         </span>
       </div>
       <div class="op-hdr-date-right">
-        <div class="op-hdr-input-wrap">
-          <input type="date" id="od" value="${dt}" ${isLocked ? 'readonly' : ''} aria-label="Balances as of date">
-          ${isLocked ? `<div class="op-date-overlay" data-a="unlockdate" title="Click to change date"></div>` : ''}
-        </div>
         ${isLocked ? `
+          <span class="op-hdr-date-val">${dt ? dt.split('-').reverse().join('/') : ''}</span>
+          <input type="date" id="od" value="${dt}" readonly aria-label="Balances as of date" class="op-hdr-hidden-input">
           <button type="button" class="op-hdr-change-btn" data-a="unlockdate" title="Change date">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 20h9"></path>
@@ -258,7 +256,11 @@ export function renderOpen() {
             </svg>
             <span class="op-hdr-change-text">Change</span>
           </button>
-        ` : ''}
+        ` : `
+          <div class="op-hdr-input-wrap">
+            <input type="date" id="od" value="${dt}" aria-label="Balances as of date">
+          </div>
+        `}
       </div>
     </div>
   `;

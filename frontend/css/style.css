@@ -2234,6 +2234,30 @@ aside.open ~ #ov {
   flex-shrink: 0;
 }
 
+.op-hdr-date-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx, #0f172a);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+  display: inline-block;
+  padding: 0 4px;
+  user-select: none;
+}
+
+.op-hdr-hidden-input {
+  position: absolute !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  clip: rect(0, 0, 0, 0) !important;
+}
+
 .op-hdr-input-wrap {
   position: relative;
   display: inline-flex;
@@ -2410,11 +2434,11 @@ aside.open ~ #ov {
   .op-hdr-date-card {
     height: 34px !important;
     padding: 2px 6px 2px 8px !important;
-    gap: 5px !important;
+    gap: 6px !important;
     border-radius: 8px !important;
     flex-shrink: 0 !important;
     margin-left: auto !important;
-    max-width: calc(100% - 140px) !important;
+    max-width: calc(100% - 130px) !important;
   }
 
   .op-lbl-full {
@@ -2426,24 +2450,34 @@ aside.open ~ #ov {
     font-size: 11.5px !important;
   }
 
+  .op-hdr-date-val {
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    letter-spacing: 0.2px !important;
+    padding: 0 2px !important;
+    display: inline-block !important;
+  }
+
   .op-hdr-date-card input[type="date"] {
     font-size: 12px !important;
     height: 28px !important;
   }
 
-  .op-hdr-date-card.is-locked input[type="date"] {
-    width: 96px !important;
-    padding: 2px 2px !important;
-  }
-
   .op-hdr-date-card.is-editing input[type="date"] {
-    width: 112px !important;
+    width: 116px !important;
+    max-width: 120px !important;
     padding: 2px 4px !important;
   }
 
   .op-hdr-change-btn {
     height: 26px !important;
-    padding: 0 6px !important;
+    width: 26px !important;
+    min-width: 26px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .op-hdr-change-text {
