@@ -986,12 +986,16 @@ export function bindBillsEvents() {
   if (fileInput) {
     fileInput.onchange = async e => {
       for (const f of e.target.files) {
-        if (!(f.type.startsWith('image/') || f.type === 'application/pdf' || /\.pdf$/i.test(f.name))) {
-          toast('Only JPG, PNG or PDF files are allowed');
+        if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
+          toast('PDF files are not stored in the database. Please attach receipt photos or images (JPG, PNG, WebP).');
+          continue;
+        }
+        if (!f.type.startsWith('image/')) {
+          toast('Only image files (JPG, PNG, WebP) are allowed');
           continue;
         }
         const b = await shrink(f);
-        billsState.files.push({ name: b.name, type: b.type || 'application/pdf', blob: b });
+        billsState.files.push({ name: b.name, type: b.type || 'image/jpeg', blob: b });
       }
       fileInput.value = '';
       drawAttachedFiles();

@@ -156,7 +156,7 @@ export function injectAttachmentStyles() {
 }
 
 // ---- Reusable attachment panel (used by bills.js and others) ----
-export function attachmentPanelHTML({ uploadId, cameraId, inputId, listId, listHTML, label = 'Bill Attachments & Weighbridge Slips', sub = 'JPG, PNG or PDF · scan with camera or upload' }) {
+export function attachmentPanelHTML({ uploadId, cameraId, inputId, listId, listHTML, label = 'Bill Attachments & Weighbridge Slips', sub = 'JPG, PNG, WebP · scan with camera or upload' }) {
   return `
     <div class="bf-att">
       <div class="bf-att-head">
@@ -169,7 +169,7 @@ export function attachmentPanelHTML({ uploadId, cameraId, inputId, listId, listH
           <button type="button" class="bf-btn pri" id="${cameraId}">${ICONS.camera(16)}<span>Scan with camera</span></button>
         </div>
       </div>
-      <input type="file" id="${inputId}" accept="image/*,.pdf,application/pdf" multiple style="display:none">
+      <input type="file" id="${inputId}" accept="image/*,.jpg,.jpeg,.png,.webp" multiple style="display:none">
       <div class="bf-att-body" id="${listId}">${listHTML}</div>
     </div>`;
 }
@@ -284,6 +284,11 @@ export async function deleteAttachments(recordId) {
 // ==========================================
 export function shrinkImage(file, maxDimension = 1600, quality = 0.84) {
   return new Promise((resolve) => {
+    if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')) {
+      toast('PDF files are not stored in database. Please upload an image (JPG, PNG, WebP) or take a photo.');
+      resolve(null);
+      return;
+    }
     if (!file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = () => resolve({
@@ -402,7 +407,7 @@ export function openCameraScanner(onCaptured) {
       console.warn('Camera stream error:', err);
       showStatus(`<div class="ico">${ICONS.alert(22)}</div>
         <div><b style="color:#fff">Camera unavailable</b><br>${esc(err.message || 'Permission denied')}</div>
-        <small>Use “Upload” below to choose an image or PDF instead.</small>`);
+        <small>Use “Upload” below to choose an image instead.</small>`);
     }
   }
 
@@ -417,7 +422,7 @@ export function openCameraScanner(onCaptured) {
       <div class="l">
         <label class="bf-btn ghost-dark" style="cursor:pointer;margin:0">
           ${ICONS.upload(16)}<span class="lbl-hide">Upload</span>
-          <input type="file" id="bfFallback" accept="image/*,application/pdf" style="display:none">
+          <input type="file" id="bfFallback" accept="image/*" style="display:none">
         </label>
       </div>
       <button type="button" class="bf-shutter" id="bfSnap" aria-label="Capture photo"><span></span></button>
@@ -487,14 +492,14 @@ export function renderAttachmentControl({ idPrefix, files = [], label = 'Receipt
       <div class="bf-att-head">
         <div class="bf-att-title">
           <div class="bf-att-ico">${ICONS.paperclip(18)}</div>
-          <div><b>${esc(label)}</b><small>JPG, PNG or PDF · scan with camera or upload</small></div>
+          <div><b>${esc(label)}</b><small>JPG, PNG, WebP · scan with camera or upload</small></div>
         </div>
         <div class="bf-att-actions">
           <button type="button" class="bf-btn" id="${idPrefix}_btn_upload">${ICONS.upload(16)}<span>Attach file</span></button>
           <button type="button" class="bf-btn pri" id="${idPrefix}_btn_camera">${ICONS.camera(16)}<span>Scan with camera</span></button>
         </div>
       </div>
-      <input type="file" id="${idPrefix}_file_input" multiple accept="image/*,application/pdf,.csv" style="display:none">
+      <input type="file" id="${idPrefix}_file_input" multiple accept="image/*,.csv" style="display:none">
       <input type="file" id="${idPrefix}_camera_input" accept="image/*" capture="environment" style="display:none">
       <div class="bf-att-body" id="${idPrefix}_file_list">${renderAttachmentPills(idPrefix, files)}</div>
     </div>`;

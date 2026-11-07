@@ -683,9 +683,9 @@
           {
             "url": "https://res.cloudinary.com/iqsinmcr/image/upload/v1729234568/sample.jpg",
             "thumb": "https://res.cloudinary.com/iqsinmcr/image/upload/c_thumb,w_200,g_face/v1729234568/sample.jpg",
-            "name": "invoice_kalinga_steel.pdf",
+            "name": "invoice_kalinga_steel.jpg",
             "size": 182000,
-            "type": "application/pdf",
+            "type": "image/jpeg",
             "at": "2026-10-09T14:05:00.000Z"
           }
         ]

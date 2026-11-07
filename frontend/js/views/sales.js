@@ -599,7 +599,7 @@ export function showInvoicePreviewModal(doc) {
   });
 
   // Helper guidance modal for WhatsApp Desktop / Web sharing
-  const showWaHelperModal = ({ docNo, customerName, phone, fileName, cloudUrl, waUrl, fullMsg, onRedownload }) => {
+  const showWaHelperModal = ({ docNo, customerName, phone, fileName, waUrl, fullMsg, onRedownload }) => {
     const existing = document.getElementById('pd_wa_guide_modal');
     if (existing) existing.remove();
 
@@ -629,9 +629,9 @@ export function showInvoicePreviewModal(doc) {
           <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
             <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#ecfdf5;color:#059669;font-weight:700;font-size:12px;flex-shrink:0;">✓</span>
             <div style="font-size:13px;color:#334155;line-height:1.45;">
-              <b>WhatsApp chat opened with invoice breakdown${cloudUrl ? ' & online PDF link' : ''}:</b>
+              <b>WhatsApp chat opened with invoice breakdown:</b>
               <div style="font-size:12px;color:#64748b;margin-top:2px;">
-                ${cloudUrl ? 'Recipient can tap the secure PDF link directly inside WhatsApp to view or download the invoice.' : 'Complete bill breakdown, items and totals are pre-filled in your WhatsApp message.'}
+                Complete bill breakdown, items and totals are pre-filled in your WhatsApp message.
               </div>
             </div>
           </div>
@@ -649,8 +649,8 @@ export function showInvoicePreviewModal(doc) {
           <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:12px;font-size:12.5px;color:#92400e;line-height:1.5;">
             💡 <b>How to send PDF document with text:</b>
             <div style="margin-top:4px;font-size:12px;line-height:1.5;">
-              • <b>Option 1:</b> Hit send in WhatsApp — the message already includes the complete summary and clickable official PDF link!<br>
-              • <b>Option 2:</b> Drag the downloaded <b>${esc(fileName)}</b> file from your browser into WhatsApp and paste (Cmd+V) the caption. Only ONE clean document will be sent!
+              • The official PDF (<b>${esc(fileName)}</b>) has been downloaded to your computer and the summary copied to clipboard.<br>
+              • Drag or attach the file into your WhatsApp chat, and paste (Cmd+V / Ctrl+V) the message caption.
             </div>
           </div>
         </div>
@@ -724,43 +724,10 @@ export function showInvoicePreviewModal(doc) {
         console.warn('Could not generate PDF object:', err);
       }
 
-      // 2. Upload PDF to Cloudinary for instant direct download link
-      let cloudPdfUrl = '';
-      if (pdfBlob) {
-        try {
-          const reader = new FileReader();
-          const base64Data = await new Promise((resolve, reject) => {
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(pdfBlob);
-          });
+      // 2. Build complete message text (pure text breakdown - no remote PDF uploads or db storage)
+      const fullMsg = baseMsg + '\n\nThank you for your business!';
 
-          const uploadPromise = fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ file: base64Data, folder: 'bufin/invoices' })
-          }).then(r => r.ok ? r.json() : null);
-
-          const res = await Promise.race([
-            uploadPromise,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500))
-          ]);
-          if (res && res.url) {
-            cloudPdfUrl = res.url;
-          }
-        } catch (e) {
-          console.warn('Cloud upload skipped or timed out:', e?.message || e);
-        }
-      }
-
-      // 3. Build complete message text
-      let fullMsg = baseMsg;
-      if (cloudPdfUrl) {
-        fullMsg += `\n\n📄 *Download / View Official PDF Invoice:*\n${cloudPdfUrl}`;
-      }
-      fullMsg += `\n\nThank you for your business!`;
-
-      // 4. Mobile Devices ONLY (Android / iOS phones & tablets):
+      // 3. Mobile Devices ONLY (Android / iOS phones & tablets):
       // Web Share API Level 2 cleanly attaches 1 file with caption on mobile OSs.
       // On desktop (macOS / Windows), navigator.share is deliberately NOT used because
       // macOS Chrome's WebShare bridge causes duplicate attachments and prepends temp file paths.
@@ -786,8 +753,8 @@ export function showInvoicePreviewModal(doc) {
         }
       }
 
-      // 5. Desktop (Mac / Windows) direct WhatsApp workflow:
-      // Download single PDF file automatically to Downloads
+      // 4. Desktop (Mac / Windows) direct WhatsApp workflow:
+      // Download single PDF file automatically to Downloads purely client-side
       if (p) {
         try {
           p.save(pdfFileName);
@@ -804,20 +771,19 @@ export function showInvoicePreviewModal(doc) {
         } catch (e) {}
       }
 
-      // Open WhatsApp directly to the customer's chat with formatted text & online PDF link
+      // Open WhatsApp directly to the customer's chat with formatted text
       const cleanPhone = custPhone.replace(/\D/g, '');
       const waUrl = cleanPhone
         ? `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(fullMsg)}`
         : `https://api.whatsapp.com/send?text=${encodeURIComponent(fullMsg)}`;
       window.open(waUrl, '_blank');
 
-      // 6. Display a sleek guidance modal on desktop
+      // 5. Display a sleek guidance modal on desktop
       showWaHelperModal({
         docNo: doc.no,
         customerName: cName,
         phone: cleanPhone,
         fileName: pdfFileName,
-        cloudUrl: cloudPdfUrl,
         waUrl: waUrl,
         fullMsg: fullMsg,
         onRedownload: () => {
