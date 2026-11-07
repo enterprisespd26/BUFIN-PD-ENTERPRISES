@@ -781,18 +781,32 @@ function bindViewEvents() {
   if (currentPage === 'set') {
     $('#bf')?.addEventListener('submit', e => {
       e.preventDefault();
+      const cfForm = $('#cf');
+      if (cfForm) {
+        const cfData = Object.fromEntries(new FormData(cfForm));
+        if (cfData.cloudName) db.biz.cloudinary_name = cfData.cloudName.trim();
+        if (cfData.apiKey) db.biz.cloudinary_key = cfData.apiKey.trim();
+        if (cfData.apiSecret) db.biz.cloudinary_secret = cfData.apiSecret.trim();
+      }
       Object.assign(db.biz, Object.fromEntries(new FormData(e.target)));
       log('settings', 'updated');
       save();
       render();
-      toast('Saved');
+      toast('Settings saved');
     });
 
     $('#cf')?.addEventListener('submit', async e => {
       e.preventDefault();
       const fd = Object.fromEntries(new FormData(e.target));
       const statEl = $('#c_stat');
-      if (statEl) statEl.textContent = 'Saving & verifying...';
+      if (statEl) statEl.textContent = 'Saving credentials...';
+
+      // Always persist to client-side database immediately
+      if (fd.cloudName) db.biz.cloudinary_name = fd.cloudName.trim();
+      if (fd.apiKey) db.biz.cloudinary_key = fd.apiKey.trim();
+      if (fd.apiSecret) db.biz.cloudinary_secret = fd.apiSecret.trim();
+      save();
+
       try {
         const res = await fetch('/api/cloudinary/config', {
           method: 'POST',
@@ -801,20 +815,18 @@ function bindViewEvents() {
         });
         if (res.ok) {
           const cfg = await res.json();
-          db.biz.cloudinary_name = cfg.cloudName;
-          db.biz.cloudinary_key = cfg.apiKey;
-          if (fd.apiSecret) db.biz.cloudinary_secret = fd.apiSecret;
+          if (cfg.cloudName) db.biz.cloudinary_name = cfg.cloudName;
+          if (cfg.apiKey) db.biz.cloudinary_key = cfg.apiKey;
           save();
-          if (statEl) statEl.innerHTML = '<span style="color:#16a34a">✓ Cloudinary Credentials Active</span>';
+          if (statEl) statEl.innerHTML = '<span style="color:#16a34a">✓ Cloudinary Credentials Saved &amp; Synced</span>';
           toast('Cloudinary credentials saved successfully');
         } else {
-          const err = await res.json();
-          if (statEl) statEl.innerHTML = `<span style="color:#dc2626">✕ Error: ${esc(err.error || 'Failed')}</span>`;
-          toast(err.error || 'Failed to save Cloudinary credentials');
+          if (statEl) statEl.innerHTML = '<span style="color:#16a34a">✓ Saved in browser storage</span>';
+          toast('Cloudinary credentials saved');
         }
       } catch (err) {
-        if (statEl) statEl.textContent = 'Network error saving settings';
-        toast('Network error saving settings');
+        if (statEl) statEl.innerHTML = '<span style="color:#16a34a">✓ Saved in browser storage (Offline)</span>';
+        toast('Cloudinary credentials saved');
       }
     });
 

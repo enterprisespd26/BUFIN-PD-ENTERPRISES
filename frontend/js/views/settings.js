@@ -137,7 +137,7 @@ export function renderSettings() {
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;">
             ${fld('cloudName', 'Cloudinary Cloud Name', 'text', db.biz.cloudinary_name || 'iqsinmcr')}
             ${fld('apiKey', 'Cloudinary API Key', 'text', db.biz.cloudinary_key || '573667157386361')}
-            ${fld('apiSecret', 'Cloudinary API Secret (leave blank to keep current)', 'password', '')}
+            ${fld('apiSecret', 'Cloudinary API Secret', 'password', db.biz.cloudinary_secret || '')}
           </div>
           <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
             <button type="submit" class="p sm">Update Server Credentials</button>

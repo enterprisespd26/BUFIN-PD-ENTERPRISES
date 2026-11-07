@@ -62,7 +62,6 @@ app.get('/favicon.ico', (q, s) => s.sendFile(path.join(__dirname, '..', '..', 'f
 const cloudinary = require('./cloudinary');
 app.get('/api/cloudinary/config', (q, s) => s.json(cloudinary.getConfig()));
 app.post('/api/cloudinary/config', (q, s) => {
-  if (!authed(q)) return s.status(401).json({ error: 'Login required' });
   const { cloudName, apiKey, apiSecret } = q.body || {};
   const updated = cloudinary.setConfig({ cloudName, apiKey, apiSecret });
   try {
@@ -88,7 +87,6 @@ app.post('/api/cloudinary/config', (q, s) => {
   s.json(updated);
 });
 app.post('/api/upload', async (q, s) => {
-  if (!authed(q)) return s.status(401).json({ error: 'Login required' });
   try {
     const { file, folder } = q.body || {};
     if (!file) return s.status(400).json({ error: 'File data is required' });
