@@ -1281,6 +1281,16 @@ document.addEventListener('click', e => {
   }
 });
 
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const t = e.target.closest('[data-a]');
+    if (t && ACTIONS[t.dataset.a] && t.getAttribute('role') === 'button' && t.tagName !== 'BUTTON' && t.tagName !== 'INPUT') {
+      e.preventDefault();
+      ACTIONS[t.dataset.a](t.dataset.i);
+    }
+  }
+});
+
 window.addEventListener('hashchange', render);
 window.addEventListener('bufin-render', render);
 

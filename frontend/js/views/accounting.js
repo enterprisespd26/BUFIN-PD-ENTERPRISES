@@ -231,40 +231,41 @@ export function renderOpen() {
     `;
   }).join('');
 
-  return head('Opening Balances') +
-    statusBanner +
-    `<div class="op-date-filter-row">
-      <div class="op-date-card ${isLocked ? 'is-locked' : 'is-editing'}">
-        <div class="op-date-left">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="op-date-icon">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          <span class="op-date-label">Balances as of</span>
-          <span id="od_readable" class="op-date-readable">${formatReadableDate(dt)}</span>
+  const dateCard = `
+    <div class="op-hdr-date-card ${isLocked ? 'is-locked' : 'is-editing'}" ${isLocked ? 'data-a="unlockdate" role="button" tabindex="0" title="Click to change opening date"' : ''}>
+      <div class="op-hdr-date-left">
+        <svg class="op-hdr-calendar-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span class="op-hdr-date-label">
+          <span class="op-lbl-full">Balances as of</span>
+          <span class="op-lbl-short">As of</span>
+        </span>
+      </div>
+      <div class="op-hdr-date-right">
+        <div class="op-hdr-input-wrap">
+          <input type="date" id="od" value="${dt}" ${isLocked ? 'readonly' : ''} aria-label="Balances as of date">
+          ${isLocked ? `<div class="op-date-overlay" data-a="unlockdate" title="Click to change date"></div>` : ''}
         </div>
-        <div class="op-date-right">
-          <div class="op-date-input-wrap">
-            <input type="date" id="od" value="${dt}" ${isLocked ? 'readonly' : ''} aria-label="Balances as of date">
-            ${isLocked ? `
-              <div class="op-date-overlay" data-a="unlockdate" title="Click or tap to change date"></div>
-            ` : ''}
-          </div>
-          ${isLocked ? `
-            <button type="button" class="btn sm op-btn-change-date" data-a="unlockdate" title="Change opening date">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-              </svg>
-              <span>Change</span>
-            </button>
-          ` : ''}
-        </div>
+        ${isLocked ? `
+          <button type="button" class="op-hdr-change-btn" data-a="unlockdate" title="Change date">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+            <span class="op-hdr-change-text">Change</span>
+          </button>
+        ` : ''}
       </div>
     </div>
-    <div class="wrap">
+  `;
+
+  return head('Opening Balances', dateCard, 'ob-header-bar') +
+    statusBanner +
+    `<div class="wrap">
       <table>
         <thead>
           <tr>

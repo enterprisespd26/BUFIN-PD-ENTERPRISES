@@ -2144,123 +2144,171 @@ aside.open ~ #ov {
   color: #1e293b;
 }
 
-/* ================= Opening Balances Date Control ================= */
-.op-date-filter-row {
-  margin-bottom: 16px;
-  width: 100%;
+/* ================= Opening Balances Header Bar & Top-Right Date Card ================= */
+.bar.ob-header-bar {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: nowrap !important;
+  gap: 12px !important;
+  margin-bottom: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
-.op-date-card {
+
+.bar.ob-header-bar h2 {
+  flex: 0 1 auto !important;
+  margin: 0 !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: var(--tx, #0f172a) !important;
+  letter-spacing: -0.01em !important;
+  white-space: nowrap !important;
+}
+
+.op-hdr-date-card {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
   background: var(--sf, #ffffff);
   border: 1px solid var(--bd, #e2e8f0);
-  border-radius: 12px;
-  padding: 8px 14px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-  max-width: 480px;
-  width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.op-date-card.is-editing {
-  border-color: #93c5fd;
-  background: #f8fbff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
-}
-.op-date-card.is-locked {
-  cursor: pointer;
-}
-.op-date-left {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  flex-shrink: 0;
-}
-.op-date-icon {
-  flex-shrink: 0;
-}
-.op-date-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--tx, #0f172a);
-  white-space: nowrap;
-}
-.op-date-readable {
-  font-size: 11.5px;
-  color: #1e40af;
-  font-weight: 600;
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
-  padding: 2px 7px;
-  border-radius: 5px;
-  white-space: nowrap;
-}
-.op-date-right {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.op-date-input-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.op-date-card input[type="date"] {
-  font-size: 13.5px;
+  border-radius: 10px;
+  padding: 4px 8px 4px 12px;
   height: 38px;
-  min-height: 38px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--bd, #cbd5e1);
-  background: var(--sf, #ffffff);
-  color: var(--tx, #0f172a);
-  font-weight: 600;
   box-sizing: border-box;
-  outline: none;
-  transition: border-color 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: all 0.15s ease;
+  user-select: none;
+  flex-shrink: 0;
+  margin-left: auto;
 }
-.op-date-card.is-editing input[type="date"] {
-  border: 1.5px solid #2563eb;
+
+.op-hdr-date-card.is-locked {
+  cursor: pointer;
   background: #ffffff;
 }
-.op-date-card.is-editing input[type="date"]:focus {
+
+.op-hdr-date-card.is-locked:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06);
+}
+
+.op-hdr-date-card.is-editing {
+  border-color: #93c5fd;
+  background: #f0f7ff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.op-hdr-date-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.op-hdr-calendar-icon {
+  flex-shrink: 0;
+}
+
+.op-hdr-date-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.op-lbl-full {
+  display: inline;
+}
+
+.op-lbl-short {
+  display: none;
+}
+
+.op-hdr-date-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.op-hdr-input-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.op-hdr-date-card input[type="date"] {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx, #0f172a);
+  font-family: inherit;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.op-hdr-date-card.is-locked input[type="date"] {
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  padding: 3px 4px;
+  height: 30px;
+  width: 112px;
+}
+
+.op-hdr-date-card.is-locked input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.op-hdr-date-card.is-editing input[type="date"] {
+  border: 1.5px solid #2563eb;
+  background: #ffffff;
+  padding: 3px 8px;
+  height: 30px;
+  width: 126px;
+}
+
+.op-hdr-date-card.is-editing input[type="date"]:focus {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
-.op-date-card.is-locked input[type="date"] {
-  background: #f8fafc;
-  cursor: pointer;
-  border-color: #e2e8f0;
-}
+
 .op-date-overlay {
   position: absolute;
   inset: 0;
   cursor: pointer;
   z-index: 2;
-  border-radius: 8px;
+  border-radius: 6px;
 }
-.op-btn-change-date {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
-  font-size: 11.5px;
-  font-weight: 600;
-  height: 34px;
-  padding: 0 9px;
-  border-radius: 7px;
-  cursor: pointer;
+
+.op-hdr-change-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
 }
-.op-btn-change-date:hover {
+
+.op-hdr-change-btn:hover {
   background: #dbeafe;
   border-color: #93c5fd;
   color: #1e40af;
+}
+
+.op-hdr-change-btn svg {
+  flex-shrink: 0;
 }
 
 @media (min-width: 641px) {
@@ -2336,39 +2384,70 @@ aside.open ~ #ov {
     font-size: 12.5px !important;
   }
 
-  /* Opening Balances Date Control on Mobile */
-  .op-date-filter-row {
-    margin-bottom: 12px !important;
-  }
-  .op-date-card {
-    max-width: 100% !important;
-    padding: 8px 12px !important;
-    min-height: 48px !important;
+  /* Opening Balances Header Bar & Top-Right Date Card on Mobile */
+  .bar.ob-header-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
     gap: 8px !important;
-    border-radius: 10px !important;
+    margin-bottom: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
-  .op-date-label {
-    font-size: 12.5px !important;
+
+  .bar.ob-header-bar h2 {
+    font-size: clamp(15px, 4.3vw, 18.5px) !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 0 1 auto !important;
+    margin: 0 !important;
   }
-  .op-date-readable {
+
+  .op-hdr-date-card {
+    height: 34px !important;
+    padding: 2px 6px 2px 8px !important;
+    gap: 5px !important;
+    border-radius: 8px !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+    max-width: calc(100% - 140px) !important;
+  }
+
+  .op-lbl-full {
     display: none !important;
   }
-  .op-date-right {
-    flex: 1 1 auto !important;
-    justify-content: flex-end !important;
+
+  .op-lbl-short {
+    display: inline !important;
+    font-size: 11.5px !important;
   }
-  .op-date-card input[type="date"] {
-    width: 138px !important;
-    max-width: 138px !important;
-    font-size: 13px !important;
-    height: 36px !important;
-    min-height: 36px !important;
-    padding: 4px 8px !important;
+
+  .op-hdr-date-card input[type="date"] {
+    font-size: 12px !important;
+    height: 28px !important;
   }
-  .op-btn-change-date {
-    height: 32px !important;
-    padding: 0 8px !important;
-    font-size: 11px !important;
+
+  .op-hdr-date-card.is-locked input[type="date"] {
+    width: 96px !important;
+    padding: 2px 2px !important;
+  }
+
+  .op-hdr-date-card.is-editing input[type="date"] {
+    width: 112px !important;
+    padding: 2px 4px !important;
+  }
+
+  .op-hdr-change-btn {
+    height: 26px !important;
+    padding: 0 6px !important;
+  }
+
+  .op-hdr-change-text {
+    display: none !important;
   }
 
   /* General Ledger & Cash Book Opening Balance Summary Row */
