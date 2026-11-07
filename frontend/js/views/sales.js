@@ -561,7 +561,7 @@ export function showInvoicePreviewModal(doc) {
   });
 
   // Helper guidance modal for WhatsApp Desktop / Web sharing
-  const showWaHelperModal = ({ docNo, customerName, phone, fileName, cloudUrl, waUrl, onRedownload }) => {
+  const showWaHelperModal = ({ docNo, customerName, phone, fileName, cloudUrl, waUrl, fullMsg, onRedownload }) => {
     const existing = document.getElementById('pd_wa_guide_modal');
     if (existing) existing.remove();
 
@@ -591,9 +591,9 @@ export function showInvoicePreviewModal(doc) {
           <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
             <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#ecfdf5;color:#059669;font-weight:700;font-size:12px;flex-shrink:0;">✓</span>
             <div style="font-size:13px;color:#334155;line-height:1.45;">
-              <b>WhatsApp chat opened with invoice summary${cloudUrl ? ' & online PDF link' : ''}:</b>
+              <b>WhatsApp chat opened with invoice breakdown${cloudUrl ? ' & online PDF link' : ''}:</b>
               <div style="font-size:12px;color:#64748b;margin-top:2px;">
-                ${cloudUrl ? 'Customer can tap the secure PDF link directly inside WhatsApp to view or download the invoice.' : 'Complete bill breakdown, items and totals are pre-filled in your WhatsApp message.'}
+                ${cloudUrl ? 'Recipient can tap the secure PDF link directly inside WhatsApp to view or download the invoice.' : 'Complete bill breakdown, items and totals are pre-filled in your WhatsApp message.'}
               </div>
             </div>
           </div>
@@ -601,7 +601,7 @@ export function showInvoicePreviewModal(doc) {
           <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
             <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#eff6ff;color:#2563eb;font-weight:700;font-size:12px;flex-shrink:0;">📥</span>
             <div style="font-size:13px;color:#334155;line-height:1.45;min-width:0;flex:1;">
-              <b>Official PDF document downloaded:</b>
+              <b>Official PDF document downloaded (single clean file):</b>
               <div style="display:inline-flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11.5px;color:#1e293b;margin-top:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                 📄 ${esc(fileName)}
               </div>
@@ -609,16 +609,18 @@ export function showInvoicePreviewModal(doc) {
           </div>
 
           <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:12px;font-size:12.5px;color:#92400e;line-height:1.5;">
-            💡 <b>To attach the PDF document directly into WhatsApp:</b>
-            <div style="margin-top:3px;font-size:12px;">
-              Drag the downloaded <b>${esc(fileName)}</b> file from your browser's download bar and drop it directly into the open WhatsApp chat, or click the paperclip (📎) in WhatsApp!
+            💡 <b>How to send PDF document with text:</b>
+            <div style="margin-top:4px;font-size:12px;line-height:1.5;">
+              • <b>Option 1:</b> Hit send in WhatsApp — the message already includes the complete summary and clickable official PDF link!<br>
+              • <b>Option 2:</b> Drag the downloaded <b>${esc(fileName)}</b> file from your browser into WhatsApp and paste (Cmd+V) the caption. Only ONE clean document will be sent!
             </div>
           </div>
         </div>
 
-        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #f1f5f9;background:#f8fafc;">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #f1f5f9;background:#f8fafc;flex-wrap:wrap;">
+          <button type="button" class="btn alt sm" id="pd_wa_copy_btn" style="font-size:12px;">📋 Copy Text</button>
           <button type="button" class="btn alt sm" id="pd_wa_redownload_btn" style="font-size:12px;">📥 Re-download PDF</button>
-          <button type="button" class="btn green sm" id="pd_wa_reopen_btn" style="font-size:12px;background:#25D366;color:#fff;border:none;">💬 Re-open WhatsApp</button>
+          <button type="button" class="btn green sm" id="pd_wa_reopen_btn" style="font-size:12px;background:#25D366;color:#fff;border:none;">💬 Open WhatsApp</button>
           <button type="button" class="btn pri sm" id="pd_wa_done_btn" style="font-size:12px;">Done</button>
         </div>
       </div>
@@ -630,6 +632,12 @@ export function showInvoicePreviewModal(doc) {
     overlay.querySelector('#pd_wa_close_x').onclick = close;
     overlay.querySelector('#pd_wa_done_btn').onclick = close;
     overlay.querySelector('#pd_wa_reopen_btn').onclick = () => window.open(waUrl, '_blank');
+    overlay.querySelector('#pd_wa_copy_btn').onclick = () => {
+      if (navigator.clipboard && navigator.clipboard.writeText && fullMsg) {
+        navigator.clipboard.writeText(fullMsg);
+        toast('Invoice summary copied to clipboard');
+      }
+    };
     overlay.querySelector('#pd_wa_redownload_btn').onclick = () => {
       if (typeof onRedownload === 'function') onRedownload();
     };
@@ -714,12 +722,18 @@ export function showInvoicePreviewModal(doc) {
       }
       fullMsg += `\n\nThank you for your business!`;
 
-      // 4. Mobile / Supported Browsers: Try Web Share API Level 2 (with PDF file)
-      if (pdfFile && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+      // 4. Mobile Devices ONLY (Android / iOS phones & tablets):
+      // Web Share API Level 2 cleanly attaches 1 file with caption on mobile OSs.
+      // On desktop (macOS / Windows), navigator.share is deliberately NOT used because
+      // macOS Chrome's WebShare bridge causes duplicate attachments and prepends temp file paths.
+      const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
+        (navigator.maxTouchPoints > 1 && !/Macintosh/i.test(navigator.userAgent));
+
+      if (isMobileDevice && pdfFile && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
         try {
+          // Pass ONLY files and text (NO title property to prevent duplicate file attachments)
           await navigator.share({
             files: [pdfFile],
-            title: `${docTitle} #${doc.no}`,
             text: fullMsg
           });
           toast('Shared invoice via system share');
@@ -730,12 +744,12 @@ export function showInvoicePreviewModal(doc) {
             resetBtns();
             return;
           }
-          console.warn('Native share failed, falling back to WhatsApp URL & local download:', err);
+          console.warn('Native mobile share failed, falling back to direct WhatsApp URL:', err);
         }
       }
 
-      // 5. Desktop / WhatsApp Web fallback:
-      // Download the PDF file automatically
+      // 5. Desktop (Mac / Windows) direct WhatsApp workflow:
+      // Download single PDF file automatically to Downloads
       if (p) {
         try {
           p.save(pdfFileName);
@@ -745,14 +759,21 @@ export function showInvoicePreviewModal(doc) {
         }
       }
 
-      // Open WhatsApp with complete formatted text & online PDF link
+      // Copy complete invoice summary to clipboard so user can effortlessly paste into WhatsApp
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(fullMsg);
+        } catch (e) {}
+      }
+
+      // Open WhatsApp directly to the customer's chat with formatted text & online PDF link
       const cleanPhone = custPhone.replace(/\D/g, '');
       const waUrl = cleanPhone
         ? `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(fullMsg)}`
         : `https://api.whatsapp.com/send?text=${encodeURIComponent(fullMsg)}`;
       window.open(waUrl, '_blank');
 
-      // 6. Display a sleek, helpful guidance modal
+      // 6. Display a sleek guidance modal on desktop
       showWaHelperModal({
         docNo: doc.no,
         customerName: cName,
@@ -760,6 +781,7 @@ export function showInvoicePreviewModal(doc) {
         fileName: pdfFileName,
         cloudUrl: cloudPdfUrl,
         waUrl: waUrl,
+        fullMsg: fullMsg,
         onRedownload: () => {
           if (p) {
             p.save(pdfFileName);
