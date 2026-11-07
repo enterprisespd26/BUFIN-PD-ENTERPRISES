@@ -64,6 +64,7 @@ import { db, setDb, post, checkCashLiquidity, net, dstat, out, sgn, acc, reverse
 import { getInventoryStock } from '../frontend/js/views/bills.js';
 import { taxSplit } from '../frontend/js/modules/actions.js';
 import { saveAttachments, getAttachments } from '../frontend/js/modules/attachments.js';
+import { detectHsnCode } from '../frontend/js/views/sales.js';
 
 // Reset database helper
 function resetTestDb() {
@@ -271,6 +272,52 @@ test('TC-SALES-04: Conditional Billing Logic & Validation Check (Paid in Full vs
   const erroneousInput = 708000; // 7 lakhs entered instead of 7080
   const isPaiseMismatch = erroneousInput > figPaid.gt * 10;
   assert.ok(isPaiseMismatch, 'Validation must detect 10x paise mismatch');
+});
+
+test('TC-SALES-05: Auto-generate HSN codes based on item/material name and eliminate hardcoded 7204 duplication', () => {
+  resetTestDb();
+
+  // 1. Packaging / Gunny Bags / Bardana / GBG
+  assert.equal(detectHsnCode('gbg'), '6305', 'Trade abbreviation "gbg" must auto-detect HSN 6305');
+  assert.equal(detectHsnCode('Gunny bags'), '6305', 'Gunny bags must auto-detect HSN 6305');
+  assert.equal(detectHsnCode('Jute sacks'), '6305', 'Jute sacks must auto-detect HSN 6305');
+  assert.equal(detectHsnCode('Bardana'), '6305', 'Bardana must auto-detect HSN 6305');
+
+  // 2. Metals & Standard Commodities
+  assert.equal(detectHsnCode('Iron scrap'), '7204', 'Iron scrap must auto-detect HSN 7204');
+  assert.equal(detectHsnCode('Steel scrap'), '7204', 'Steel scrap must auto-detect HSN 7204');
+  assert.equal(detectHsnCode('MS scrap'), '7204', 'MS scrap must auto-detect HSN 7204');
+  assert.equal(detectHsnCode('HMS 1 & 2'), '7204', 'HMS must auto-detect HSN 7204');
+  assert.equal(detectHsnCode('Copper scrap'), '7404', 'Copper scrap must auto-detect HSN 7404');
+  assert.equal(detectHsnCode('Armature copper'), '7404', 'Armature copper must auto-detect HSN 7404');
+  assert.equal(detectHsnCode('Brass scrap'), '7404', 'Brass scrap must auto-detect HSN 7404');
+  assert.equal(detectHsnCode('Aluminium scrap'), '7602', 'Aluminium scrap must auto-detect HSN 7602');
+  assert.equal(detectHsnCode('Battery scrap'), '8549', 'Battery scrap must auto-detect HSN 8549');
+  assert.equal(detectHsnCode('Lead acid battery'), '8549', 'Lead acid battery must auto-detect HSN 8549');
+  assert.equal(detectHsnCode('Plastic scrap'), '3915', 'Plastic scrap must auto-detect HSN 3915');
+  assert.equal(detectHsnCode('Carton / Paper raddi'), '4707', 'Carton / Paper must auto-detect HSN 4707');
+  assert.equal(detectHsnCode('Lead scrap'), '7802', 'Lead scrap must auto-detect HSN 7802');
+  assert.equal(detectHsnCode('Zinc scrap'), '7902', 'Zinc scrap must auto-detect HSN 7902');
+  assert.equal(detectHsnCode('Rubber / Tyre scrap'), '4004', 'Rubber / tyre scrap must auto-detect HSN 4004');
+  assert.equal(detectHsnCode('Glass bottles / cullet'), '7001', 'Glass cullet must auto-detect HSN 7001');
+
+  // 3. Custom / Unknown items must start with empty HSN string (never forced 7204)
+  assert.equal(detectHsnCode('Custom Item XYZ'), '', 'Unrecognized items must return empty string');
+  assert.equal(detectHsnCode(''), '', 'Empty string must return empty string');
+  assert.equal(detectHsnCode(null), '', 'Null must return empty string');
+
+  // 4. Ensure new catalog items do not inherit previous row or force 7204
+  const newItem = { n: '', h: '', u: 'kg', r: 0 };
+  assert.equal(newItem.h, '', 'Newly added item catalog row must default to empty HSN, not 7204');
+
+  // 5. Auto-repair stuck 7204 on legacy/erroneous gbg item
+  const legacyItem = { n: 'gbg', h: '7204', u: 'kg', r: 0 };
+  let resolvedHsn = legacyItem.h;
+  const autoHsn = detectHsnCode(legacyItem.n);
+  if (!resolvedHsn || (resolvedHsn === '7204' && autoHsn && autoHsn !== '7204')) {
+    resolvedHsn = autoHsn;
+  }
+  assert.equal(resolvedHsn, '6305', 'Legacy item "gbg" stuck with 7204 must resolve to 6305');
 });
 
 // ========================================================

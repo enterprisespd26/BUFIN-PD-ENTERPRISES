@@ -53,6 +53,120 @@ function words(n) {
   return (p(Math.floor(n / 1e7), 'Crore') + p(Math.floor(n / 1e5) % 100, 'Lakh') + p(Math.floor(n / 1e3) % 100, 'Thousand') + p(n % 1000, '')).trim();
 }
 
+/**
+ * Intelligent HSN Auto-Detection based on scrap material name & trade keywords.
+ * Standard Indian GST HSN codes for scrap commodities and packaging:
+ *  - 6305: Gunny bags / Jute sacks / Bardana / GBG
+ *  - 7204: Ferrous waste & scrap (Iron, Steel, MS, SS, Cast Iron, HMS, TMT)
+ *  - 7404: Copper, Brass, Bronze scrap
+ *  - 7602: Aluminium waste & scrap
+ *  - 8549: Electrical & electronic waste, scrap batteries
+ *  - 3915: Plastic waste & scrap (PVC, HDPE, LDPE, PP, PET)
+ *  - 4707: Paper & Cardboard waste (Carton, Corrugated, Kraft, Raddi)
+ *  - 7802: Lead waste & scrap
+ *  - 7902: Zinc waste & scrap
+ *  - 7503: Nickel waste & scrap
+ *  - 8002: Tin waste & scrap
+ *  - 4004: Rubber & Tyre scrap
+ *  - 7001: Glass scrap / Cullet
+ *  - 6310: Textile waste / Rags / Chindi
+ *  - 4401: Wood & timber waste
+ *  - 8544: Insulated wire & cables
+ *  - 8479: Machinery & equipment scrap
+ */
+export function detectHsnCode(name) {
+  if (!name || typeof name !== 'string') return '';
+  const s = name.trim().toLowerCase();
+  if (!s) return '';
+
+  // 1. Packaging / Gunny bags / Jute / Bardana / Sacks / GBG
+  if (/\b(gbg|gunny|jute|bardana|sack|sacks|burlap|packing bag|bagging)\b/i.test(s) || s === 'gbg') {
+    return '6305';
+  }
+
+  // 2. Battery & E-waste (check before standalone lead/metals)
+  if (/\b(battery|batteries|lead acid|lead-acid|e-waste|ewaste|electronic waste|pcb|motherboard|inverter battery|ups battery)\b/i.test(s)) {
+    return '8549';
+  }
+
+  // 3. Copper, Brass, Bronze
+  if (/\b(copper|armature|millberry|berry|heavy copper|copper wire|brass|pittal|peetal|bronze|gunmetal|gun metal)\b/i.test(s) || /^(cu)$/i.test(s)) {
+    return '7404';
+  }
+
+  // 4. Aluminium
+  if (/\b(aluminium|aluminum|al scrap|tandoori|extrusion|utensil|section|foil|al foil|dross)\b/i.test(s) || /^(al)$/i.test(s)) {
+    return '7602';
+  }
+
+  // 5. Iron & Steel scrap (Ferrous)
+  if (/\b(iron|steel|ms|ss|cast iron|cast-iron|ci scrap|sponge iron|tmt|rebar|hms|hms1|hms2|crc|cr sheet|hr sheet|shredded|turning|borings|ferrous|pig iron|billet|ingot)\b/i.test(s) || /^(fe|ms|ss)$/i.test(s)) {
+    return '7204';
+  }
+
+  // 6. Plastic & Polymers
+  if (/\b(plastic|polymer|pvc|hdpe|ldpe|pp|pet|polythene|polyethylene|polypropylene|acrylic|nylon|abs plastic|pet bottle)\b/i.test(s)) {
+    return '3915';
+  }
+
+  // 7. Paper & Cardboard
+  if (/\b(paper|carton|cardboard|corrugated|kraft|duplex|newspaper|raddi|notebook|records|waste paper|box board)\b/i.test(s)) {
+    return '4707';
+  }
+
+  // 8. Lead scrap
+  if (/\b(lead scrap|lead metal|sheesha|sheesa|pb scrap)\b/i.test(s) || /^(pb)$/i.test(s)) {
+    return '7802';
+  }
+
+  // 9. Zinc scrap
+  if (/\b(zinc|jasta|zn scrap|dross zinc)\b/i.test(s) || /^(zn)$/i.test(s)) {
+    return '7902';
+  }
+
+  // 10. Nickel scrap
+  if (/\b(nickel|ni scrap)\b/i.test(s) || /^(ni)$/i.test(s)) {
+    return '7503';
+  }
+
+  // 11. Tin scrap
+  if (/\b(tin scrap|sn scrap)\b/i.test(s) || /^(sn)$/i.test(s)) {
+    return '8002';
+  }
+
+  // 12. Rubber & Tyres
+  if (/\b(rubber|tyre|tire|tube|crumb rubber)\b/i.test(s)) {
+    return '4004';
+  }
+
+  // 13. Glass & Cullet
+  if (/\b(glass|cullet|broken glass|bottle scrap)\b/i.test(s)) {
+    return '7001';
+  }
+
+  // 14. Textile, Rags, Cotton waste
+  if (/\b(textile|cotton waste|rags|chindi|fabric waste|yarn waste|hosiery cut)\b/i.test(s)) {
+    return '6310';
+  }
+
+  // 15. Wood waste
+  if (/\b(wood|timber|sawdust|wood scrap|pallet scrap)\b/i.test(s)) {
+    return '4401';
+  }
+
+  // 16. Cable & Wires
+  if (/\b(cable|wire|wiring|copper cable|armoured cable)\b/i.test(s)) {
+    return '8544';
+  }
+
+  // 17. Machinery / Motor
+  if (/\b(machinery|machine|motor|engine|gearbox|pump)\b/i.test(s)) {
+    return '8479';
+  }
+
+  return '';
+}
+
 function getMode(cs, modeVal, rateVal, cg) {
   if (modeVal && modeVal !== 'auto') return modeVal;
   if (+rateVal === 0) return 'none';
@@ -997,13 +1111,10 @@ export function renderSales() {
               ${lines.map((l, i) => `
                 <tr data-line="${i}" data-prev-unit="${esc(l.u || 'kg')}">
                   <td data-label="Item">
-                    <select class="pd-line-name" data-i="${i}">
-                      <option value="">Custom…</option>
-                      ${scrapItems.map(x => `<option value="${esc(x.n)}" ${x.n === l.n ? 'selected' : ''}>${esc(x.n)}</option>`).join('')}
-                    </select>
+                    <input type="text" class="pd-line-name" data-i="${i}" list="pd_items_dl" value="${esc(l.n || '')}" placeholder="Item name (e.g. Copper scrap)">
                   </td>
                   <td data-label="HSN">
-                    <input type="text" class="pd-line-hsn" data-i="${i}" value="${esc(l.h || '')}">
+                    <input type="text" class="pd-line-hsn" data-i="${i}" value="${esc(l.h || detectHsnCode(l.n) || '')}" placeholder="Auto or HSN" list="pd_hsn_suggestions">
                   </td>
                   <td data-label="Qty">
                     <input type="number" step="any" min="0" class="pd-line-qty" data-i="${i}" value="${l.q ?? ''}">
@@ -1030,6 +1141,9 @@ export function renderSales() {
         <div class="pd-btn-row">
           <button type="button" class="btn alt sm" id="pd_add_line">+ Add line</button>
         </div>
+        <datalist id="pd_items_dl">
+          ${scrapItems.map(x => `<option value="${esc(x.n)}">${esc(x.n)}${x.h ? ` (HSN: ${x.h})` : ''}</option>`).join('')}
+        </datalist>
       </div>
 
       <div class="pd-card">
@@ -1213,10 +1327,16 @@ export function renderSales() {
               </tr>
             </thead>
             <tbody id="pd_items_body">
-              ${scrapItems.map((x, i) => `
+              ${scrapItems.map((x, i) => {
+                let displayHsn = x.h || '';
+                const autoHsn = detectHsnCode(x.n);
+                if (!displayHsn || (displayHsn === '7204' && autoHsn && autoHsn !== '7204')) {
+                  displayHsn = autoHsn || displayHsn;
+                }
+                return `
                 <tr>
-                  <td data-label="Item"><input type="text" class="pd-item-n" data-i="${i}" value="${esc(x.n)}"></td>
-                  <td data-label="HSN"><input type="text" class="pd-item-h" data-i="${i}" value="${esc(x.h)}"></td>
+                  <td data-label="Item"><input type="text" class="pd-item-n" data-i="${i}" value="${esc(x.n)}" placeholder="Item name (e.g. Copper scrap)"></td>
+                  <td data-label="HSN"><input type="text" class="pd-item-h" data-i="${i}" value="${esc(displayHsn)}" placeholder="Auto or HSN" list="pd_hsn_suggestions"></td>
                   <td data-label="Unit">
                     <select class="pd-item-u" data-i="${i}">
                       ${['kg', 'quintal', 'ton', 'pcs'].map(u => `<option value="${u}" ${u === x.u ? 'selected' : ''}>${u}</option>`).join('')}
@@ -1225,7 +1345,8 @@ export function renderSales() {
                   <td data-label="Rate (₹)"><input type="number" step="any" class="pd-item-r" data-i="${i}" value="${x.r}"></td>
                   <td data-label="Actions"><button type="button" class="btn red sm pd-item-del" data-i="${i}" title="Remove item" aria-label="Remove item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td>
                 </tr>
-              `).join('')}
+              `;
+              }).join('')}
             </tbody>
           </table>
         </div>
@@ -1233,6 +1354,24 @@ export function renderSales() {
           <button type="button" class="btn alt" id="pd_btn_add_item">+ Add item</button>
           <button type="button" class="btn p" id="pd_btn_save_items">Save items</button>
         </div>
+        <datalist id="pd_hsn_suggestions">
+          <option value="7204">7204 - Ferrous / Iron &amp; Steel scrap</option>
+          <option value="7404">7404 - Copper / Brass / Bronze scrap</option>
+          <option value="7602">7602 - Aluminium waste &amp; scrap</option>
+          <option value="8549">8549 - Battery &amp; E-waste scrap</option>
+          <option value="3915">3915 - Plastic waste, parings &amp; scrap</option>
+          <option value="4707">4707 - Paper &amp; Cardboard waste</option>
+          <option value="6305">6305 - Gunny bags / Jute sacks (GBG)</option>
+          <option value="7802">7802 - Lead waste &amp; scrap</option>
+          <option value="7902">7902 - Zinc waste &amp; scrap</option>
+          <option value="7503">7503 - Nickel waste &amp; scrap</option>
+          <option value="8002">8002 - Tin waste &amp; scrap</option>
+          <option value="4004">4004 - Rubber &amp; Tyre scrap</option>
+          <option value="7001">7001 - Glass scrap / Cullet</option>
+          <option value="6310">6310 - Rags &amp; Textile waste (Chindi)</option>
+          <option value="8544">8544 - Insulated Wire &amp; Cables</option>
+          <option value="8479">8479 - Machinery &amp; Equipment scrap</option>
+        </datalist>
       </div>
     </div>
 
@@ -1269,7 +1408,7 @@ export function bindSalesEvents() {
           addItemBtn.click();
         } else {
           if (!db.items) db.items = [];
-          db.items.push({ n: '', h: '7204', u: 'kg', r: 0 });
+          db.items.push({ n: '', h: '', u: 'kg', r: 0 });
           container.innerHTML = renderSales();
           bindSalesEvents();
         }
@@ -1327,8 +1466,9 @@ export function bindSalesEvents() {
   const recalculateForm = () => {
     const lines = [];
     container.querySelectorAll('#pd_lines tr').forEach((tr, i) => {
-      const n = tr.querySelector('.pd-line-name')?.value || '';
-      const h = tr.querySelector('.pd-line-hsn')?.value || '';
+      const n = (tr.querySelector('.pd-line-name')?.value || '').trim();
+      let h = (tr.querySelector('.pd-line-hsn')?.value || '').trim();
+      if (!h && n) h = detectHsnCode(n);
       const q = parseFloat(tr.querySelector('.pd-line-qty')?.value) || 0;
       const u = tr.querySelector('.pd-line-unit')?.value || 'kg';
       const r = parseFloat(tr.querySelector('.pd-line-rate')?.value) || 0;
@@ -1384,35 +1524,61 @@ export function bindSalesEvents() {
     }
   };
 
-  // Line item name dropdown change -> autofill HSN, Unit, and smart rate conversion
-  container.querySelectorAll('.pd-line-name').forEach(sel => {
-    sel.onchange = e => {
-      const idx = e.target.dataset.i;
-      const val = e.target.value;
-      const m = (db.items || []).find(x => x.n === val);
-      if (m && idx !== undefined) {
-        const tr = container.querySelector(`tr[data-line="${idx}"]`);
-        if (tr) {
-          const hsnInput = tr.querySelector('.pd-line-hsn');
-          const unitSelect = tr.querySelector('.pd-line-unit');
-          const rateInput = tr.querySelector('.pd-line-rate');
-          if (hsnInput) hsnInput.value = m.h || '';
+  // Line item name input/datalist change -> autofill HSN, Unit, and smart rate conversion
+  const handleLineNameChange = e => {
+    const idx = e.target.dataset.i;
+    const val = (e.target.value || '').trim();
+    const tr = container.querySelector(`tr[data-line="${idx}"]`);
+    if (!tr) return;
+    const hsnInput = tr.querySelector('.pd-line-hsn');
+    const unitSelect = tr.querySelector('.pd-line-unit');
+    const rateInput = tr.querySelector('.pd-line-rate');
 
-          const masterUnit = m.u || 'kg';
-          const masterRate = parseFloat(m.r) || 0;
-          const currentUnit = unitSelect ? unitSelect.value : masterUnit;
+    const m = (db.items || []).find(x => (x.n || '').trim().toLowerCase() === val.toLowerCase());
+    if (m && idx !== undefined) {
+      if (hsnInput) {
+        hsnInput.value = m.h || detectHsnCode(m.n) || '';
+        hsnInput.dataset.auto = '1';
+        delete hsnInput.dataset.manual;
+      }
 
-          if (unitSelect) {
-            if (currentUnit && currentUnit !== masterUnit && masterRate > 0) {
-              if (rateInput) rateInput.value = convertRate(masterRate, masterUnit, currentUnit);
-            } else {
-              unitSelect.value = masterUnit;
-              if (rateInput) rateInput.value = masterRate;
-            }
-            tr.dataset.prevUnit = unitSelect.value;
-          }
+      const masterUnit = m.u || 'kg';
+      const masterRate = parseFloat(m.r) || 0;
+      const currentUnit = unitSelect ? unitSelect.value : masterUnit;
+
+      if (unitSelect) {
+        if (currentUnit && currentUnit !== masterUnit && masterRate > 0) {
+          if (rateInput) rateInput.value = convertRate(masterRate, masterUnit, currentUnit);
+        } else {
+          unitSelect.value = masterUnit;
+          if (rateInput) rateInput.value = masterRate;
+        }
+        tr.dataset.prevUnit = unitSelect.value;
+      }
+    } else {
+      // Auto-detect HSN code from typed material name if not manually locked
+      if (hsnInput && hsnInput.dataset.manual !== '1') {
+        const autoHsn = detectHsnCode(val);
+        if (autoHsn) {
+          hsnInput.value = autoHsn;
+          hsnInput.dataset.auto = '1';
+        } else if (hsnInput.dataset.auto === '1') {
+          hsnInput.value = '';
         }
       }
+    }
+    recalculateForm();
+  };
+
+  container.querySelectorAll('.pd-line-name').forEach(inp => {
+    inp.oninput = handleLineNameChange;
+    inp.onchange = handleLineNameChange;
+  });
+
+  container.querySelectorAll('.pd-line-hsn').forEach(inp => {
+    inp.oninput = () => {
+      inp.dataset.manual = '1';
+      inp.dataset.auto = '0';
       recalculateForm();
     };
   });
@@ -2106,14 +2272,14 @@ export function bindSalesEvents() {
   if (addItemBtn) {
     addItemBtn.onclick = () => {
       if (!db.items) db.items = [];
-      db.items.push({ n: '', h: '7204', u: 'kg', r: 0 });
+      db.items.push({ n: '', h: '', u: 'kg', r: 0 });
       const tbody = $('#pd_items_body');
       if (tbody) {
         const i = db.items.length - 1;
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td data-label="Item"><input type="text" class="pd-item-n" data-i="${i}" value=""></td>
-          <td data-label="HSN"><input type="text" class="pd-item-h" data-i="${i}" value="7204"></td>
+          <td data-label="Item"><input type="text" class="pd-item-n" data-i="${i}" value="" placeholder="Item name (e.g. Copper scrap)"></td>
+          <td data-label="HSN"><input type="text" class="pd-item-h" data-i="${i}" value="" placeholder="Auto or HSN" list="pd_hsn_suggestions"></td>
           <td data-label="Unit">
             <select class="pd-item-u" data-i="${i}">
               <option value="kg" selected>kg</option>
@@ -2135,6 +2301,34 @@ export function bindSalesEvents() {
       }
     };
   }
+
+  // Master Scrap catalog: auto-detect HSN on item name typing
+  container.querySelectorAll('#pd_items_body .pd-item-n').forEach(nameInp => {
+    nameInp.oninput = () => {
+      const tr = nameInp.closest('tr');
+      if (!tr) return;
+      const hsnInp = tr.querySelector('.pd-item-h');
+      if (!hsnInp) return;
+      if (hsnInp.dataset.manual === '1') return; // User explicitly typed an HSN override
+
+      const val = nameInp.value.trim();
+      const detected = detectHsnCode(val);
+      if (detected) {
+        hsnInp.value = detected;
+        hsnInp.dataset.auto = '1';
+      } else if (hsnInp.dataset.auto === '1') {
+        hsnInp.value = '';
+      }
+    };
+  });
+
+  // Track if user manually edits the HSN field so we don't clobber manual entries
+  container.querySelectorAll('#pd_items_body .pd-item-h').forEach(hsnInp => {
+    hsnInp.oninput = () => {
+      hsnInp.dataset.manual = '1';
+      hsnInp.dataset.auto = '0';
+    };
+  });
 
   // Master Scrap items: auto-convert default rate on unit change
   container.querySelectorAll('#pd_items_body .pd-item-u').forEach(unitSel => {
@@ -2172,7 +2366,8 @@ export function bindSalesEvents() {
       const items = [];
       container.querySelectorAll('#pd_items_body tr').forEach(tr => {
         const n = (tr.querySelector('.pd-item-n')?.value || '').trim();
-        const h = (tr.querySelector('.pd-item-h')?.value || '').trim();
+        let h = (tr.querySelector('.pd-item-h')?.value || '').trim();
+        if (!h && n) h = detectHsnCode(n);
         const u = tr.querySelector('.pd-item-u')?.value || 'kg';
         const r = parseFloat(tr.querySelector('.pd-item-r')?.value) || 0;
         if (n) items.push({ n, h, u, r });
