@@ -278,7 +278,8 @@ export const paid = d => (d.pays || []).reduce((s, p) => {
     const je = db.entries.find(e => e.id === p.je);
     if (je && je.status === 'reversed') return s;
   }
-  return s + (p.amt || 0);
+  const amt = p.amt !== undefined ? p.amt : (p.a !== undefined ? p.a : 0);
+  return s + (parseFloat(amt) || 0);
 }, 0);
 export const out = d => (d.total || 0) - paid(d);
 export const dstat = d => d.cancelled ? ['Cancelled', 'rd'] : out(d) <= 0 ? ['Paid', 'ok'] : d.due && d.due < today() ? ['Overdue', 'rd'] : paid(d) > 0 ? ['Partial', 'wn'] : ['Open', ''];
