@@ -137,7 +137,24 @@ export function renderSettings() {
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;">
             ${fld('cloudName', 'Cloudinary Cloud Name', 'text', db.biz.cloudinary_name || 'iqsinmcr')}
             ${fld('apiKey', 'Cloudinary API Key', 'text', db.biz.cloudinary_key || '573667157386361')}
-            ${fld('apiSecret', 'Cloudinary API Secret', 'password', db.biz.cloudinary_secret || '')}
+            <label style="position:relative;margin-bottom:0;">
+              Cloudinary API Secret
+              <div style="position:relative;display:flex;align-items:center;margin-top:4px;">
+                <input id="apiSecretInput" name="apiSecret" type="password" value="${esc(db.biz.cloudinary_secret || '')}" placeholder="Paste API Secret" style="padding-right:38px;box-sizing:border-box;">
+                <button type="button" id="toggleApiSecret" title="Show or Hide Secret" aria-label="Show or Hide Secret" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:transparent;border:none;padding:4px;cursor:pointer;color:#64748b;display:flex;align-items:center;justify-content:center;border-radius:6px;min-height:unset;min-width:unset;height:30px;width:30px;box-shadow:none;">
+                  <svg id="eyeIconOpen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg id="eyeIconClosed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                    <line x1="2" y1="2" x2="22" y2="22"></line>
+                  </svg>
+                </button>
+              </div>
+            </label>
           </div>
           <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
             <button type="submit" class="p sm">Update Server Credentials</button>

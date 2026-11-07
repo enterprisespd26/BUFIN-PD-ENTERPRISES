@@ -850,6 +850,23 @@ function bindViewEvents() {
         if (resEl) resEl.innerHTML = '<span style="color:#dc2626;">✕ Could not connect to backend server: ' + esc(err.message) + '</span>';
       }
     });
+
+    const toggleBtn = $('#toggleApiSecret');
+    const secretInput = $('#apiSecretInput');
+    const eyeOpen = $('#eyeIconOpen');
+    const eyeClosed = $('#eyeIconClosed');
+    if (toggleBtn && secretInput) {
+      toggleBtn.onclick = e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isPass = secretInput.type === 'password';
+        secretInput.type = isPass ? 'text' : 'password';
+        if (eyeOpen && eyeClosed) {
+          eyeOpen.style.display = isPass ? 'none' : 'block';
+          eyeClosed.style.display = isPass ? 'block' : 'none';
+        }
+      };
+    }
   }
 }
 
