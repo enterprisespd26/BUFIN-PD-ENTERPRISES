@@ -3,7 +3,7 @@ const https = require('https');
 
 let cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'iqsinmcr';
 let apiKey = process.env.CLOUDINARY_API_KEY || '573667157386361';
-let apiSecret = process.env.CLOUDINARY_API_SECRET || '';
+let apiSecret = process.env.CLOUDINARY_API_SECRET || 'ZH66sXW2wppxv9V4_9zYd-eRaSU';
 
 if (process.env.CLOUDINARY_URL) {
   try {

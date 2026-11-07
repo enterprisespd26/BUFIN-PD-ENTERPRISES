@@ -1321,6 +1321,51 @@
   }
 }
 
+/* WhatsApp Share Guidance Modal */
+.pd-wa-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: pdModalIn 0.18s ease-out;
+}
+
+.pd-wa-card {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  animation: pdCardIn 0.2s ease-out;
+}
+
+.pd-wa-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.pd-wa-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #25D366;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
 /* Print */
 @media print {
   body>*:not(.pd-invoice-modal-overlay) {

@@ -513,6 +513,8 @@ export function showInvoicePreviewModal(doc) {
     modalEl.remove();
     document.removeEventListener('keydown', onKeyDown);
     document.body.style.overflow = prevOverflow;
+    const waGuide = document.getElementById('pd_wa_guide_modal');
+    if (waGuide) waGuide.remove();
   };
   modalEl._teardown = teardown;
 
@@ -558,22 +560,220 @@ export function showInvoicePreviewModal(doc) {
     if (el) el.onclick = handlePdf;
   });
 
-  // WhatsApp Share
-  const handleWa = () => {
-    const bizName = db.biz.name || 'PD ENTERPRISES';
-    const cName = doc.c?.n || 'Customer';
-    const gt = inr(f.gt);
-    const bal = inr(f.bal);
-    const dateStr = doc.date ? doc.date.split('-').reverse().join('/') : '';
-    const linesSummary = (doc.lines || []).map(l =>
-      `* ${l.n}: ${l.q} ${l.u || 'kg'} @ Rs.${(+l.r).toFixed(2)} = Rs.${((l.q || 0) * (l.r || 0)).toFixed(2)}`
-    ).join('\n');
-    const msg = `*${docTitle.toUpperCase()} - ${doc.no}*\n*${bizName}*\n\nDate: ${dateStr}\nCustomer: ${cName}${doc.veh ? '\nVehicle: ' + doc.veh : ''}\n\n*Items:*\n${linesSummary}\n\n*Total Amount:* ${gt}\n*Balance Due:* ${bal}\n\nThank you for your business!`;
-    const cleanPhone = custPhone.replace(/\D/g, '');
-    const waUrl = cleanPhone
-      ? `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(msg)}`
-      : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-    window.open(waUrl, '_blank');
+  // Helper guidance modal for WhatsApp Desktop / Web sharing
+  const showWaHelperModal = ({ docNo, customerName, phone, fileName, cloudUrl, waUrl, onRedownload }) => {
+    const existing = document.getElementById('pd_wa_guide_modal');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'pd-wa-modal-overlay noprint';
+    overlay.id = 'pd_wa_guide_modal';
+    overlay.innerHTML = `
+      <div class="pd-wa-card" role="dialog" aria-modal="true" aria-label="WhatsApp Sharing Guide">
+        <div class="pd-wa-header">
+          <div class="pd-wa-icon-badge">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:#0f172a;">Sharing to WhatsApp</h3>
+            <p style="margin:2px 0 0;font-size:12.5px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${esc(customerName)} &bull; #${esc(docNo)} ${phone ? `&bull; +${phone.length === 10 ? '91 ' + phone : phone}` : ''}
+            </p>
+          </div>
+          <button type="button" class="universal-close-btn" id="pd_wa_close_x" aria-label="Close" style="background:none;border:none;cursor:pointer;color:#64748b;padding:4px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <div style="padding:16px 20px;">
+          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#ecfdf5;color:#059669;font-weight:700;font-size:12px;flex-shrink:0;">✓</span>
+            <div style="font-size:13px;color:#334155;line-height:1.45;">
+              <b>WhatsApp chat opened with invoice summary${cloudUrl ? ' & online PDF link' : ''}:</b>
+              <div style="font-size:12px;color:#64748b;margin-top:2px;">
+                ${cloudUrl ? 'Customer can tap the secure PDF link directly inside WhatsApp to view or download the invoice.' : 'Complete bill breakdown, items and totals are pre-filled in your WhatsApp message.'}
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#eff6ff;color:#2563eb;font-weight:700;font-size:12px;flex-shrink:0;">📥</span>
+            <div style="font-size:13px;color:#334155;line-height:1.45;min-width:0;flex:1;">
+              <b>Official PDF document downloaded:</b>
+              <div style="display:inline-flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11.5px;color:#1e293b;margin-top:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                📄 ${esc(fileName)}
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:12px;font-size:12.5px;color:#92400e;line-height:1.5;">
+            💡 <b>To attach the PDF document directly into WhatsApp:</b>
+            <div style="margin-top:3px;font-size:12px;">
+              Drag the downloaded <b>${esc(fileName)}</b> file from your browser's download bar and drop it directly into the open WhatsApp chat, or click the paperclip (📎) in WhatsApp!
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #f1f5f9;background:#f8fafc;">
+          <button type="button" class="btn alt sm" id="pd_wa_redownload_btn" style="font-size:12px;">📥 Re-download PDF</button>
+          <button type="button" class="btn green sm" id="pd_wa_reopen_btn" style="font-size:12px;background:#25D366;color:#fff;border:none;">💬 Re-open WhatsApp</button>
+          <button type="button" class="btn pri sm" id="pd_wa_done_btn" style="font-size:12px;">Done</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.querySelector('#pd_wa_close_x').onclick = close;
+    overlay.querySelector('#pd_wa_done_btn').onclick = close;
+    overlay.querySelector('#pd_wa_reopen_btn').onclick = () => window.open(waUrl, '_blank');
+    overlay.querySelector('#pd_wa_redownload_btn').onclick = () => {
+      if (typeof onRedownload === 'function') onRedownload();
+    };
+  };
+
+  // WhatsApp Share with PDF & Text
+  const handleWa = async () => {
+    const waBtns = ['#pd_modal_wa', '#pd_modal_wa_mob'].map(sel => modalEl.querySelector(sel)).filter(Boolean);
+    const origHtmls = waBtns.map(b => b.innerHTML);
+    waBtns.forEach(b => {
+      b.disabled = true;
+      b.innerHTML = `<span style="font-size:12px;display:inline-flex;align-items:center;gap:4px;">⏳ Preparing...</span>`;
+    });
+
+    const resetBtns = () => {
+      waBtns.forEach((b, i) => {
+        b.disabled = false;
+        b.innerHTML = origHtmls[i];
+      });
+    };
+
+    try {
+      const bizName = db.biz.name || 'PD ENTERPRISES';
+      const cName = doc.c?.n || 'Customer';
+      const gt = inr(f.gt);
+      const bal = inr(f.bal);
+      const dateStr = doc.date ? doc.date.split('-').reverse().join('/') : '';
+      const linesSummary = (doc.lines || []).map(l =>
+        `• ${l.n}: ${l.q} ${l.u || 'kg'} @ Rs.${(+l.r).toFixed(2)} = Rs.${((l.q || 0) * (l.r || 0)).toFixed(2)}`
+      ).join('\n');
+
+      let baseMsg = `*${docTitle.toUpperCase()} - ${doc.no}*\n*${bizName}*\n\nDate: ${dateStr}\nCustomer: ${cName}${doc.veh ? '\nVehicle: ' + doc.veh : ''}\n\n*Items:*\n${linesSummary}\n\n*Total Amount:* ${gt}\n*Balance Due:* ${bal}`;
+
+      // 1. Generate the official PDF
+      let p = null;
+      let pdfBlob = null;
+      let pdfFile = null;
+      const baseFileName = ('Invoice_' + doc.no + '_' + cName).replace(/[^\w.-]+/g, '_');
+      const pdfFileName = baseFileName + '.pdf';
+
+      try {
+        p = mkPdf(doc);
+        pdfBlob = p.output('blob');
+        pdfFile = new File([pdfBlob], pdfFileName, { type: 'application/pdf' });
+      } catch (err) {
+        console.warn('Could not generate PDF object:', err);
+      }
+
+      // 2. Upload PDF to Cloudinary for instant direct download link
+      let cloudPdfUrl = '';
+      if (pdfBlob) {
+        try {
+          const reader = new FileReader();
+          const base64Data = await new Promise((resolve, reject) => {
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(pdfBlob);
+          });
+
+          const uploadPromise = fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file: base64Data, folder: 'bufin/invoices' })
+          }).then(r => r.ok ? r.json() : null);
+
+          const res = await Promise.race([
+            uploadPromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500))
+          ]);
+          if (res && res.url) {
+            cloudPdfUrl = res.url;
+          }
+        } catch (e) {
+          console.warn('Cloud upload skipped or timed out:', e?.message || e);
+        }
+      }
+
+      // 3. Build complete message text
+      let fullMsg = baseMsg;
+      if (cloudPdfUrl) {
+        fullMsg += `\n\n📄 *Download / View Official PDF Invoice:*\n${cloudPdfUrl}`;
+      }
+      fullMsg += `\n\nThank you for your business!`;
+
+      // 4. Mobile / Supported Browsers: Try Web Share API Level 2 (with PDF file)
+      if (pdfFile && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        try {
+          await navigator.share({
+            files: [pdfFile],
+            title: `${docTitle} #${doc.no}`,
+            text: fullMsg
+          });
+          toast('Shared invoice via system share');
+          resetBtns();
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            resetBtns();
+            return;
+          }
+          console.warn('Native share failed, falling back to WhatsApp URL & local download:', err);
+        }
+      }
+
+      // 5. Desktop / WhatsApp Web fallback:
+      // Download the PDF file automatically
+      if (p) {
+        try {
+          p.save(pdfFileName);
+          toast(`PDF downloaded: ${pdfFileName}`);
+        } catch (e) {
+          console.warn('Could not trigger automatic PDF save:', e);
+        }
+      }
+
+      // Open WhatsApp with complete formatted text & online PDF link
+      const cleanPhone = custPhone.replace(/\D/g, '');
+      const waUrl = cleanPhone
+        ? `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(fullMsg)}`
+        : `https://api.whatsapp.com/send?text=${encodeURIComponent(fullMsg)}`;
+      window.open(waUrl, '_blank');
+
+      // 6. Display a sleek, helpful guidance modal
+      showWaHelperModal({
+        docNo: doc.no,
+        customerName: cName,
+        phone: cleanPhone,
+        fileName: pdfFileName,
+        cloudUrl: cloudPdfUrl,
+        waUrl: waUrl,
+        onRedownload: () => {
+          if (p) {
+            p.save(pdfFileName);
+            toast('PDF downloaded again');
+          }
+        }
+      });
+
+    } catch (e) {
+      console.error('WhatsApp share error:', e);
+      toast('Could not share on WhatsApp: ' + (e?.message || e));
+    } finally {
+      resetBtns();
+    }
   };
   ['#pd_modal_wa', '#pd_modal_wa_mob'].forEach(id => {
     const el = modalEl.querySelector(id);
