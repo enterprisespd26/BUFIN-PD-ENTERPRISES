@@ -1181,11 +1181,13 @@ export function renderSales() {
               <span style="font-size:12px;color:var(--t2);">Select settlement status (Paid in Full vs Credit / Pending)</span>
             </div>
             <div class="pd-seg-toggle" style="display:inline-flex;background:#e2e8f0;padding:3px;border-radius:8px;gap:3px;">
-              <button type="button" id="pd_btn_status_paid" class="pd-seg-btn ${isPaymentReceived ? 'active' : ''}" style="padding:6px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:${isPaymentReceived ? '#10b981' : 'transparent'};color:${isPaymentReceived ? '#ffffff' : '#475569'};transition:all 0.15s ease;">
-                ✓ Paid in Full
+              <button type="button" id="pd_btn_status_paid" class="pd-seg-btn ${isPaymentReceived ? 'active' : ''}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:${isPaymentReceived ? '#059669' : 'transparent'};color:${isPaymentReceived ? '#ffffff' : '#475569'};transition:all 0.15s ease;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <span>Paid in Full</span>
               </button>
-              <button type="button" id="pd_btn_status_credit" class="pd-seg-btn ${!isPaymentReceived ? 'active' : ''}" style="padding:6px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:${!isPaymentReceived ? '#f59e0b' : 'transparent'};color:${!isPaymentReceived ? '#ffffff' : '#475569'};transition:all 0.15s ease;">
-                ⏳ Credit / Pending
+              <button type="button" id="pd_btn_status_credit" class="pd-seg-btn ${!isPaymentReceived ? 'active' : ''}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:${!isPaymentReceived ? '#d97706' : 'transparent'};color:${!isPaymentReceived ? '#ffffff' : '#475569'};transition:all 0.15s ease;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span>Credit / Pending</span>
               </button>
             </div>
             <input type="checkbox" id="pd_pay_received" ${isPaymentReceived ? 'checked' : ''} style="display:none;">
@@ -1217,17 +1219,23 @@ export function renderSales() {
         </div>
 
         <div class="pd-tot" id="pd_totals_box" style="margin-top:16px">
-          <div><span>Subtotal</span><span>${inr(liveFigs.sub)}</span></div>
-          ${liveFigs.disc ? `<div><span>Discount</span><span>− ${inr(liveFigs.disc)}</span></div>` : ''}
+          <div>
+            <span style="display:inline-flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#64748b;"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="12" y2="14"></line></svg>
+              Subtotal
+            </span>
+            <span>${inr(liveFigs.sub)}</span>
+          </div>
+          ${liveFigs.disc ? `<div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444;"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>Discount</span><span>− ${inr(liveFigs.disc)}</span></div>` : ''}
           ${liveFigs.m === 'intra'
-      ? `<div><span>CGST @ ${liveFigs.rt / 2}%</span><span>${inr(liveFigs.half)}</span></div><div><span>SGST @ ${liveFigs.rt / 2}%</span><span>${inr(liveFigs.half)}</span></div>`
+      ? `<div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#2563eb;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>CGST @ ${liveFigs.rt / 2}%</span><span>${inr(liveFigs.half)}</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#2563eb;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>SGST @ ${liveFigs.rt / 2}%</span><span>${inr(liveFigs.half)}</span></div>`
       : liveFigs.m === 'inter'
-        ? `<div><span>IGST @ ${liveFigs.rt}%</span><span>${inr(liveFigs.tax)}</span></div>`
+        ? `<div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#2563eb;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>IGST @ ${liveFigs.rt}%</span><span>${inr(liveFigs.tax)}</span></div>`
         : ''}
-          ${liveFigs.ro ? `<div><span>Round off</span><span>${inr(liveFigs.ro)}</span></div>` : ''}
-          <div class="gt"><span>Total</span><span>${inr(liveFigs.gt)}</span></div>
-          <div><span>Received</span><span>${inr(liveFigs.rec)}</span></div>
-          <div><b>Balance due</b><b>${inr(liveFigs.bal)}</b></div>
+          ${liveFigs.ro ? `<div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#64748b;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>Round off</span><span>${inr(liveFigs.ro)}</span></div>` : ''}
+          <div class="gt"><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ac);"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v12M15 9.5H9.5a2.5 2.5 0 0 0 0 5h5"></path></svg>Total</span><span>${inr(liveFigs.gt)}</span></div>
+          <div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#059669;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>Received</span><span>${inr(liveFigs.rec)}</span></div>
+          <div><b style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#d97706;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>Balance due</b><b>${inr(liveFigs.bal)}</b></div>
         </div>
 
         <div class="pd-btn-row" style="margin-top:16px">
@@ -1509,17 +1517,23 @@ export function bindSalesEvents() {
     const box = $('#pd_totals_box');
     if (box) {
       box.innerHTML = `
-        <div><span>Subtotal</span><span>${inr(f.sub)}</span></div>
-        ${f.disc ? `<div><span>Discount</span><span>− ${inr(f.disc)}</span></div>` : ''}
+        <div>
+          <span style="display:inline-flex;align-items:center;gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#64748b;"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="12" y2="14"></line></svg>
+            Subtotal
+          </span>
+          <span>${inr(f.sub)}</span>
+        </div>
+        ${f.disc ? `<div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444;"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>Discount</span><span>− ${inr(f.disc)}</span></div>` : ''}
         ${f.m === 'intra'
-          ? `<div><span>CGST @ ${f.rt / 2}%</span><span>${inr(f.half)}</span></div><div><span>SGST @ ${f.rt / 2}%</span><span>${inr(f.half)}</span></div>`
+          ? `<div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#2563eb;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>CGST @ ${f.rt / 2}%</span><span>${inr(f.half)}</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#2563eb;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>SGST @ ${f.rt / 2}%</span><span>${inr(f.half)}</span></div>`
           : f.m === 'inter'
-            ? `<div><span>IGST @ ${f.rt}%</span><span>${inr(f.tax)}</span></div>`
+            ? `<div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#2563eb;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>IGST @ ${f.rt}%</span><span>${inr(f.tax)}</span></div>`
             : ''}
-        ${f.ro ? `<div><span>Round off</span><span>${inr(f.ro)}</span></div>` : ''}
-        <div class="gt"><span>Total</span><span>${inr(f.gt)}</span></div>
-        <div><span>Received</span><span>${inr(f.rec)}</span></div>
-        <div><b>Balance due</b><b>${inr(f.bal)}</b></div>
+        ${f.ro ? `<div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#64748b;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>Round off</span><span>${inr(f.ro)}</span></div>` : ''}
+        <div class="gt"><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ac);"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v12M15 9.5H9.5a2.5 2.5 0 0 0 0 5h5"></path></svg>Total</span><span>${inr(f.gt)}</span></div>
+        <div><span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#059669;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>Received</span><span>${inr(f.rec)}</span></div>
+        <div><b style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#d97706;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>Balance due</b><b>${inr(f.bal)}</b></div>
       `;
     }
   };
@@ -1732,14 +1746,14 @@ export function bindSalesEvents() {
 
     if (btnStatusPaid && btnStatusCredit) {
       if (isPaid) {
-        btnStatusPaid.style.background = '#10b981';
+        btnStatusPaid.style.background = '#059669';
         btnStatusPaid.style.color = '#ffffff';
         btnStatusCredit.style.background = 'transparent';
         btnStatusCredit.style.color = '#475569';
       } else {
         btnStatusPaid.style.background = 'transparent';
         btnStatusPaid.style.color = '#475569';
-        btnStatusCredit.style.background = '#f59e0b';
+        btnStatusCredit.style.background = '#d97706';
         btnStatusCredit.style.color = '#ffffff';
       }
     }
