@@ -3290,20 +3290,47 @@ HOW TO USE:
 
 export function showBackupModal() {
   const stats = [
-    { label: 'Accounts', count: db.accounts.length },
-    { label: 'Journal Entries', count: db.entries.length },
-    { label: 'Parties', count: db.parties.length },
-    { label: 'Sales Invoices', count: (db.docs || []).filter(x => (x.type || x.t) === 'sale').length },
-    { label: 'Purchase Bills', count: (db.docs || []).filter(x => (x.type || x.t) === 'bill').length },
-    { label: 'Inventory Items', count: (db.items || []).length }
+    {
+      label: 'Accounts',
+      count: db.accounts.length,
+      icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path><path d="M6 6h10"></path><path d="M6 10h10"></path></svg>`
+    },
+    {
+      label: 'Journal Entries',
+      count: db.entries.length,
+      icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>`
+    },
+    {
+      label: 'Parties',
+      count: db.parties.length,
+      icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`
+    },
+    {
+      label: 'Sales Invoices',
+      count: (db.docs || []).filter(x => (x.type || x.t) === 'sale').length,
+      icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"></path><line x1="8" y1="8" x2="16" y2="8"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="12" y2="16"></line></svg>`
+    },
+    {
+      label: 'Purchase Bills',
+      count: (db.docs || []).filter(x => (x.type || x.t) === 'bill').length,
+      icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>`
+    },
+    {
+      label: 'Inventory Items',
+      count: (db.items || []).length,
+      icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>`
+    }
   ];
 
   const jsonStr = JSON.stringify(db, null, 2);
 
   const statsHtml = stats.map(s => `
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:12.5px;color:#64748b;font-weight:500;">${s.label}</span>
-      <b style="font-size:13.5px;color:#0f172a;">${s.count}</b>
+      <div style="display:flex;align-items:center;gap:6px;">
+        ${s.icon}
+        <span style="font-size:12px;color:#64748b;font-weight:500;">${s.label}</span>
+      </div>
+      <b style="font-size:13px;color:#0f172a;font-variant-numeric:tabular-nums;">${s.count}</b>
     </div>
   `).join('');
 
@@ -3312,9 +3339,9 @@ export function showBackupModal() {
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <div style="width:38px;height:38px;border-radius:10px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="21 8 21 21 3 21 3 8"></polyline>
-            <rect x="1" y="3" width="22" height="5"></rect>
-            <line x1="10" y1="12" x2="14" y2="12"></line>
+            <rect width="20" height="5" x="2" y="3" rx="1"/>
+            <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>
+            <path d="M10 12h4"/>
           </svg>
         </div>
         <div>
@@ -3327,42 +3354,78 @@ export function showBackupModal() {
         ${statsHtml}
       </div>
 
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;line-height:1.45;">
-        📁 <b>ZIP archive includes:</b>
-        <div style="margin-top:4px;color:#15803d;display:flex;flex-wrap:wrap;gap:6px;">
-          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">00_all_transactions_master_combined.csv</span>
-          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">01_journal_entries.csv</span>
-          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">02_chart_of_accounts.csv</span>
-          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">03_sales_invoices.csv</span>
-          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">04_purchase_bills.csv</span>
-          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">05_parties_directory.csv</span>
-          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">06_inventory_items.csv</span>
-          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">07_cash_bank_book.csv</span>
-          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">bufin_system_backup_state.json</span>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:6px;color:#166534;font-size:12.5px;font-weight:700;margin-bottom:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+          </svg>
+          <span>ZIP Archive Contents (Dedicated CSVs + Master File):</span>
+        </div>
+
+        <div style="background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:6px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="8" y1="13" x2="16" y2="13"></line>
+              <line x1="8" y1="17" x2="16" y2="17"></line>
+            </svg>
+            <span style="font-family:monospace;font-size:11.5px;font-weight:700;color:#14532d;">00_all_transactions_master_combined.csv</span>
+          </div>
+          <span style="background:#15803d;color:#fff;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;">Master All-in-One</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(185px, 1fr));gap:5px;">
+          ${[
+            '01_journal_entries.csv',
+            '02_chart_of_accounts.csv',
+            '03_sales_invoices.csv',
+            '04_purchase_bills.csv',
+            '05_parties_directory.csv',
+            '06_inventory_items.csv',
+            '07_cash_bank_book.csv',
+            '08_loans_register.csv'
+          ].map(name => `
+            <div style="background:#ffffff;border:1px solid #bbf7d0;padding:4px 8px;border-radius:5px;display:flex;align-items:center;gap:6px;font-size:11px;font-family:monospace;color:#166534;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+            </div>
+          `).join('')}
+          <div style="background:#ffffff;border:1px solid #93c5fd;padding:4px 8px;border-radius:5px;display:flex;align-items:center;gap:6px;font-size:11px;font-family:monospace;color:#1e40af;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">bufin_system_backup_state.json</span>
+          </div>
         </div>
       </div>
 
       <!-- Action Buttons -->
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-        <button type="button" id="btnDownloadZip" class="p" style="height:44px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;font-weight:700;">
+        <button type="button" id="btnDownloadZip" class="p" style="height:44px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;font-weight:700;cursor:pointer;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="21 8 21 21 3 21 3 8"></polyline>
-            <rect x="1" y="3" width="22" height="5"></rect>
-            <line x1="10" y1="12" x2="14" y2="12"></line>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span>📦 Download All CSVs in ZIP Archive (.zip)</span>
+          <span>Download All CSVs in ZIP Archive (.zip)</span>
         </button>
 
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button type="button" id="btnDownloadBackup" style="flex:1;min-width:160px;height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;">
+          <button type="button" id="btnDownloadBackup" style="flex:1;min-width:160px;height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;cursor:pointer;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
             </svg>
             <span>System JSON Only (.json)</span>
           </button>
-          <button type="button" id="btnCopyBackup" style="height:38px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;">
+          <button type="button" id="btnCopyBackup" style="height:38px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -3446,7 +3509,11 @@ export function showRestoreModal() {
       </details>
 
       <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:8px 12px;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
-        <span style="font-size:14px;">⚠️</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
         <span style="font-size:11.5px;color:#92400e;line-height:1.35;">Restoring will completely overwrite the active ledger in this browser and sync with the database.</span>
       </div>
 
@@ -3484,7 +3551,12 @@ export function showRestoreModal() {
     } catch (err) {
       parsedData = null;
       $('#restorePreview').style.display = 'none';
-      $('#restoreError').textContent = '⚠️ ' + err.message;
+      $('#restoreError').innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>${esc(err.message)}</span>
+        </div>
+      `;
       $('#restoreError').style.display = 'block';
       const btn = $('#btnConfirmRestore');
       btn.disabled = true;
@@ -3528,13 +3600,21 @@ export function showRestoreModal() {
         }
         validateAndShow(jsonContent);
         dropZone.innerHTML = `
-          <div style="color:#16a34a;font-weight:600;font-size:13.5px;">✓ File Loaded: ${esc(file.name)}</div>
+          <div style="color:#16a34a;font-weight:600;font-size:13.5px;display:flex;align-items:center;justify-content:center;gap:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>File Loaded: ${esc(file.name)}</span>
+          </div>
           <div style="font-size:11.5px;color:#64748b;margin-top:2px;">${(file.size / 1024).toFixed(1)} KB — Click to choose different file</div>
         `;
       } catch (err) {
         parsedData = null;
         $('#restorePreview').style.display = 'none';
-        $('#restoreError').textContent = '⚠️ ' + err.message;
+        $('#restoreError').innerHTML = `
+          <div style="display:flex;align-items:center;gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>${esc(err.message)}</span>
+          </div>
+        `;
         $('#restoreError').style.display = 'block';
       }
     };

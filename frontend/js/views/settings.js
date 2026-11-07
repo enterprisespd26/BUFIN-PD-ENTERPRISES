@@ -51,8 +51,12 @@ export function renderSettings() {
         </button>
       </div>
 
-      <div style="margin-top:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:12px;color:#475569;line-height:1.45;">
-        🔒 <b>No client credentials required:</b> Your Cloudinary API keys and secret are configured safely on the backend server. Paper bills, weighbridge slips, and camera scans automatically upload to Cloudinary CDN with secure HTTPS links.
+      <div style="margin-top:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:12px;color:#475569;line-height:1.45;display:flex;align-items:flex-start;gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <div><b>No client credentials required:</b> Your Cloudinary API keys and secret are configured safely on the backend server. Paper bills, weighbridge slips, and camera scans automatically upload to Cloudinary CDN with secure HTTPS links.</div>
       </div>
       <div id="c_test_result" style="margin-top:8px;font-size:12px;font-weight:600;"></div>
 
@@ -79,7 +83,7 @@ export function renderSettings() {
         <div>
           <div style="font-size:14.5px;font-weight:700;color:#0f172a;">Data Protection &amp; Snapshots</div>
           <div style="font-size:12px;color:#64748b;margin-top:2px;">
-            Export full JSON ledger backups or restore your business accounts safely.
+            Export complete ZIP archive with dedicated entity CSVs, master combined spreadsheet, and system JSON.
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -89,7 +93,7 @@ export function renderSettings() {
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            <span>Backup Data (.json)</span>
+            <span>Download Backup (.zip)</span>
           </button>
           <button data-a="restore" style="display:inline-flex;align-items:center;gap:6px;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -97,9 +101,15 @@ export function renderSettings() {
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <span>Restore from Backup</span>
+            <span>Restore Backup (.zip / .json)</span>
           </button>
           <button class="d" data-a="wipe" style="display:inline-flex;align-items:center;gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+              <path d="M10 11v6"></path>
+              <path d="M14 11v6"></path>
+            </svg>
             <span>Erase All Data</span>
           </button>
         </div>
