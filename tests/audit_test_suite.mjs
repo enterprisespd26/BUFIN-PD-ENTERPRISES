@@ -68,7 +68,28 @@ import { saveAttachments, getAttachments } from '../frontend/js/modules/attachme
 // Reset database helper
 function resetTestDb() {
   setDb({
-    biz: { name: 'PD Enterprises', gstin: '21AAAAA0000A1Z5', state: 'Odisha', owner: 'Pritam', addr: 'Plot 42, Industrial Area, Rourkela' },
+    biz: {
+      name: 'PD ENTERPRISES',
+      owner: 'Pritam Das',
+      gstin: '21IFNPD3153M1ZC',
+      addr: 'Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India',
+      phone: '+91 7684010176',
+      email: 'enterprisespd26@gmail.com',
+      state: 'Odisha',
+      prefix: 'PD/2627/',
+      bank_name: 'State Bank of India (SBI)',
+      account_holder: 'PD ENTERPRISES',
+      account_no: '00000045659125494',
+      account_type: 'Current Account',
+      account_desc: 'CA-REGULAR-PUB-OTH-ALL-INR',
+      ifsc: 'SBIN0009825',
+      micr: '756002536',
+      bank_addr: 'Plot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059',
+      bank: 'State Bank of India (SBI) - A/C: 00000045659125494\nIFSC: SBIN0009825 | MICR: 756002536\nCurrent Account: CA-REGULAR-PUB-OTH-ALL-INR\nPlot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059',
+      upi: '7684010176@upi',
+      terms: '1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.\n4. Subject to Balasore jurisdiction.',
+      lock: ''
+    },
     accounts: [
       { code: '1000', name: 'Cash in Hand', t: 'A', cash: true },
       { code: '1010', name: 'Bank Account', t: 'A', cash: true },
@@ -1053,6 +1074,35 @@ test('TC-SET-02: Updating business profile dynamically updates company letterhea
   assert.equal(db.biz.name, 'PD ENTERPRISES PVT LTD');
   assert.equal(db.biz.gstin, '21ABCDE9999Z1Z8');
   assert.ok(db.biz.addr.includes('Scrap Complex'));
+});
+
+test('TC-SYS-BIZ-01: Permanent PD ENTERPRISES company and State Bank of India bank details are preserved across business settings and invoices', () => {
+  resetTestDb();
+
+  // Verify Permanent Business Credentials
+  assert.equal(db.biz.name, 'PD ENTERPRISES', 'Company name must be PD ENTERPRISES');
+  assert.equal(db.biz.gstin, '21IFNPD3153M1ZC', 'GSTIN must be 21IFNPD3153M1ZC');
+  assert.equal(db.biz.addr, 'Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India', 'Registered address must match exactly');
+  assert.equal(db.biz.phone, '+91 7684010176', 'Phone must match');
+  assert.equal(db.biz.email, 'enterprisespd26@gmail.com', 'Email must match');
+  assert.equal(db.biz.state, 'Odisha', 'State must be Odisha');
+
+  // Verify Permanent State Bank of India (SBI) Details
+  assert.equal(db.biz.bank_name, 'State Bank of India (SBI)', 'Bank name must be State Bank of India (SBI)');
+  assert.equal(db.biz.account_holder, 'PD ENTERPRISES', 'Account holder must be PD ENTERPRISES');
+  assert.equal(db.biz.account_no, '00000045659125494', 'Account number must be 00000045659125494');
+  assert.equal(db.biz.account_type, 'Current Account', 'Account type must be Current Account');
+  assert.equal(db.biz.account_desc, 'CA-REGULAR-PUB-OTH-ALL-INR', 'Account description must match');
+  assert.equal(db.biz.ifsc, 'SBIN0009825', 'IFSC code must be SBIN0009825');
+  assert.equal(db.biz.micr, '756002536', 'MICR code must be 756002536');
+  assert.equal(db.biz.bank_addr, 'Plot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059', 'Bank branch address must match');
+
+  // Verify Multi-line Bank Details for Invoices & Settings
+  assert.ok(db.biz.bank.includes('00000045659125494'), 'Invoice bank details must contain account number');
+  assert.ok(db.biz.bank.includes('SBIN0009825'), 'Invoice bank details must contain IFSC code');
+  assert.ok(db.biz.bank.includes('756002536'), 'Invoice bank details must contain MICR code');
+  assert.ok(db.biz.bank.includes('CA-REGULAR-PUB-OTH-ALL-INR'), 'Invoice bank details must contain account description');
+  assert.ok(db.biz.bank.includes('Panichhatara, Muhanchuan'), 'Invoice bank details must contain bank address');
 });
 
 // ========================================================

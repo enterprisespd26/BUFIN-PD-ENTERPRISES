@@ -27,7 +27,7 @@ export const STAMP_RATIO = 2.4489; // width / height
 
 export const salesState = {
   tab: 'rec', // 'new' | 'rec' | 'itm' | 'view'
-  lines: [{ n: 'Iron scrap', h: '7204', q: 100, u: 'kg', r: 28 }],
+  lines: [{ n: '', h: '', q: 0, u: 'kg', r: 0 }],
   editNo: null,
   viewNo: null,
   selectedPartyId: null,
@@ -869,7 +869,7 @@ export function renderSales() {
   const invNotes = activeInv ? (activeInv.nt || '') : '';
 
   // Current lines
-  const lines = salesState.lines.length ? salesState.lines : [{ n: 'Iron scrap', h: '7204', q: 100, u: 'kg', r: 28 }];
+  const lines = salesState.lines.length ? salesState.lines : [{ n: '', h: '', q: 0, u: 'kg', r: 0 }];
   salesState.lines = lines;
 
   // Compute live totals for the new invoice form
@@ -1661,7 +1661,7 @@ export function bindSalesEvents() {
     clearBtn.onclick = () => {
       salesState.editNo = null;
       salesState.selectedPartyId = null;
-      salesState.lines = [{ n: 'Iron scrap', h: '7204', q: 100, u: 'kg', r: 28 }];
+      salesState.lines = [{ n: '', h: '', q: 0, u: 'kg', r: 0 }];
       salesState.paymentReceived = false;
       salesState.newNo = nextInvNo();
       container.innerHTML = renderSales();

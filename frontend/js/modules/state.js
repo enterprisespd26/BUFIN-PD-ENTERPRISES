@@ -61,16 +61,7 @@ try {
   }
 } catch (e) {}
 
-export const DEF_SCRAP_ITEMS = [
-  { n: "Iron scrap", h: "7204", u: "kg", r: 0 },
-  { n: "Steel scrap", h: "7204", u: "kg", r: 0 },
-  { n: "Aluminium scrap", h: "7602", u: "kg", r: 0 },
-  { n: "Copper scrap", h: "7404", u: "kg", r: 0 },
-  { n: "Brass scrap", h: "7404", u: "kg", r: 0 },
-  { n: "Plastic scrap", h: "3915", u: "kg", r: 0 },
-  { n: "Paper / cardboard", h: "4707", u: "kg", r: 0 },
-  { n: "Battery scrap", h: "8549", u: "kg", r: 0 }
-];
+export const DEF_SCRAP_ITEMS = [];
 
 export let db = initialDb || {
   biz: {
@@ -82,7 +73,15 @@ export let db = initialDb || {
     email: 'enterprisespd26@gmail.com',
     state: 'Odisha',
     prefix: 'PD/2627/',
-    bank: 'State Bank of India - A/C 39876543210, IFSC SBIN0001234',
+    bank_name: 'State Bank of India (SBI)',
+    account_holder: 'PD ENTERPRISES',
+    account_no: '00000045659125494',
+    account_type: 'Current Account',
+    account_desc: 'CA-REGULAR-PUB-OTH-ALL-INR',
+    ifsc: 'SBIN0009825',
+    micr: '756002536',
+    bank_addr: 'Plot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059',
+    bank: 'State Bank of India (SBI) - A/C: 00000045659125494\nIFSC: SBIN0009825 | MICR: 756002536\nCurrent Account: CA-REGULAR-PUB-OTH-ALL-INR\nPlot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059',
     upi: '7684010176@upi',
     terms: '1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.\n4. Subject to Balasore jurisdiction.',
     lock: ''
@@ -93,7 +92,7 @@ export let db = initialDb || {
   docs: [],
   loans: [],
   seq: {},
-  items: DEF_SCRAP_ITEMS,
+  items: [],
   audit: []
 };
 

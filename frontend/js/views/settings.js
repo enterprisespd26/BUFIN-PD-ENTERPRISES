@@ -59,7 +59,7 @@ export function renderSettings() {
 
         <div class="two">
           <label>Address<textarea name="addr" rows="3" style="resize:vertical;">${esc(db.biz.addr || 'Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India')}</textarea></label>
-          <label>Bank details (shown on printed invoice)<textarea name="bank" rows="3" style="resize:vertical;">${esc(db.biz.bank || 'State Bank of India - A/C 39876543210, IFSC SBIN0001234')}</textarea></label>
+          <label>Bank details (shown on printed invoice)<textarea name="bank" rows="4" style="resize:vertical;">${esc(db.biz.bank || 'State Bank of India (SBI) - A/C: 00000045659125494\nIFSC: SBIN0009825 | MICR: 756002536\nCurrent Account: CA-REGULAR-PUB-OTH-ALL-INR\nPlot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059')}</textarea></label>
         </div>
 
         <div class="two">
