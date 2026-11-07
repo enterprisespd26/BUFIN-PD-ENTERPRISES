@@ -4,21 +4,89 @@ import { fld } from '../modules/components.js';
 
 export function renderSettings() {
   return head('Settings') +
-    `<div class="wrap" style="padding:16px">
+    `<div class="wrap" style="padding:18px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd);padding-bottom:12px;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:9px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 21h18"></path>
+              <path d="M9 8h1"></path>
+              <path d="M9 12h1"></path>
+              <path d="M9 16h1"></path>
+              <path d="M14 8h1"></path>
+              <path d="M14 12h1"></path>
+              <path d="M14 16h1"></path>
+              <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path>
+            </svg>
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:#0f172a;">Business Profile &amp; Letterhead</div>
+            <div style="font-size:12px;color:#64748b;">Configure your company credentials, GST details, bank accounts, and invoice headers.</div>
+          </div>
+        </div>
+        <span style="font-size:11.5px;font-weight:600;background:#f1f5f9;color:#475569;padding:4px 10px;border-radius:6px;">
+          GST Active: ${esc(db.biz.state || 'Odisha')}
+        </span>
+      </div>
+
       <form id="bf">
-        ${fld('name', 'Business name', 'text', db.biz.name || 'PD ENTERPRISES')}
-        ${fld('owner', 'Proprietor name', 'text', db.biz.owner || 'Pritam Das')}
-        ${fld('gstin', 'GSTIN', 'text', db.biz.gstin || '21IFNPD3153M1ZC')}
-        ${fld('phone', 'Mobile / Phone', 'text', db.biz.phone || '+91 7684010176')}
-        ${fld('email', 'Email', 'text', db.biz.email || 'enterprisespd26@gmail.com')}
-        ${fld('state', 'Home State (for CGST+SGST vs IGST)', 'text', db.biz.state || 'Odisha')}
-        ${fld('prefix', 'Invoice Prefix', 'text', db.biz.prefix || 'PD/2627/')}
-        ${fld('upi', 'UPI ID', 'text', db.biz.upi || '7684010176@upi')}
-        <label>Address<textarea name="addr" rows="3">${esc(db.biz.addr || 'Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India')}</textarea></label>
-        <label>Bank details (shown on printed invoice)<textarea name="bank" rows="3">${esc(db.biz.bank || 'State Bank of India - A/C 39876543210, IFSC SBIN0001234')}</textarea></label>
-        <label>Terms &amp; conditions<textarea name="terms" rows="3">${esc(db.biz.terms || '1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.\n4. Subject to Balasore jurisdiction.')}</textarea></label>
-        ${fld('lock', 'Lock periods up to (no posting on or before)', 'date', db.biz.lock || '')}
-        <div style="margin-top:14px"><button class="p">Save settings</button></div>
+        <div class="two">
+          ${fld('name', 'Business name', 'text', db.biz.name || 'PD ENTERPRISES')}
+          ${fld('owner', 'Proprietor name', 'text', db.biz.owner || 'Pritam Das')}
+        </div>
+        <div class="two">
+          ${fld('gstin', 'GSTIN', 'text', db.biz.gstin || '21IFNPD3153M1ZC')}
+          ${fld('state', 'Home State (for CGST+SGST vs IGST)', 'text', db.biz.state || 'Odisha')}
+        </div>
+        <div class="two">
+          ${fld('phone', 'Mobile / Phone', 'text', db.biz.phone || '+91 7684010176')}
+          ${fld('email', 'Email', 'text', db.biz.email || 'enterprisespd26@gmail.com')}
+        </div>
+        <div class="two">
+          ${fld('prefix', 'Invoice Prefix', 'text', db.biz.prefix || 'PD/2627/')}
+          ${fld('upi', 'UPI ID', 'text', db.biz.upi || '7684010176@upi')}
+        </div>
+
+        <div style="font-size:13px;font-weight:700;color:#1e293b;margin:14px 0 10px;padding-top:12px;border-top:1px dashed #e2e8f0;display:flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <span>Invoice Details, Banking &amp; Lockout</span>
+        </div>
+
+        <div class="two">
+          <label>Address<textarea name="addr" rows="3" style="resize:vertical;">${esc(db.biz.addr || 'Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India')}</textarea></label>
+          <label>Bank details (shown on printed invoice)<textarea name="bank" rows="3" style="resize:vertical;">${esc(db.biz.bank || 'State Bank of India - A/C 39876543210, IFSC SBIN0001234')}</textarea></label>
+        </div>
+
+        <div class="two">
+          <label>Terms &amp; conditions<textarea name="terms" rows="3" style="resize:vertical;">${esc(db.biz.terms || '1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.\n4. Subject to Balasore jurisdiction.')}</textarea></label>
+          <div style="display:flex;flex-direction:column;">
+            ${fld('lock', 'Lock periods up to (no posting on or before)', 'date', db.biz.lock || '')}
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:12px;color:#64748b;line-height:1.4;margin-top:2px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px;">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              Transactions on or before this locked date cannot be posted or edited.
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <button class="p" style="height:40px;padding:0 22px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span>Save settings</span>
+          </button>
+          <span style="font-size:12px;color:#64748b;">Changes dynamically update company letterhead, tax invoices, and accounting locks.</span>
+        </div>
       </form>
     </div>
     <h3>Cloud Storage &amp; Receipts (Cloudinary)</h3>
@@ -66,9 +134,11 @@ export function renderSettings() {
           <div style="font-size:11.5px;color:var(--t2);margin-bottom:8px;">
             Only change these if you want to switch your backend Cloudinary account. Leave secret blank to keep existing.
           </div>
-          ${fld('cloudName', 'Cloudinary Cloud Name', 'text', db.biz.cloudinary_name || 'iqsinmcr')}
-          ${fld('apiKey', 'Cloudinary API Key', 'text', db.biz.cloudinary_key || '573667157386361')}
-          ${fld('apiSecret', 'Cloudinary API Secret (leave blank to keep current)', 'password', '')}
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;">
+            ${fld('cloudName', 'Cloudinary Cloud Name', 'text', db.biz.cloudinary_name || 'iqsinmcr')}
+            ${fld('apiKey', 'Cloudinary API Key', 'text', db.biz.cloudinary_key || '573667157386361')}
+            ${fld('apiSecret', 'Cloudinary API Secret (leave blank to keep current)', 'password', '')}
+          </div>
           <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
             <button type="submit" class="p sm">Update Server Credentials</button>
             <span id="c_stat" style="font-size:12px;font-weight:600;color:var(--t2)"></span>
