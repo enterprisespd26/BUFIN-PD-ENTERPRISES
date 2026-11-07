@@ -26,5 +26,21 @@ function validate(next, prev) {
     const lock = next.biz && next.biz.lock;
     if (lock) for (const e of next.entries) if (!old.has(e.id) && e.date <= lock) fail(e.ref + ': period is locked up to ' + lock);
   }
+  if (Array.isArray(next.docs)) {
+    for (const doc of next.docs) {
+      if (doc && doc.type === 'sale') {
+        const totalPaisa = doc.total || 0;
+        let paidPaisa = 0;
+        if (Array.isArray(doc.pays) && doc.pays.length) {
+          paidPaisa = doc.pays.reduce((s, p) => s + (p.void ? 0 : (p.amt || p.a || 0)), 0);
+        } else if (doc.paid !== undefined && doc.paid !== null) {
+          paidPaisa = (doc.paid > (totalPaisa / 100) * 10 && totalPaisa > 0) ? doc.paid : Math.round(doc.paid * 100);
+        }
+        if (paidPaisa > totalPaisa) {
+          fail(`Invoice ${doc.no || doc.id}: Received amount (${paidPaisa / 100}) cannot exceed grand total (${totalPaisa / 100})`);
+        }
+      }
+    }
+  }
 }
 module.exports = { validate };

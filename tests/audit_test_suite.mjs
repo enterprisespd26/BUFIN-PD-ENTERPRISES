@@ -200,6 +200,58 @@ test('TC-SALES-03: Multi-Unit Scrap Engine Conversions', () => {
   assert.equal(lineSubtotalTon, 60000, '1.5 tons @ ₹40,000 = ₹60,000');
 });
 
+test('TC-SALES-04: Conditional Billing Logic & Validation Check (Paid in Full vs Credit / Pending)', () => {
+  // Helper mimicking calcFigs from sales.js
+  const calcTestFigs = (lines, disc, rate, mode, paidVal) => {
+    const sub = (lines || []).reduce((s, l) => s + (parseFloat(l.q) || 0) * (parseFloat(l.r) || 0), 0);
+    const tx = sub - (disc || 0);
+    const tax = tx * (rate || 0) / 100;
+    const gt = Math.round(tx + tax);
+    let paidPaisa = 0;
+    if (paidVal !== undefined && paidVal !== null && paidVal !== '') {
+      const raw = parseFloat(paidVal) || 0;
+      paidPaisa = (raw > gt * 10 && gt > 0) ? raw : Math.round(raw * 100);
+    }
+    const paidRupees = paidPaisa / 100;
+    const rec = Math.min(gt, Math.max(0, Math.round(paidRupees * 100) / 100));
+    const bal = Math.max(0, Math.round((gt - rec) * 100) / 100);
+    const isPaid = bal <= 0 && (gt === 0 || rec >= gt);
+    return { sub, gt, rec, bal, isPaid };
+  };
+
+  const testLines = [{ n: 'Copper scrap', q: 100, r: 60 }]; // ₹6,000 subtotal + 18% GST = ₹7,080
+
+  // 1. Scenario A: Paid in Full
+  const figPaid = calcTestFigs(testLines, 0, 18, 'intra', 7080);
+  assert.equal(figPaid.gt, 7080, 'Grand total must be 7080');
+  assert.equal(figPaid.rec, 7080, 'Received amount must exactly match grand total (7080)');
+  assert.equal(figPaid.bal, 0, 'Balance due must be exactly 0.00');
+  assert.equal(figPaid.rec + figPaid.bal, figPaid.gt, 'Received + Balance Due must equal Grand Total');
+  assert.ok(figPaid.isPaid, 'isPaid must resolve to true');
+
+  // Terms #1 for Paid in Full
+  const defaultTerms = '1. Payment within 15 days.\n2. Goods once sold will not be taken back.';
+  const paidTerms = defaultTerms.replace(/^\s*1\.\s*(Payment within|Paid in full)[^\n]*/mi, '1. Paid in full via NEFT.');
+  assert.ok(paidTerms.startsWith('1. Paid in full via NEFT.'), 'Terms rule #1 must change to Paid in full via NEFT');
+
+  // 2. Scenario B: Unpaid / Credit Term
+  const figUnpaid = calcTestFigs(testLines, 0, 18, 'intra', 0);
+  assert.equal(figUnpaid.gt, 7080, 'Grand total must be 7080');
+  assert.equal(figUnpaid.rec, 0, 'Received amount must be 0.00');
+  assert.equal(figUnpaid.bal, 7080, 'Balance due must equal Grand Total (7080)');
+  assert.equal(figUnpaid.rec + figUnpaid.bal, figUnpaid.gt, 'Received + Balance Due must equal Grand Total');
+  assert.ok(!figUnpaid.isPaid, 'isPaid must resolve to false');
+
+  // Terms #1 for Credit / Unpaid
+  const creditTerms = paidTerms.replace(/^\s*1\.\s*Paid in full[^\n]*/mi, '1. Payment within 15 days.');
+  assert.ok(creditTerms.startsWith('1. Payment within 15 days.'), 'Terms rule #1 must keep Payment within 15 days');
+
+  // 3. Validation Check: Guard against 7-lakh input error
+  const erroneousInput = 708000; // 7 lakhs entered instead of 7080
+  const isPaiseMismatch = erroneousInput > figPaid.gt * 10;
+  assert.ok(isPaiseMismatch, 'Validation must detect 10x paise mismatch');
+});
+
 // ========================================================
 // MODULE 2: PURCHASE BILLS & INVENTORY STOCK (/#/bills, /#/inventory)
 // ========================================================

@@ -1059,32 +1059,45 @@ export function renderSales() {
           </label>
         </div>
 
-        <!-- CONDITIONAL PAYMENT TOGGLE -->
-        <div style="background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:14px 16px;margin-top:16px;">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;font-weight:600;font-size:14px;color:var(--tx);margin:0;">
-            <input type="checkbox" id="pd_pay_received" ${isPaymentReceived ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;margin:0;">
-            <span>Payment Received Now?</span>
-          </label>
-          <div id="pd_payment_fields" style="display:${isPaymentReceived ? 'grid' : 'none'};grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--bd);">
+        <!-- CONDITIONAL PAYMENT STATUS TOGGLE -->
+        <div class="pd-pay-status-box" style="background:#f8fafc;border:1px solid var(--bd);border-radius:10px;padding:16px;margin-top:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+            <div>
+              <span style="font-weight:700;font-size:14px;color:var(--tx);display:block;">Payment Status</span>
+              <span style="font-size:12px;color:var(--t2);">Select settlement status (Paid in Full vs Credit / Pending)</span>
+            </div>
+            <div class="pd-seg-toggle" style="display:inline-flex;background:#e2e8f0;padding:3px;border-radius:8px;gap:3px;">
+              <button type="button" id="pd_btn_status_paid" class="pd-seg-btn ${isPaymentReceived ? 'active' : ''}" style="padding:6px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:${isPaymentReceived ? '#10b981' : 'transparent'};color:${isPaymentReceived ? '#ffffff' : '#475569'};transition:all 0.15s ease;">
+                ✓ Paid in Full
+              </button>
+              <button type="button" id="pd_btn_status_credit" class="pd-seg-btn ${!isPaymentReceived ? 'active' : ''}" style="padding:6px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:${!isPaymentReceived ? '#f59e0b' : 'transparent'};color:${!isPaymentReceived ? '#ffffff' : '#475569'};transition:all 0.15s ease;">
+                ⏳ Credit / Pending
+              </button>
+            </div>
+            <input type="checkbox" id="pd_pay_received" ${isPaymentReceived ? 'checked' : ''} style="display:none;">
+          </div>
+
+          <div id="pd_payment_fields" style="display:${isPaymentReceived ? 'grid' : 'none'};grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;padding-top:14px;border-top:1px dashed var(--bd);">
             <label class="pd-label">Amount received (₹)
-              <input type="number" id="pd_paid" value="${invPaid}" min="0" step="any">
+              <input type="number" id="pd_paid" value="${invPaid !== '' ? invPaid : liveFigs.gt}" min="0" step="any" placeholder="₹0.00" data-auto-sync="${isPaymentReceived && (invPaid === '' || invPaid == liveFigs.gt) ? '1' : '0'}">
             </label>
             <label class="pd-label">Payment mode
               <select id="pd_pm">
-                <option ${invPm === 'Cash' ? 'selected' : ''}>Cash</option>
-                <option ${invPm === 'UPI' ? 'selected' : ''}>UPI</option>
-                <option ${invPm === 'Bank transfer' ? 'selected' : ''}>Bank transfer</option>
-                <option ${invPm === 'Cheque' ? 'selected' : ''}>Cheque</option>
+                <option value="Bank Transfer" ${invPm === 'Bank Transfer' ? 'selected' : ''}>Bank Transfer (NEFT/RTGS)</option>
+                <option value="UPI" ${invPm === 'UPI' ? 'selected' : ''}>UPI</option>
+                <option value="Cash" ${invPm === 'Cash' ? 'selected' : ''}>Cash</option>
+                <option value="Cheque" ${invPm === 'Cheque' ? 'selected' : ''}>Cheque</option>
+                <option value="Credit" ${invPm === 'Credit' ? 'selected' : ''}>Credit</option>
               </select>
             </label>
             <label class="pd-label">Deposit Account
               <select id="pd_deposit_acct">
-                <option value="1000" ${invDepositAcct === '1000' ? 'selected' : ''}>1000 · Cash in Hand</option>
                 <option value="1010" ${invDepositAcct === '1010' ? 'selected' : ''}>1010 · Bank Account</option>
+                <option value="1000" ${invDepositAcct === '1000' ? 'selected' : ''}>1000 · Cash in Hand</option>
               </select>
             </label>
             <label class="pd-label">Payment Reference / Txn ID
-              <input type="text" id="pd_pay_ref" value="${esc(invPayRef)}" placeholder="e.g. UPI Ref / Cheque No">
+              <input type="text" id="pd_pay_ref" value="${esc(invPayRef)}" placeholder="e.g. NEFT-SBI-9912 / UPI Ref">
             </label>
           </div>
         </div>
@@ -1099,7 +1112,8 @@ export function renderSales() {
         : ''}
           ${liveFigs.ro ? `<div><span>Round off</span><span>${inr(liveFigs.ro)}</span></div>` : ''}
           <div class="gt"><span>Total</span><span>${inr(liveFigs.gt)}</span></div>
-          <div><span>Balance due</span><span>${inr(liveFigs.bal)}</span></div>
+          <div><span>Received</span><span>${inr(liveFigs.rec)}</span></div>
+          <div><b>Balance due</b><b>${inr(liveFigs.bal)}</b></div>
         </div>
 
         <div class="pd-btn-row" style="margin-top:16px">
@@ -1364,7 +1378,8 @@ export function bindSalesEvents() {
             : ''}
         ${f.ro ? `<div><span>Round off</span><span>${inr(f.ro)}</span></div>` : ''}
         <div class="gt"><span>Total</span><span>${inr(f.gt)}</span></div>
-        <div><span>Balance due</span><span>${inr(f.bal)}</span></div>
+        <div><span>Received</span><span>${inr(f.rec)}</span></div>
+        <div><b>Balance due</b><b>${inr(f.bal)}</b></div>
       `;
     }
   };
@@ -1535,47 +1550,90 @@ export function bindSalesEvents() {
     csInput.oninput = recalculateForm;
   }
 
-  // Payment received checkbox & conditional fields
+  // Payment received toggle buttons & conditional fields
+  const btnStatusPaid = $('#pd_btn_status_paid');
+  const btnStatusCredit = $('#pd_btn_status_credit');
   const payRecChk = $('#pd_pay_received');
   const payFields = $('#pd_payment_fields');
   const paidInput = $('#pd_paid');
   const depositAcctSelect = $('#pd_deposit_acct');
   const pmSelect = $('#pd_pm');
+  const ntInput = $('#pd_nt');
 
-  if (payRecChk) {
-    payRecChk.onchange = () => {
-      salesState.paymentReceived = payRecChk.checked;
-      if (payRecChk.checked) {
-        if (payFields) payFields.style.display = 'grid';
-        if (paidInput) {
-          paidInput.dataset.autoSync = '1';
-          const custState = $('#pd_cs')?.value || db.biz.state || 'Odisha';
-          const invMode = $('#pd_mode')?.value || 'auto';
-          const invRate = parseFloat($('#pd_rate')?.value) || 0;
-          const invDisc = parseFloat($('#pd_disc')?.value) || 0;
-          const f = calcFigs({
-            lines: salesState.lines,
-            disc: invDisc,
-            rate: invRate,
-            mode: getMode(custState, invMode, invRate),
-            paid: 0
-          });
-          paidInput.value = f.gt > 0 ? f.gt : '';
-        }
+  const updatePaymentStatus = (isPaid) => {
+    salesState.paymentReceived = isPaid;
+    if (payRecChk) payRecChk.checked = isPaid;
+
+    if (btnStatusPaid && btnStatusCredit) {
+      if (isPaid) {
+        btnStatusPaid.style.background = '#10b981';
+        btnStatusPaid.style.color = '#ffffff';
+        btnStatusCredit.style.background = 'transparent';
+        btnStatusCredit.style.color = '#475569';
       } else {
-        if (payFields) payFields.style.display = 'none';
-        if (paidInput) {
-          delete paidInput.dataset.autoSync;
-          paidInput.value = '0';
+        btnStatusPaid.style.background = 'transparent';
+        btnStatusPaid.style.color = '#475569';
+        btnStatusCredit.style.background = '#f59e0b';
+        btnStatusCredit.style.color = '#ffffff';
+      }
+    }
+
+    if (isPaid) {
+      if (payFields) payFields.style.display = 'grid';
+      if (pmSelect) {
+        if (pmSelect.value === 'Credit' || pmSelect.value.includes('Pending')) {
+          pmSelect.value = 'Bank Transfer';
         }
       }
-      recalculateForm();
-    };
-  }
+      if (depositAcctSelect) {
+        depositAcctSelect.value = pmSelect?.value === 'Cash' ? '1000' : '1010';
+      }
+      if (ntInput && (!ntInput.value || /credit\s+terms/i.test(ntInput.value))) {
+        ntInput.value = 'Full payment received via NEFT upon dispatch.';
+      }
+      if (paidInput) {
+        paidInput.dataset.autoSync = '1';
+        const custState = $('#pd_cs')?.value || db.biz.state || 'Odisha';
+        const invMode = $('#pd_mode')?.value || 'auto';
+        const invRate = parseFloat($('#pd_rate')?.value) || 0;
+        const invDisc = parseFloat($('#pd_disc')?.value) || 0;
+        const custGstin = ($('#pd_cg')?.value || '').trim();
+        const f = calcFigs({
+          lines: salesState.lines,
+          disc: invDisc,
+          rate: invRate,
+          mode: getMode(custState, invMode, invRate, custGstin),
+          paid: 0
+        });
+        paidInput.value = f.gt > 0 ? f.gt : '';
+      }
+    } else {
+      if (payFields) payFields.style.display = 'none';
+      if (paidInput) {
+        delete paidInput.dataset.autoSync;
+        paidInput.value = '0';
+      }
+      if (pmSelect) {
+        pmSelect.value = 'Credit';
+      }
+      if (ntInput && /payment\s+received/i.test(ntInput.value)) {
+        ntInput.value = '';
+      }
+    }
+    recalculateForm();
+  };
+
+  if (btnStatusPaid) btnStatusPaid.onclick = () => updatePaymentStatus(true);
+  if (btnStatusCredit) btnStatusCredit.onclick = () => updatePaymentStatus(false);
+  if (payRecChk) payRecChk.onchange = () => updatePaymentStatus(payRecChk.checked);
 
   if (paidInput) {
     paidInput.oninput = () => {
       delete paidInput.dataset.autoSync;
+      const val = parseFloat(paidInput.value) || 0;
+      if (val > 0 && !salesState.paymentReceived) {
+        updatePaymentStatus(true);
+      }
       recalculateForm();
     };
   }
@@ -1637,12 +1695,39 @@ export function bindSalesEvents() {
     const effMode = getMode(cState, modeSel, rate, cGstin);
     const payReceived = Boolean($('#pd_pay_received')?.checked);
     const paidAmt = payReceived ? (parseFloat($('#pd_paid')?.value) || 0) : 0;
-    const pm = $('#pd_pm')?.value || 'Cash';
+    let pm = $('#pd_pm')?.value || 'Bank Transfer';
     const depositAcct = $('#pd_deposit_acct')?.value || (pm === 'Cash' ? '1000' : '1010');
     const payRef = ($('#pd_pay_ref')?.value || '').trim();
-    const nt = ($('#pd_nt')?.value || '').trim();
+    let nt = ($('#pd_nt')?.value || '').trim();
 
     const f = calcFigs({ lines, disc, rate, mode: effMode, paid: paidAmt });
+
+    // Validation rule: [Received Amount + Balance Due] must always equal [Grand Total]
+    if (paidAmt < 0) {
+      return toast('Received amount cannot be negative');
+    }
+    if (paidAmt > f.gt) {
+      return toast(`Received amount (₹${paidAmt.toLocaleString('en-IN')}) cannot exceed Grand Total (₹${f.gt.toLocaleString('en-IN')})`);
+    }
+    if (f.gt > 0 && paidAmt > f.gt * 10) {
+      return toast(`Received amount looks abnormally high (₹${paidAmt.toLocaleString('en-IN')}). Please enter amount in Rupees (e.g. ₹${f.gt}), not Paise.`);
+    }
+    const sumPaisa = Math.round(paidAmt * 100) + Math.round(f.bal * 100);
+    const gtPaisa = Math.round(f.gt * 100);
+    if (sumPaisa !== gtPaisa) {
+      return toast(`Validation Error: Received Amount (₹${paidAmt}) + Balance Due (₹${f.bal}) must equal Grand Total (₹${f.gt})`);
+    }
+
+    if (payReceived && paidAmt >= f.gt) {
+      if (!nt) nt = 'Full payment received via NEFT upon dispatch.';
+      if (pm === 'Credit' || pm.includes('Pending')) pm = 'Bank Transfer';
+    } else if (!payReceived || paidAmt === 0) {
+      if (/payment\s+received/i.test(nt)) nt = '';
+      if (pm !== 'Credit' && !pm.includes('Pending')) {
+        pm = pm === 'Bank Transfer' ? 'Bank Transfer (Pending)' : 'Credit';
+      }
+    }
+
     const totalPaisa = f.gt * 100;
     const basePaisa = Math.round(f.tx * 100);
     const gstPaisa = Math.round(f.tax * 100);

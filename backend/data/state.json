@@ -713,7 +713,7 @@
         "disc": 0,
         "mode": "intra",
         "modeSel": "auto",
-        "paid": 708000,
+        "paid": 7080,
         "pm": "Bank Transfer",
         "nt": "Full payment received via NEFT upon dispatch.",
         "lines": [
@@ -769,8 +769,8 @@
         "mode": "inter",
         "modeSel": "inter",
         "paid": 0,
-        "pm": "Bank Transfer",
-        "nt": "Credit terms 15 days. Unpaid invoice.",
+        "pm": "Bank Transfer (Pending)",
+        "nt": "",
         "lines": [
           {
             "n": "Aluminium scrap",
