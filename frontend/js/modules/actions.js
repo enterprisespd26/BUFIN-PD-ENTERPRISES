@@ -1,5 +1,5 @@
-import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid, downloadCSV, downloadJSON } from './utils.js';
-import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity } from './state.js';
+import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid, downloadCSV, downloadJSON, downloadZIP, readZipFile } from './utils.js';
+import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries } from './state.js';
 import { modal, closeM, form, fld, sel, opts, accOpts, partyOpts } from './components.js';
 
 import { getTxnRowData } from '../views/money.js';
@@ -3042,21 +3042,263 @@ export function showCsvModal() {
 export const exportTransactionsCsv = showCsvModal;
 
 
+export function buildAllBackupFiles() {
+  const escCsv = val => {
+    if (val === null || val === undefined) return '';
+    const s = String(val);
+    if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  };
+
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const dStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const files = [];
+
+  // 1. Chart of Accounts
+  const coaRows = [['Account Code', 'Account Name', 'Type Code', 'Account Type', 'Is Cash/Bank', 'Current Balance (₹)']];
+  for (const a of (db.accounts || [])) {
+    const b = net(a.code);
+    coaRows.push([
+      a.code,
+      a.name,
+      a.t,
+      TN[a.t] || a.t,
+      a.cash ? 'Yes' : 'No',
+      (b / 100).toFixed(2)
+    ]);
+  }
+  files.push({ name: `02_chart_of_accounts_${dStr}.csv`, data: coaRows.map(r => r.map(escCsv).join(',')).join('\n') });
+
+  // 2. Journal Entries (all lines)
+  const jeRows = [['Date', 'Journal Ref', 'Source Type', 'Account Code', 'Account Name', 'Debit (₹)', 'Credit (₹)', 'Party Name', 'Narration', 'Status']];
+  for (const e of (db.entries || [])) {
+    for (const l of (e.lines || [])) {
+      jeRows.push([
+        e.date,
+        e.ref,
+        e.src || 'jv',
+        l.a,
+        an(l.a),
+        l.d ? (l.d / 100).toFixed(2) : '0.00',
+        l.c ? (l.c / 100).toFixed(2) : '0.00',
+        pn(l.p),
+        e.narr || '',
+        e.status || 'posted'
+      ]);
+    }
+  }
+  files.push({ name: `01_journal_entries_${dStr}.csv`, data: jeRows.map(r => r.map(escCsv).join(',')).join('\n') });
+
+  // 3. Sales Invoices
+  const saleRows = [['Invoice No', 'Date', 'Due Date', 'Customer Name', 'Customer Phone', 'Customer GSTIN', 'Taxable Base (₹)', 'GST Amount (₹)', 'Total Amount (₹)', 'Paid Amount (₹)', 'Balance Due (₹)', 'Payment Status', 'Payment Mode', 'Notes']];
+  for (const d of (db.docs || []).filter(x => (x.type || x.t) === 'sale')) {
+    const paidAmt = (d.pays || []).reduce((s, p) => s + (p.a || 0), 0);
+    const outAmt = (d.total || 0) - paidAmt;
+    const status = d.cancelled ? 'Cancelled' : outAmt <= 0 ? 'Paid' : paidAmt > 0 ? 'Partial' : 'Open';
+    saleRows.push([
+      d.no || '',
+      d.date || '',
+      d.due || '',
+      d.c?.n || pn(d.party) || '',
+      d.c?.p || '',
+      d.c?.g || '',
+      d.base ? (d.base / 100).toFixed(2) : '0.00',
+      d.gst ? (d.gst / 100).toFixed(2) : '0.00',
+      d.total ? (d.total / 100).toFixed(2) : '0.00',
+      (paidAmt / 100).toFixed(2),
+      (outAmt / 100).toFixed(2),
+      status,
+      d.pm || '',
+      d.nt || ''
+    ]);
+  }
+  files.push({ name: `03_sales_invoices_${dStr}.csv`, data: saleRows.map(r => r.map(escCsv).join(',')).join('\n') });
+
+  // 4. Purchase Bills
+  const billRows = [['Bill No', 'Supplier Invoice No', 'Date', 'Due Date', 'Supplier Name', 'Material Description', 'Quantity', 'Unit', 'Rate (₹)', 'Taxable Base (₹)', 'GST Amount (₹)', 'Total Amount (₹)', 'Paid Amount (₹)', 'Status', 'Cloud Receipt Link']];
+  for (const d of (db.docs || []).filter(x => (x.type || x.t) === 'bill')) {
+    const paidAmt = (d.pays || []).reduce((s, p) => s + (p.a || 0), 0);
+    const outAmt = (d.total || 0) - paidAmt;
+    const status = d.cancelled ? 'Cancelled' : outAmt <= 0 ? 'Paid' : paidAmt > 0 ? 'Partial' : 'Open';
+    const fileUrl = (d.files || []).map(f => f.url).filter(Boolean).join(' | ');
+    billRows.push([
+      d.no || '',
+      d.sno || '',
+      d.date || '',
+      d.due || '',
+      d.sup || pn(d.party) || '',
+      d.mat || '',
+      d.q || '',
+      d.u || '',
+      d.r || '',
+      d.base ? (d.base / 100).toFixed(2) : '0.00',
+      d.gst ? (d.gst / 100).toFixed(2) : '0.00',
+      d.total ? (d.total / 100).toFixed(2) : '0.00',
+      (paidAmt / 100).toFixed(2),
+      status,
+      fileUrl
+    ]);
+  }
+  files.push({ name: `04_purchase_bills_${dStr}.csv`, data: billRows.map(r => r.map(escCsv).join(',')).join('\n') });
+
+  // 5. Parties Directory
+  const partyRows = [['Party ID', 'Party Name', 'Party Type', 'Mobile Phone', 'GSTIN', 'State', 'Address', 'City']];
+  for (const p of (db.parties || [])) {
+    partyRows.push([
+      p.id,
+      p.name,
+      p.type || 'both',
+      p.phone || '',
+      p.gstin || '',
+      p.state || '',
+      p.addr || '',
+      p.city || ''
+    ]);
+  }
+  files.push({ name: `05_parties_directory_${dStr}.csv`, data: partyRows.map(r => r.map(escCsv).join(',')).join('\n') });
+
+  // 6. Inventory Items
+  const itemRows = [['Item Name', 'HSN / SAC Code', 'Default Unit', 'Standard Rate (₹)']];
+  for (const it of (db.items || [])) {
+    itemRows.push([
+      it.n || '',
+      it.h || '',
+      it.u || 'kg',
+      it.r ? Number(it.r).toFixed(2) : '0.00'
+    ]);
+  }
+  files.push({ name: `06_inventory_items_${dStr}.csv`, data: itemRows.map(r => r.map(escCsv).join(',')).join('\n') });
+
+  // 7. Cash and Bank Book
+  const cashAccounts = (db.accounts || []).filter(a => a.cash).map(a => a.code);
+  const cbRows = [['Date', 'Reference', 'Account Code', 'Account Name', 'Party Name', 'Narration', 'Money In (₹)', 'Money Out (₹)']];
+  for (const e of sortEntries(db.entries || [])) {
+    for (const l of (e.lines || [])) {
+      if (cashAccounts.includes(l.a)) {
+        cbRows.push([
+          e.date,
+          e.ref,
+          l.a,
+          an(l.a),
+          pn(l.p),
+          e.narr || '',
+          l.d ? (l.d / 100).toFixed(2) : '0.00',
+          l.c ? (l.c / 100).toFixed(2) : '0.00'
+        ]);
+      }
+    }
+  }
+  files.push({ name: `07_cash_and_bank_book_${dStr}.csv`, data: cbRows.map(r => r.map(escCsv).join(',')).join('\n') });
+
+  // 8. Loans Register
+  const loanRows = [['Loan ID', 'Loan Reference', 'Loan Name', 'Direction', 'Party Name', 'Principal (₹)', 'Repaid (₹)', 'Outstanding (₹)', 'Annual Rate (%)', 'Date', 'Due Date', 'Status', 'Notes']];
+  for (const l of (db.loans || [])) {
+    const outPrinc = (l.principal || 0) - (l.repaid || 0);
+    const status = outPrinc <= 0 ? 'Closed' : l.due && l.due < today() ? 'Overdue' : 'Active';
+    loanRows.push([
+      l.id,
+      l.ref || '',
+      l.name || '',
+      l.dir || 'taken',
+      l.partyName || pn(l.party) || '',
+      (l.principal / 100).toFixed(2),
+      (l.repaid / 100).toFixed(2),
+      (outPrinc / 100).toFixed(2),
+      l.rate || '',
+      l.date || '',
+      l.due || '',
+      status,
+      l.notes || ''
+    ]);
+  }
+  files.push({ name: `08_loans_register_${dStr}.csv`, data: loanRows.map(r => r.map(escCsv).join(',')).join('\n') });
+
+  // 9. Master Combined Transactions (ALL DATA CONSOLIDATED)
+  const masterRows = [['Date', 'Reference No', 'Transaction Category', 'Primary Party', 'Account Code', 'Account Name', 'Debit Amount (₹)', 'Credit Amount (₹)', 'Narration / Description', 'Status']];
+  for (const e of sortEntries(db.entries || [])) {
+    const cat = e.src === 'sale' ? 'Sales Invoice'
+      : e.src === 'bill' ? 'Purchase Bill'
+      : e.src === 'open' ? 'Opening Balance'
+      : e.src === 'pay' ? 'Payment'
+      : e.src === 'trf' ? 'Transfer'
+      : 'Journal Entry';
+    for (const l of (e.lines || [])) {
+      masterRows.push([
+        e.date,
+        e.ref,
+        cat,
+        pn(l.p),
+        l.a,
+        an(l.a),
+        l.d ? (l.d / 100).toFixed(2) : '0.00',
+        l.c ? (l.c / 100).toFixed(2) : '0.00',
+        e.narr || '',
+        e.status || 'posted'
+      ]);
+    }
+  }
+  files.push({ name: `00_all_transactions_master_combined_${dStr}.csv`, data: masterRows.map(r => r.map(escCsv).join(',')).join('\n') });
+
+  // 10. Complete System Backup JSON (for instant 1-click restore)
+  files.push({
+    name: `bufin_system_backup_state_${dStr}.json`,
+    data: JSON.stringify(db, null, 2)
+  });
+
+  // 11. Readme summary file
+  const readmeText = `=====================================================
+BUFIN COMPLETE LEDGER BACKUP ARCHIVE
+Business Name: ${db.biz.name || 'PD ENTERPRISES'}
+Proprietor:    ${db.biz.owner || 'Pritam Das'}
+GSTIN:         ${db.biz.gstin || '21IFNPD3153M1ZC'}
+Export Date:   ${now.toLocaleString('en-IN')}
+=====================================================
+
+CONTENTS OF THIS ZIP BACKUP:
+1. 00_all_transactions_master_combined_${dStr}.csv
+   -> Consolidated master spreadsheet combining all debits, credits, and transactions across every account.
+2. 01_journal_entries_${dStr}.csv
+   -> Full double-entry general journal with line-by-line debits and credits.
+3. 02_chart_of_accounts_${dStr}.csv
+   -> Complete Chart of Accounts with account codes, categories, and balances.
+4. 03_sales_invoices_${dStr}.csv
+   -> All sales invoices, customer details, GST split, payment status.
+5. 04_purchase_bills_${dStr}.csv
+   -> All purchase bills, scrap weighbridge slips, supplier details, and Cloudinary receipt links.
+6. 05_parties_directory_${dStr}.csv
+   -> Customers, suppliers, and contacts directory with GSTIN and phone numbers.
+7. 06_inventory_items_${dStr}.csv
+   -> Product catalog, HSN/SAC codes, and standard rates.
+8. 07_cash_and_bank_book_${dStr}.csv
+   -> Dedicated cash and bank ledger statement.
+9. 08_loans_register_${dStr}.csv
+   -> Borrowed/lent loans, EMI schedules, and principal tracking.
+10. bufin_system_backup_state_${dStr}.json
+   -> Native system state file. Can be restored directly into BUFIN anytime!
+
+HOW TO USE:
+- Open any .csv file in Microsoft Excel, Google Sheets, LibreOffice, or Apple Numbers.
+- To restore your data into BUFIN, go to Settings -> Restore Backup and select either this .zip file or the .json file inside.
+=====================================================`;
+  files.push({ name: `README_BACKUP_SUMMARY.txt`, data: readmeText });
+
+  return { files, dStr };
+}
+
 export function showBackupModal() {
   const stats = [
     { label: 'Accounts', count: db.accounts.length },
     { label: 'Journal Entries', count: db.entries.length },
     { label: 'Parties', count: db.parties.length },
-    { label: 'Sales Invoices', count: (db.sales || []).length },
-    { label: 'Purchase Bills', count: (db.bills || []).length },
-    { label: 'Products', count: (db.products || []).length }
+    { label: 'Sales Invoices', count: (db.docs || []).filter(x => (x.type || x.t) === 'sale').length },
+    { label: 'Purchase Bills', count: (db.docs || []).filter(x => (x.type || x.t) === 'bill').length },
+    { label: 'Inventory Items', count: (db.items || []).length }
   ];
 
   const jsonStr = JSON.stringify(db, null, 2);
-  const bytes = new Blob([jsonStr]).size;
-  const sizeStr = bytes > 1024 * 1024 
-    ? `${(bytes / (1024 * 1024)).toFixed(2)} MB`
-    : `${(bytes / 1024).toFixed(1)} KB`;
 
   const statsHtml = stats.map(s => `
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">
@@ -3069,55 +3311,84 @@ export function showBackupModal() {
     <div style="padding:4px 0;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <div style="width:38px;height:38px;border-radius:10px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="21 8 21 21 3 21 3 8"></polyline>
+            <rect x="1" y="3" width="22" height="5"></rect>
+            <line x1="10" y1="12" x2="14" y2="12"></line>
           </svg>
         </div>
         <div>
-          <h3 style="margin:0;font-size:17px;font-weight:700;color:#0f172a;">Download Ledger Backup</h3>
-          <div style="font-size:12px;color:#64748b;margin-top:2px;">Complete snapshot of your accounts, journal, and business ledger.</div>
+          <h3 style="margin:0;font-size:17px;font-weight:700;color:#0f172a;">Download Complete Ledger Backup</h3>
+          <div style="font-size:12px;color:#64748b;margin-top:2px;">Export all individual CSV spreadsheets in a ZIP archive or system JSON file.</div>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px;margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px;margin-bottom:12px;">
         ${statsHtml}
       </div>
 
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-size:12px;color:#166534;font-weight:600;">Backup Size: ${sizeStr}</span>
-        <span style="font-size:11.5px;color:#15803d;">Date: ${new Date().toLocaleDateString('en-IN')}</span>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;line-height:1.45;">
+        📁 <b>ZIP archive includes:</b>
+        <div style="margin-top:4px;color:#15803d;display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">00_all_transactions_master_combined.csv</span>
+          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">01_journal_entries.csv</span>
+          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">02_chart_of_accounts.csv</span>
+          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">03_sales_invoices.csv</span>
+          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">04_purchase_bills.csv</span>
+          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">05_parties_directory.csv</span>
+          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">06_inventory_items.csv</span>
+          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">07_cash_bank_book.csv</span>
+          <span style="background:#dcfce7;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;">bufin_system_backup_state.json</span>
+        </div>
       </div>
 
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-        <button type="button" id="btnDownloadBackup" class="p" style="flex:1;min-width:180px;height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
+      <!-- Action Buttons -->
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+        <button type="button" id="btnDownloadZip" class="p" style="height:44px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;font-weight:700;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="21 8 21 21 3 21 3 8"></polyline>
+            <rect x="1" y="3" width="22" height="5"></rect>
+            <line x1="10" y1="12" x2="14" y2="12"></line>
           </svg>
-          <span>Download Backup File (.json)</span>
+          <span>📦 Download All CSVs in ZIP Archive (.zip)</span>
         </button>
-        <button type="button" id="btnCopyBackup" style="height:40px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-          <span>Copy JSON</span>
-        </button>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" id="btnDownloadBackup" style="flex:1;min-width:160px;height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>System JSON Only (.json)</span>
+          </button>
+          <button type="button" id="btnCopyBackup" style="height:38px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copy JSON</span>
+          </button>
+        </div>
       </div>
 
       <details style="margin-top:10px;">
         <summary style="font-size:12px;color:#64748b;cursor:pointer;padding:4px 0;">View Raw JSON</summary>
-        <textarea id="ta" rows="6" readonly style="width:100%;font-size:11px;font-family:monospace;margin-top:6px;box-sizing:border-box;">${esc(jsonStr)}</textarea>
+        <textarea id="ta" rows="5" readonly style="width:100%;font-size:11px;font-family:monospace;margin-top:6px;box-sizing:border-box;">${esc(jsonStr)}</textarea>
       </details>
     </div>
   `);
 
+  $('#btnDownloadZip').onclick = () => {
+    const { files, dStr } = buildAllBackupFiles();
+    const cleanBiz = (db.biz.name || 'PD_ENTERPRISES').replace(/[^a-zA-Z0-9_-]/g, '_');
+    downloadZIP(files, `bufin_complete_backup_${cleanBiz}_${dStr}`);
+    toast('Complete ZIP backup with all CSVs downloaded!');
+  };
+
   $('#btnDownloadBackup').onclick = () => {
-    downloadJSON(db, `bufin_backup_${(db.biz.name || 'PD_ENTERPRISES').replace(/\s+/g, '_')}`);
-    toast('Backup file downloaded');
+    downloadJSON(db, `bufin_backup_${(db.biz.name || 'PD_ENTERPRISES').replace(/[^a-zA-Z0-9_-]/g, '_')}`);
+    toast('System JSON backup downloaded');
   };
 
   $('#btnCopyBackup').onclick = () => {
@@ -3141,7 +3412,7 @@ export function showRestoreModal() {
         </div>
         <div>
           <h3 style="margin:0;font-size:17px;font-weight:700;color:#0f172a;">Restore Ledger from Backup</h3>
-          <div style="font-size:12px;color:#64748b;margin-top:2px;">Upload a previously downloaded .json backup file or paste JSON data.</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px;">Upload a previously downloaded .zip archive or .json backup file.</div>
         </div>
       </div>
 
@@ -3152,9 +3423,9 @@ export function showRestoreModal() {
           <polyline points="17 8 12 3 7 8"></polyline>
           <line x1="12" y1="3" x2="12" y2="15"></line>
         </svg>
-        <div style="font-size:13.5px;font-weight:600;color:#1e293b;">Click to upload backup file (.json)</div>
+        <div style="font-size:13.5px;font-weight:600;color:#1e293b;">Click to upload backup file (.zip or .json)</div>
         <div style="font-size:11.5px;color:#64748b;margin-top:3px;">or drag &amp; drop your BUFIN backup file here</div>
-        <input type="file" id="restoreFileInput" accept=".json,application/json" style="display:none;">
+        <input type="file" id="restoreFileInput" accept=".zip,.json,application/zip,application/json" style="display:none;">
       </div>
 
       <!-- Verification / Preview Block -->
@@ -3240,15 +3511,39 @@ export function showRestoreModal() {
   };
 
   const handleFile = file => {
+    const isZip = file.name.toLowerCase().endsWith('.zip');
     const reader = new FileReader();
     reader.onload = ev => {
-      validateAndShow(ev.target.result);
-      dropZone.innerHTML = `
-        <div style="color:#16a34a;font-weight:600;font-size:13.5px;">✓ File Loaded: ${esc(file.name)}</div>
-        <div style="font-size:11.5px;color:#64748b;margin-top:2px;">${(file.size / 1024).toFixed(1)} KB — Click to choose different file</div>
-      `;
+      try {
+        let jsonContent = null;
+        if (isZip) {
+          const zipBytes = new Uint8Array(ev.target.result);
+          const extracted = readZipFile(zipBytes, '.json');
+          if (!extracted || !extracted.data) {
+            throw new Error('Could not find BUFIN system backup (.json) inside the ZIP archive.');
+          }
+          jsonContent = extracted.data;
+        } else {
+          jsonContent = ev.target.result;
+        }
+        validateAndShow(jsonContent);
+        dropZone.innerHTML = `
+          <div style="color:#16a34a;font-weight:600;font-size:13.5px;">✓ File Loaded: ${esc(file.name)}</div>
+          <div style="font-size:11.5px;color:#64748b;margin-top:2px;">${(file.size / 1024).toFixed(1)} KB — Click to choose different file</div>
+        `;
+      } catch (err) {
+        parsedData = null;
+        $('#restorePreview').style.display = 'none';
+        $('#restoreError').textContent = '⚠️ ' + err.message;
+        $('#restoreError').style.display = 'block';
+      }
     };
-    reader.readAsText(file);
+
+    if (isZip) {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file);
+    }
   };
 
   $('#restoreTextarea').oninput = e => {

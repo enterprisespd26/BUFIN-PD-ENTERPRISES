@@ -159,7 +159,170 @@ export const downloadJSON = (data, filename = 'bufin_backup') => {
   URL.revokeObjectURL(url);
 };
 
+/**
+ * Fast CRC-32 calculation for ZIP archives
+ */
+const CRC_TABLE = new Uint32Array(256);
+for (let i = 0; i < 256; i++) {
+  let c = i;
+  for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+  CRC_TABLE[i] = c;
+}
+
+export function crc32(buf) {
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < buf.length; i++) {
+    crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ buf[i]) & 0xFF];
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+/**
+ * Standard PKZIP archive creator (Store method 0, UTF-8 filenames)
+ * files: [{ name: 'file.csv', data: 'string or Uint8Array' }, ...]
+ */
+export function createZip(files) {
+  const encoder = new TextEncoder();
+  const fileRecords = [];
+  let offset = 0;
+  const parts = [];
+
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+
+  for (const f of files) {
+    const nameBytes = encoder.encode(f.name);
+    const dataBytes = typeof f.data === 'string' ? encoder.encode(f.data) : f.data;
+    const crc = crc32(dataBytes);
+    const size = dataBytes.length;
+
+    // Local Header: 30 bytes + name + data
+    const localHeader = new Uint8Array(30 + nameBytes.length);
+    const view = new DataView(localHeader.buffer);
+    view.setUint32(0, 0x04034b50, true);
+    view.setUint16(4, 20, true);
+    view.setUint16(6, 0x0800, true); // UTF-8 filename flag
+    view.setUint16(8, 0, true);      // Store (no compression)
+    view.setUint16(10, dosTime, true);
+    view.setUint16(12, dosDate, true);
+    view.setUint32(14, crc, true);
+    view.setUint32(18, size, true);
+    view.setUint32(22, size, true);
+    view.setUint16(26, nameBytes.length, true);
+    view.setUint16(28, 0, true);
+    localHeader.set(nameBytes, 30);
+
+    parts.push(localHeader);
+    parts.push(dataBytes);
+
+    fileRecords.push({ nameBytes, crc, size, offset, dosTime, dosDate });
+    offset += localHeader.length + size;
+  }
+
+  const centralDirStart = offset;
+  let centralDirSize = 0;
+
+  for (const r of fileRecords) {
+    const cdHeader = new Uint8Array(46 + r.nameBytes.length);
+    const view = new DataView(cdHeader.buffer);
+    view.setUint32(0, 0x02014b50, true);
+    view.setUint16(4, 20, true);
+    view.setUint16(6, 20, true);
+    view.setUint16(8, 0x0800, true); // UTF-8 filename flag
+    view.setUint16(10, 0, true);      // Store
+    view.setUint16(12, r.dosTime, true);
+    view.setUint16(14, r.dosDate, true);
+    view.setUint32(16, r.crc, true);
+    view.setUint32(20, r.size, true);
+    view.setUint32(24, r.size, true);
+    view.setUint16(28, r.nameBytes.length, true);
+    view.setUint16(30, 0, true);
+    view.setUint16(32, 0, true);
+    view.setUint16(34, 0, true);
+    view.setUint16(36, 0, true);
+    view.setUint32(38, 0, true);
+    view.setUint32(42, r.offset, true);
+    cdHeader.set(r.nameBytes, 46);
+
+    parts.push(cdHeader);
+    centralDirSize += cdHeader.length;
+  }
+
+  // End of Central Directory (EOCD): 22 bytes
+  const eocd = new Uint8Array(22);
+  const eocdView = new DataView(eocd.buffer);
+  eocdView.setUint32(0, 0x06054b50, true);
+  eocdView.setUint16(4, 0, true);
+  eocdView.setUint16(6, 0, true);
+  eocdView.setUint16(8, fileRecords.length, true);
+  eocdView.setUint16(10, fileRecords.length, true);
+  eocdView.setUint32(12, centralDirSize, true);
+  eocdView.setUint32(16, centralDirStart, true);
+  eocdView.setUint16(20, 0, true);
+
+  parts.push(eocd);
+
+  let totalLen = parts.reduce((acc, p) => acc + p.length, 0);
+  const result = new Uint8Array(totalLen);
+  let cur = 0;
+  for (const p of parts) {
+    result.set(p, cur);
+    cur += p.length;
+  }
+  return result;
+}
+
+/**
+ * Direct browser ZIP file download helper
+ */
+export function downloadZIP(files, filename = 'bufin_complete_backup') {
+  const zipBytes = createZip(files);
+  const baseName = String(filename || 'bufin_complete_backup').replace(/\.zip$/i, '');
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const downloadName = baseName.endsWith(dateStr) ? `${baseName}.zip` : `${baseName}_${dateStr}.zip`;
+  const blob = new Blob([zipBytes], { type: 'application/zip' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', downloadName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Extracts a target file (e.g. '.json') from an uncompressed Store-method ZIP
+ */
+export function readZipFile(zipUint8Array, targetExt = '.json') {
+  const view = new DataView(zipUint8Array.buffer, zipUint8Array.byteOffset, zipUint8Array.byteLength);
+  let pos = 0;
+  const decoder = new TextDecoder();
+  while (pos < zipUint8Array.length - 30) {
+    const sig = view.getUint32(pos, true);
+    if (sig === 0x04034b50) {
+      const nameLen = view.getUint16(pos + 26, true);
+      const extraLen = view.getUint16(pos + 28, true);
+      const compSize = view.getUint32(pos + 18, true);
+      const name = decoder.decode(zipUint8Array.subarray(pos + 30, pos + 30 + nameLen));
+      const dataStart = pos + 30 + nameLen + extraLen;
+      const data = zipUint8Array.subarray(dataStart, dataStart + compSize);
+      if (name.endsWith(targetExt)) {
+        return { name, data: decoder.decode(data) };
+      }
+      pos = dataStart + compSize;
+    } else {
+      pos++;
+    }
+  }
+  return null;
+}
+
 if (typeof window !== 'undefined') {
   window.downloadCSV = downloadCSV;
   window.downloadJSON = downloadJSON;
+  window.downloadZIP = downloadZIP;
 }

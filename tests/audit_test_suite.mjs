@@ -1284,5 +1284,58 @@ test('TC-MOBILE-PERF-01: Native Android app performance, PWA manifest, offline s
   assert.match(attCode, /loading="lazy"/, 'attachments.js must use loading="lazy"');
 });
 
+test('TC-SYS-BACKUP-01: ZIP archive with separate entity CSVs, master consolidated CSV, and system JSON restore', async () => {
+  const { createZip, readZipFile, crc32 } = await import('../frontend/js/modules/utils.js');
+  const { buildAllBackupFiles } = await import('../frontend/js/modules/actions.js');
+  const { db, setDb } = await import('../frontend/js/modules/state.js');
+
+  // Verify pure JS zip engine
+  const sampleFiles = [
+    { name: 'test_file1.txt', data: 'Hello World BUFIN Backup!' },
+    { name: 'data.json', data: JSON.stringify({ app: 'BUFIN', version: '6.3' }) }
+  ];
+  const zipBytes = createZip(sampleFiles);
+  assert.ok(zipBytes instanceof Uint8Array, 'createZip must return a Uint8Array');
+  assert.ok(zipBytes.length > 50, 'ZIP must have header, data, central directory and EOCD');
+
+  // Check PKZIP signature 0x04034b50
+  const view = new DataView(zipBytes.buffer, zipBytes.byteOffset, zipBytes.byteLength);
+  assert.equal(view.getUint32(0, true), 0x04034b50, 'ZIP must start with PK local header signature');
+
+  // Verify readZipFile
+  const extracted = readZipFile(zipBytes, '.json');
+  assert.ok(extracted, 'readZipFile must find .json file');
+  assert.equal(extracted.name, 'data.json');
+  const parsed = JSON.parse(extracted.data);
+  assert.equal(parsed.app, 'BUFIN');
+
+  // Verify buildAllBackupFiles output
+  const res = buildAllBackupFiles();
+  const backupFiles = res.files || res;
+  assert.ok(Array.isArray(backupFiles), 'buildAllBackupFiles must return an array of file records');
+  assert.ok(backupFiles.length >= 10, 'Must have at least 10 backup files (master, 8 entities, json, readme)');
+
+  const filenames = backupFiles.map(f => f.name);
+  assert.ok(filenames.some(n => n.startsWith('00_all_transactions_master_combined_') && n.endsWith('.csv')), 'Must contain 00_all_transactions_master_combined CSV');
+  assert.ok(filenames.some(n => n.startsWith('01_journal_entries_') && n.endsWith('.csv')), 'Must contain 01_journal_entries CSV');
+  assert.ok(filenames.some(n => n.startsWith('02_chart_of_accounts_') && n.endsWith('.csv')), 'Must contain 02_chart_of_accounts CSV');
+  assert.ok(filenames.some(n => n.startsWith('03_sales_invoices_') && n.endsWith('.csv')), 'Must contain 03_sales_invoices CSV');
+  assert.ok(filenames.some(n => n.startsWith('04_purchase_bills_') && n.endsWith('.csv')), 'Must contain 04_purchase_bills CSV');
+  assert.ok(filenames.some(n => n.startsWith('05_parties_directory_') && n.endsWith('.csv')), 'Must contain 05_parties_directory CSV');
+  assert.ok(filenames.some(n => n.startsWith('06_inventory_items_') && n.endsWith('.csv')), 'Must contain 06_inventory_items CSV');
+  assert.ok(filenames.some(n => n.startsWith('07_cash_and_bank_book_') && n.endsWith('.csv')), 'Must contain 07_cash_and_bank_book CSV');
+  assert.ok(filenames.some(n => n.startsWith('08_loans_register_') && n.endsWith('.csv')), 'Must contain 08_loans_register CSV');
+  assert.ok(filenames.some(n => n.startsWith('bufin_system_backup_state_') && n.endsWith('.json')), 'Must contain native system JSON backup');
+  assert.ok(filenames.some(n => n === 'README_BACKUP_SUMMARY.txt'), 'Must contain README_BACKUP_SUMMARY.txt');
+
+  // Test full ZIP generation and extraction of system json
+  const fullZip = createZip(backupFiles);
+  const jsonInZip = readZipFile(fullZip, '.json');
+  assert.ok(jsonInZip, 'readZipFile must extract system backup state JSON from full archive');
+  const restoredState = JSON.parse(jsonInZip.data);
+  assert.ok(Array.isArray(restoredState.accounts), 'Restored JSON must have valid accounts');
+});
+
+
 
 
