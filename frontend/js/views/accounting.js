@@ -47,7 +47,25 @@ export function renderOpen() {
   const activeOpen = db.entries.find(e => e.src === 'open' && e.status === 'posted');
   const isLocked = Boolean(activeOpen && !accountingState.openUnlocked);
   const earliestDate = db.entries.length ? db.entries.map(e => e.date).sort()[0] : today();
-  const dt = accountingState.od || (activeOpen ? activeOpen.date : earliestDate);
+  const dt = isLocked
+    ? (activeOpen ? activeOpen.date : (accountingState.od || earliestDate))
+    : (accountingState.od || (activeOpen ? activeOpen.date : earliestDate));
+
+  if (isLocked && activeOpen) {
+    accountingState.od = activeOpen.date;
+  }
+
+  const formatReadableDate = dStr => {
+    if (!dStr) return '';
+    try {
+      const [y, m, d] = dStr.split('-');
+      const obj = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+      return obj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) {
+      return dStr;
+    }
+  };
+
   const prior = db.entries.filter(e => e.src === 'open' || (e.src === 'rev' && e.rev && db.entries.some(x => x.id === e.rev && x.src === 'open')));
 
   const openDebits = {};
@@ -70,9 +88,10 @@ export function renderOpen() {
       <div class="ob-status-card ob-locked-card">
         <div class="ob-card-main">
           <div class="ob-card-icon ob-icon-green">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              <circle cx="12" cy="16.5" r="1.2" fill="currentColor"></circle>
             </svg>
           </div>
           <div class="ob-card-body">
@@ -102,17 +121,17 @@ export function renderOpen() {
           </div>
         </div>
         <div class="ob-actions-row">
-          <button type="button" class="btn sm ob-btn-edit" data-a="unlockopen">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 20h9"></path>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          <button type="button" class="btn sm ob-btn-edit" data-a="unlockopen" title="Unlock and edit opening balances">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
             <span>Edit Balances</span>
           </button>
-          <button type="button" class="btn sm ob-btn-rev" data-a="revopen">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="1 4 1 10 7 10"></polyline>
-              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          <button type="button" class="btn sm ob-btn-rev" data-a="revopen" title="Reverse opening balances entry">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
             </svg>
             <span>Reverse &amp; Edit</span>
           </button>
@@ -123,29 +142,30 @@ export function renderOpen() {
       <div class="ob-status-card ob-edit-card">
         <div class="ob-card-main">
           <div class="ob-card-icon ob-icon-blue">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 20h9"></path>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
           </div>
           <div class="ob-card-body">
             <div class="ob-title-wrap">
-              <span class="ob-card-title">Editing Active Opening Balances</span>
+              <span class="ob-card-title">Editing Opening Balances</span>
               <span class="ob-pill ob-pill-blue">
                 <span class="ob-dot ob-dot-blue"></span>
                 EDIT MODE
               </span>
             </div>
             <div class="ob-edit-desc">
-              Modify account opening balances below. Changes will sync in-place upon review and confirmation.
+              Change the opening date or account balances below. Changes will sync in-place upon review and confirmation.
             </div>
           </div>
         </div>
         <div class="ob-actions-row">
           <button type="button" class="btn sm ob-btn-cancel" data-a="lockopen">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              <circle cx="12" cy="16.5" r="1.2" fill="currentColor"></circle>
             </svg>
             <span>Cancel Edit / Re-lock</span>
           </button>
@@ -213,7 +233,52 @@ export function renderOpen() {
 
   return head('Opening Balances') +
     statusBanner +
-    `<div class="filters"><label>Balances as of<input type="date" id="od" value="${dt}" ${isLocked ? 'disabled' : ''}></label></div>
+    `<div class="filters op-date-filter-row" style="margin-bottom:16px;">
+      <div class="op-date-card ${isLocked ? 'is-locked' : 'is-editing'}">
+        <div class="op-date-header">
+          <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span style="font-size:13px;font-weight:700;color:var(--tx);">Balances as of</span>
+            <span id="od_readable" style="font-size:11.5px;color:var(--t2);font-weight:600;background:var(--mu);padding:2px 8px;border-radius:5px;">${formatReadableDate(dt)}</span>
+          </div>
+          ${isLocked ? `
+            <button type="button" class="btn sm" data-a="unlockdate" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+              <span>Change Date</span>
+            </button>
+          ` : `
+            <span style="font-size:11px;font-weight:700;color:#047857;background:#ecfdf5;border:1px solid #a7f3d0;padding:2px 7px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;">
+              <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span>
+              EDITING DATE
+            </span>
+          `}
+        </div>
+        <div class="op-date-input-wrap">
+          <input type="date" id="od" value="${dt}" ${isLocked ? 'readonly' : ''} aria-label="Balances as of date">
+          ${isLocked ? `
+            <div class="op-date-overlay" data-a="unlockdate" title="Click or tap to change date"></div>
+          ` : ''}
+        </div>
+        ${isLocked ? `
+          <div style="font-size:11.5px;color:var(--t2);margin-top:6px;display:flex;align-items:center;gap:5px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>Locked with opening entry. Click input or <b>Change Date</b> to edit.</span>
+          </div>
+        ` : `
+          <div style="font-size:11.5px;color:#2563eb;margin-top:6px;font-weight:500;">
+            Select opening start date. Balances on or before this date will be recorded.
+          </div>
+        `}
+      </div>
+    </div>
     <div class="wrap">
       <table>
         <thead>
@@ -247,18 +312,19 @@ export function renderOpen() {
     <div class="bar" style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
       ${isLocked ? `
         <span style="color:#64748b;font-size:13px;display:flex;align-items:center;gap:7px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            <circle cx="12" cy="16.5" r="1.2" fill="#64748b"></circle>
           </svg>
           <span>Opening balances are locked to prevent accidental modifications.</span>
         </span>
         <button type="button" class="btn sm" data-a="unlockopen" style="background:#ffffff;color:#1e293b;border:1px solid #cbd5e1;font-weight:600;font-size:13px;padding:7px 14px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 20h9"></path>
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
           </svg>
-          <span>Unlock &amp; Edit</span>
+          <span>Unlock &amp; Edit Balances</span>
         </button>
       ` : `
         <span style="color:#64748b;font-size:13px;">

@@ -453,10 +453,11 @@ function showOpenConfirmModal() {
   $('#btn_modal_confirm').onclick = () => {
     try {
       postOpening(asOfDate, rows);
-      save();
+      accountingState.od = asOfDate;
       accountingState.openUnlocked = false;
+      save();
       closeM();
-      toast(activeOpen ? 'Opening balances updated and locked' : 'Opening balances posted and locked successfully');
+      toast(activeOpen ? 'Opening balances and date updated' : 'Opening balances posted and locked successfully');
       render();
     } catch (e) {
       toast(e.message);
@@ -518,6 +519,7 @@ function postOpening(date, rows) {
     existingOpen.date = date;
     existingOpen.lines = L;
     existingOpen.at = date + 'T00:00:00.000Z';
+    log('update ' + existingOpen.ref, existingOpen.src);
     return existingOpen;
   }
 
@@ -593,9 +595,22 @@ function bindViewEvents() {
   }
 
   if (currentPage === 'open' || currentPage === 'opening') {
-    $('#od')?.addEventListener('change', e => {
-      accountingState.od = e.target.value;
-    });
+    const odInput = $('#od');
+    if (odInput) {
+      const onDateChange = e => {
+        accountingState.od = e.target.value;
+        const readableEl = $('#od_readable');
+        if (readableEl && e.target.value) {
+          try {
+            const [y, m, d] = e.target.value.split('-');
+            const dtObj = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+            readableEl.textContent = dtObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+          } catch (err) {}
+        }
+      };
+      odInput.addEventListener('input', onDateChange);
+      odInput.addEventListener('change', onDateChange);
+    }
     $$('[data-c]').forEach(i => {
       i.oninput = () => {
         const code = i.dataset.c;
@@ -1215,8 +1230,25 @@ const ACTIONS = {
   unlockopen: () => {
     accountingState.openUnlocked = true;
     render();
+    toast('Opening balances unlocked for editing');
+  },
+  unlockdate: () => {
+    accountingState.openUnlocked = true;
+    render();
+    setTimeout(() => {
+      const od = $('#od');
+      if (od) {
+        od.focus();
+        try {
+          if (typeof od.showPicker === 'function') od.showPicker();
+        } catch (e) {}
+      }
+    }, 60);
+    toast('Opening balances unlocked for editing');
   },
   lockopen: () => {
+    const activeOpen = db.entries.find(e => e.src === 'open' && e.status === 'posted');
+    accountingState.od = activeOpen ? activeOpen.date : '';
     accountingState.openUnlocked = false;
     render();
   },

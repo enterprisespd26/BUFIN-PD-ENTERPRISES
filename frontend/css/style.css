@@ -2099,9 +2099,17 @@ aside.open ~ #ov {
   border: 1px solid #cbd5e1;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
+.ob-btn-edit svg {
+  color: #2563eb;
+  transition: transform 0.15s ease;
+}
 .ob-btn-edit:hover, .ob-btn-edit:active {
   background: #f8fafc;
   border-color: #94a3b8;
+  color: #0f172a;
+}
+.ob-btn-edit:hover svg {
+  transform: rotate(-6deg);
 }
 .ob-btn-rev {
   background: #ffffff;
@@ -2109,15 +2117,89 @@ aside.open ~ #ov {
   border: 1px solid #fecaca;
   box-shadow: 0 1px 2px rgba(220, 38, 38, 0.05);
 }
+.ob-btn-rev svg {
+  color: #dc2626;
+  transition: transform 0.2s ease;
+}
 .ob-btn-rev:hover, .ob-btn-rev:active {
   background: #fef2f2;
   border-color: #f87171;
+  color: #b91c1c;
+}
+.ob-btn-rev:hover svg {
+  transform: rotate(-25deg);
 }
 .ob-btn-cancel {
   background: #ffffff;
   color: #475569;
   border: 1px solid #cbd5e1;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.ob-btn-cancel svg {
+  color: #64748b;
+}
+.ob-btn-cancel:hover, .ob-btn-cancel:active {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+
+/* ================= Opening Balances Date Control ================= */
+.op-date-card {
+  background: var(--sf, #ffffff);
+  border: 1px solid var(--bd, #e2e8f0);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  max-width: 460px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.op-date-card.is-editing {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.op-date-card .op-date-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.op-date-card .op-date-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.op-date-card input[type="date"] {
+  width: 100%;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--bd, #e2e8f0);
+  background: var(--sf, #ffffff);
+  color: var(--tx, #0f172a);
+  font-weight: 600;
+  box-sizing: border-box;
+}
+.op-date-card input[type="date"]:focus {
+  border-color: #2563eb;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.op-date-card.is-locked input[type="date"] {
+  background: #f8fafc;
+  cursor: pointer;
+}
+.op-date-card .op-date-overlay {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  z-index: 2;
+  border-radius: 8px;
 }
 
 @media (min-width: 641px) {

@@ -788,6 +788,40 @@ test('TC-OPEN-02: Safety rule prevents duplicate opening entries via reversal/up
   assert.equal(net('1000'), 0, 'Reversal must restore net balance to zero');
 });
 
+test('TC-OPEN-03: Updating opening balances as-of date updates entry date in-place', () => {
+  resetTestDb();
+
+  // Initial opening entry as of Oct 1, 2026
+  const entry = post({
+    id: 'open_entry_1',
+    date: '2026-10-01',
+    src: 'open',
+    narr: 'Opening balances',
+    lines: [
+      { a: '1000', d: 1000000, c: 0 },
+      { a: '3200', d: 0, c: 1000000 }
+    ]
+  });
+
+  assert.equal(entry.date, '2026-10-01');
+
+  // Change date to April 1, 2026
+  const updated = post({
+    id: 'open_entry_1',
+    date: '2026-04-01',
+    src: 'open',
+    narr: 'Opening balances (updated date)',
+    lines: [
+      { a: '1000', d: 1000000, c: 0 },
+      { a: '3200', d: 0, c: 1000000 }
+    ]
+  });
+
+  assert.equal(db.entries.length, 1, 'Entry must not duplicate');
+  assert.equal(updated.date, '2026-04-01', 'Entry date must update to 2026-04-01');
+  assert.equal(entry.date, '2026-04-01', 'Original entry reference date must be updated');
+});
+
 // ========================================================
 // MODULE 11: GENERAL LEDGER PERIOD FILTERING & EXPORT (/#/gl)
 // ========================================================
