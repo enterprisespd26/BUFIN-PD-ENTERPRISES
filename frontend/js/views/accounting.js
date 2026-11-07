@@ -233,50 +233,35 @@ export function renderOpen() {
 
   return head('Opening Balances') +
     statusBanner +
-    `<div class="filters op-date-filter-row" style="margin-bottom:16px;">
+    `<div class="op-date-filter-row">
       <div class="op-date-card ${isLocked ? 'is-locked' : 'is-editing'}">
-        <div class="op-date-header">
-          <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span style="font-size:13px;font-weight:700;color:var(--tx);">Balances as of</span>
-            <span id="od_readable" style="font-size:11.5px;color:var(--t2);font-weight:600;background:var(--mu);padding:2px 8px;border-radius:5px;">${formatReadableDate(dt)}</span>
+        <div class="op-date-left">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="op-date-icon">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span class="op-date-label">Balances as of</span>
+          <span id="od_readable" class="op-date-readable">${formatReadableDate(dt)}</span>
+        </div>
+        <div class="op-date-right">
+          <div class="op-date-input-wrap">
+            <input type="date" id="od" value="${dt}" ${isLocked ? 'readonly' : ''} aria-label="Balances as of date">
+            ${isLocked ? `
+              <div class="op-date-overlay" data-a="unlockdate" title="Click or tap to change date"></div>
+            ` : ''}
           </div>
           ${isLocked ? `
-            <button type="button" class="btn sm" data-a="unlockdate" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <button type="button" class="btn sm op-btn-change-date" data-a="unlockdate" title="Change opening date">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 20h9"></path>
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
               </svg>
-              <span>Change Date</span>
+              <span>Change</span>
             </button>
-          ` : `
-            <span style="font-size:11px;font-weight:700;color:#047857;background:#ecfdf5;border:1px solid #a7f3d0;padding:2px 7px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;">
-              <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span>
-              EDITING DATE
-            </span>
-          `}
-        </div>
-        <div class="op-date-input-wrap">
-          <input type="date" id="od" value="${dt}" ${isLocked ? 'readonly' : ''} aria-label="Balances as of date">
-          ${isLocked ? `
-            <div class="op-date-overlay" data-a="unlockdate" title="Click or tap to change date"></div>
           ` : ''}
         </div>
-        ${isLocked ? `
-          <div style="font-size:11.5px;color:var(--t2);margin-top:6px;display:flex;align-items:center;gap:5px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            <span>Locked with opening entry. Click input or <b>Change Date</b> to edit.</span>
-          </div>
-        ` : `
-          <div style="font-size:11.5px;color:#2563eb;margin-top:6px;font-weight:500;">
-            Select opening start date. Balances on or before this date will be recorded.
-          </div>
-        `}
       </div>
     </div>
     <div class="wrap">
