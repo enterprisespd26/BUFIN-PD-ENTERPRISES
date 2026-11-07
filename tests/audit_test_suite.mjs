@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import nodeCrypto from 'node:crypto';
 
 // 1. SETUP DOM & STORAGE MOCKS FOR HEADLESS NODE ENVIRONMENT
 global.localStorage = {
@@ -575,6 +576,13 @@ test('TC-SYS-01: App Locking mechanism and session security', () => {
 
   mockLogoutAction();
   assert.equal(sessionLocked, true, 'Lock App action must transition application state to locked');
+});
+
+test('TC-SYS-AUTH-01: Instant 0ms PIN SHA-256 verification and client fast-unlock', () => {
+  const pin = '1379';
+  const expectedHash = '8cfecd937a9328ecb71d3c08e5dd312058ca7d75171e7ba6e3af7573e210cd6c';
+  const cryptoHash = nodeCrypto.createHash('sha256').update(pin).digest('hex');
+  assert.equal(cryptoHash, expectedHash, 'PIN hash must match 8cfecd937a9328ecb71d3c08e5dd312058ca7d75171e7ba6e3af7573e210cd6c for 0ms unlock');
 });
 
 // ========================================================

@@ -34,13 +34,20 @@ const sign = x => crypto.createHmac('sha256', SEC).update(x).digest('hex');
 const eq = (a, b) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && crypto.timingSafeEqual(x, y) };
 const authed = q => { const m = /(?:^|; )bufin=([^;]+)/.exec(q.headers.cookie || ''); if (!m) return false; const [exp, sig] = m[1].split('.'); return +exp > Date.now() && eq(sig || '', sign(exp)) };
 const tries = new Map();
-app.post('/api/login', (q, s) => {
+app.get('/api/ping', (q, s) => s.json({ ok: true, pong: true, time: Date.now() }));
+app.post('/api/login', async (q, s) => {
   const k = q.ip, t = (tries.get(k) || []).filter(x => x > Date.now() - 6e4);
   if (t.length >= 5) return s.status(429).json({ error: 'Too many attempts. Wait a minute.' });
   const supplied = String((q.body || {}).pin || (q.body || {}).password || '');
   if (!eq(supplied, PW)) { t.push(Date.now()); tries.set(k, t); return s.status(401).json({ error: 'Wrong PIN code' }) }
   const exp = String(Date.now() + DAY);
-  s.set('Set-Cookie', `bufin=${exp}.${sign(exp)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${DAY / 1000}${prod ? '; Secure' : ''}`); s.json({ ok: true });
+  s.set('Set-Cookie', `bufin=${exp}.${sign(exp)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${DAY / 1000}${prod ? '; Secure' : ''}`);
+  try {
+    const st = await store.get();
+    s.json({ ok: true, version: st ? st.version : 0, data: st ? st.data : null });
+  } catch (e) {
+    s.json({ ok: true });
+  }
 });
 app.post('/api/logout', (q, s) => { s.set('Set-Cookie', 'bufin=; Max-Age=0; Path=/'); s.json({ ok: true }) });
 app.get('/sw.js', (q, s) => {

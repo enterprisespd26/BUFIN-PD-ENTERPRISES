@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="css/invoice.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
+    try { fetch('/api/ping', { priority: 'low' }).catch(function(){}); } catch(e) {}
     window.debounce = function(fn, ms) {
       var timer;
       ms = ms || 300;

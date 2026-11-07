@@ -1,5 +1,5 @@
 // BUFIN Service Worker - Offline Caching & App Shell Acceleration
-const CACHE_NAME = 'bufin-v7.6-cache';
+const CACHE_NAME = 'bufin-v7.7-cache';
 
 const PRECACHE_ASSETS = [
   '/',
@@ -55,24 +55,26 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
 
   // 1. API state requests: Network-First with Cache fallback
-  if (url.pathname.startsWith('/api/state')) {
-    event.respondWith(
-      fetch(req)
-        .then(res => {
-          if (res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
-          }
-          return res;
-        })
-        .catch(async () => {
-          const cached = await caches.match(req);
-          if (cached) return cached;
-          return new Response(JSON.stringify({ version: 0, data: null, offline: true }), {
-            headers: { 'Content-Type': 'application/json' }
-          });
-        })
-    );
+  if (url.pathname.startsWith('/api/')) {
+    if (url.pathname.startsWith('/api/state')) {
+      event.respondWith(
+        fetch(req)
+          .then(res => {
+            if (res.ok) {
+              const clone = res.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
+            }
+            return res;
+          })
+          .catch(async () => {
+            const cached = await caches.match(req);
+            if (cached) return cached;
+            return new Response(JSON.stringify({ version: 0, data: null, offline: true }), {
+              headers: { 'Content-Type': 'application/json' }
+            });
+          })
+      );
+    }
     return;
   }
 

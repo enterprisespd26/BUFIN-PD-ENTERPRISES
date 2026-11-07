@@ -1334,8 +1334,23 @@ document.addEventListener('keydown', e => {
 window.addEventListener('hashchange', render);
 window.addEventListener('bufin-render', render);
 
-export async function boot() {
+export async function boot(opts = {}) {
   initPinKeypad();
+
+  // If fast-unlocked via instant local PIN verification, render immediately without blocking!
+  if (opts && opts.fastUnlock) {
+    if (!window.location.hash) {
+      window.location.hash = '#/overview';
+    } else {
+      render();
+    }
+    return;
+  }
+
+  // Pre-render immediately from localStorage if available
+  if (db && db.biz && window.location.hash) {
+    render();
+  }
 
   try {
     let r = await fetch('/api/state');
@@ -1351,8 +1366,13 @@ export async function boot() {
       else if (db.entries.length) push();
     }
   } catch (e) {
-    showPinLogin(boot);
-    return;
+    // If offline or connection issue, allow offline access if database already loaded
+    if (db && db.biz) {
+      // offline session
+    } else {
+      showPinLogin(boot);
+      return;
+    }
   }
 
   if (!window.location.hash) {
