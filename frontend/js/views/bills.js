@@ -570,14 +570,31 @@ export function renderBills() {
                   <td>${esc(d.mat || d.desc || 'Scrap')}${d.q ? ' (' + d.q + ' ' + (d.u || 'kg') + ')' : ''}</td>
                   <td style="text-align:right;font-weight:600">${fmt(d.total)}</td>
                   <td><span class="pd-pill ${pillCls}">${pillTxt}</span></td>
-                  <td>
-                    ${d.hasFiles ? `<button type="button" class="btn alt sm" data-ba="v" data-id="${esc(d.id)}">📎 View</button>` : '–'}
+                  <td style="text-align:center">
+                    ${d.hasFiles ? `
+                      <button type="button" class="sales-icon-btn sales-btn-view" data-ba="v" data-id="${esc(d.id)}" title="View Attached Receipts & Weighbridge Slips" aria-label="View Attachments" style="color:#2563eb;background:#eff6ff;border:1px solid #dbeafe;">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                        </svg>
+                      </button>
+                    ` : '<span style="color:#94a3b8;font-size:13px;">–</span>'}
                   </td>
                   <td style="text-align:right">
-                    <div class="pd-btn-row desktop-actions" style="justify-content:flex-end">
-                      <button type="button" class="btn alt sm" data-ba="e" data-id="${esc(d.id)}">Edit</button>
-                      ${!isPaid && !d.cancelled ? `<button type="button" class="btn alt sm" data-ba="p" data-id="${esc(d.id)}">Mark paid</button>` : ''}
-                      <button type="button" class="btn red sm" data-ba="d" data-id="${esc(d.id)}">Delete</button>
+                    <div class="pd-btn-row desktop-actions sales-desktop-actions" style="justify-content:flex-end">
+                      <button type="button" class="sales-icon-btn sales-btn-view" data-ba="voucher" data-id="${esc(d.id)}" title="View Bill Voucher" aria-label="View Bill Voucher">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      </button>
+                      <button type="button" class="sales-icon-btn sales-btn-edit" data-ba="e" data-id="${esc(d.id)}" title="Edit Purchase Bill" aria-label="Edit Purchase Bill">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                      </button>
+                      ${!isPaid && !d.cancelled ? `
+                        <button type="button" class="sales-icon-btn sales-btn-pay" data-ba="p" data-id="${esc(d.id)}" title="Mark as Paid" aria-label="Mark as Paid">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                        </button>
+                      ` : ''}
+                      <button type="button" class="sales-icon-btn sales-btn-del" data-ba="d" data-id="${esc(d.id)}" title="Delete Purchase Bill" aria-label="Delete Purchase Bill">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                      </button>
                     </div>
                     <button type="button" class="pd-more-btn" data-ba="more" data-id="${esc(d.id)}" title="Actions" aria-label="Actions">⋮</button>
                   </td>
@@ -1463,7 +1480,9 @@ export function bindBillsEvents() {
         return;
       }
 
-      if (action === 'v') {
+      if (action === 'voucher') {
+        showDoc(id);
+      } else if (action === 'v') {
         try {
           const rec = await pGet(id);
           const files = (rec?.files || []).map(f => ({
@@ -1518,9 +1537,14 @@ export function bindBillsEvents() {
           bindBillsEvents();
         } else {
           btn.dataset.confirmed = '1';
-          btn.textContent = 'Confirm?';
+          const origHtml = btn.innerHTML;
+          btn.innerHTML = `<span style="font-size:11px;font-weight:700;color:#e11d48;white-space:nowrap;">Sure?</span>`;
+          btn.style.width = 'auto';
+          btn.style.padding = '0 6px';
           setTimeout(() => {
-            btn.textContent = 'Delete';
+            btn.innerHTML = origHtml;
+            btn.style.width = '';
+            btn.style.padding = '';
             delete btn.dataset.confirmed;
           }, 3000);
         }
