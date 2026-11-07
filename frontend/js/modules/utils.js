@@ -140,6 +140,26 @@ export const downloadCSV = (csvData, filename = 'export') => {
   URL.revokeObjectURL(url);
 };
 
+/**
+ * Direct browser JSON file download helper
+ */
+export const downloadJSON = (data, filename = 'bufin_backup') => {
+  const jsonStr = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  const baseName = String(filename || 'bufin_backup').replace(/\.json$/i, '');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const downloadName = baseName.endsWith(dateStr) ? `${baseName}.json` : `${baseName}_${dateStr}.json`;
+  const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', downloadName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 if (typeof window !== 'undefined') {
   window.downloadCSV = downloadCSV;
+  window.downloadJSON = downloadJSON;
 }

@@ -21,25 +21,89 @@ export function renderSettings() {
         <div style="margin-top:14px"><button class="p">Save settings</button></div>
       </form>
     </div>
-    <h3>Cloud Storage & Receipts (Cloudinary)</h3>
+    <h3>Cloud Storage &amp; Receipts (Cloudinary)</h3>
     <div class="wrap" style="padding:16px">
-      <form id="cf">
-        <div style="font-size:12.5px;color:var(--t2);margin-bottom:12px">
-          Connect your Cloudinary account to store high-resolution paper purchase bills, invoices, and camera scans in the cloud with secure HTTPS links.
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+            </svg>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:15px;font-weight:700;color:#0f172a;">Cloudinary Storage</span>
+              <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:9999px;">
+                <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;"></span>
+                CONNECTED
+              </span>
+            </div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px;">
+              Cloud Account: <b style="color:#0f172a;">${esc(db.biz.cloudinary_name || 'iqsinmcr')}</b> · Server-Side Managed (.env / Render)
+            </div>
+          </div>
         </div>
-        ${fld('cloudName', 'Cloudinary Cloud Name', 'text', db.biz.cloudinary_name || 'iqsinmcr')}
-        ${fld('apiKey', 'Cloudinary API Key', 'text', db.biz.cloudinary_key || '573667157386361')}
-        ${fld('apiSecret', 'Cloudinary API Secret', 'password', db.biz.cloudinary_secret || '')}
-        <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <button type="submit" class="p">Save Cloudinary Credentials</button>
-          <span id="c_stat" style="font-size:12px;font-weight:600;color:var(--t2)"></span>
-        </div>
-      </form>
+        <button type="button" id="btnTestCloudinary" class="btn sm" style="display:inline-flex;align-items:center;gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span>Test Cloud Status</span>
+        </button>
+      </div>
+
+      <div style="margin-top:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:12px;color:#475569;line-height:1.45;">
+        🔒 <b>No client credentials required:</b> Your Cloudinary API keys and secret are configured safely on the backend server. Paper bills, weighbridge slips, and camera scans automatically upload to Cloudinary CDN with secure HTTPS links.
+      </div>
+      <div id="c_test_result" style="margin-top:8px;font-size:12px;font-weight:600;"></div>
+
+      <details style="margin-top:12px;">
+        <summary style="font-size:12px;color:#2563eb;cursor:pointer;font-weight:500;">Advanced: Server Credentials Override</summary>
+        <form id="cf" style="margin-top:10px;padding-top:10px;border-top:1px dashed #cbd5e1;">
+          <div style="font-size:11.5px;color:var(--t2);margin-bottom:8px;">
+            Only change these if you want to switch your backend Cloudinary account. Leave secret blank to keep existing.
+          </div>
+          ${fld('cloudName', 'Cloudinary Cloud Name', 'text', db.biz.cloudinary_name || 'iqsinmcr')}
+          ${fld('apiKey', 'Cloudinary API Key', 'text', db.biz.cloudinary_key || '573667157386361')}
+          ${fld('apiSecret', 'Cloudinary API Secret (leave blank to keep current)', 'password', '')}
+          <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+            <button type="submit" class="p sm">Update Server Credentials</button>
+            <span id="c_stat" style="font-size:12px;font-weight:600;color:var(--t2)"></span>
+          </div>
+        </form>
+      </details>
     </div>
-    <div class="bar">
-      <button data-a="backup">Backup data</button>
-      <button data-a="restore">Restore from backup</button>
-      <button class="d" data-a="wipe">Erase all data</button>
+
+    <h3>Ledger Data &amp; System Backups</h3>
+    <div class="wrap" style="padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:14.5px;font-weight:700;color:#0f172a;">Data Protection &amp; Snapshots</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px;">
+            Export full JSON ledger backups or restore your business accounts safely.
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button class="p" data-a="backup" style="display:inline-flex;align-items:center;gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Backup Data (.json)</span>
+          </button>
+          <button data-a="restore" style="display:inline-flex;align-items:center;gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>Restore from Backup</span>
+          </button>
+          <button class="d" data-a="wipe" style="display:inline-flex;align-items:center;gap:6px;">
+            <span>Erase All Data</span>
+          </button>
+        </div>
+      </div>
     </div>
     <h3>Audit log (latest)</h3>
     <div class="wrap"><table>

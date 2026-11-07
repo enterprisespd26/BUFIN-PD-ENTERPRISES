@@ -1,5 +1,5 @@
-import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid, downloadCSV } from './utils.js';
-import { db, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity } from './state.js';
+import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid, downloadCSV, downloadJSON } from './utils.js';
+import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity } from './state.js';
 import { modal, closeM, form, fld, sel, opts, accOpts, partyOpts } from './components.js';
 
 import { getTxnRowData } from '../views/money.js';
@@ -3043,7 +3043,229 @@ export const exportTransactionsCsv = showCsvModal;
 
 
 export function showBackupModal() {
-  modal(`<h3>Backup</h3><p>Copy this text and keep it somewhere safe.</p><textarea rows="10" id="ta" readonly>${esc(JSON.stringify(db))}</textarea><div class="row"><button id="copyBtn">Copy</button><button id="closeBkpBtn">Close</button></div>`);
-  $('#copyBtn').onclick = () => { $('#ta').select(); document.execCommand('copy'); toast('Copied'); };
-  $('#closeBkpBtn').onclick = closeM;
+  const stats = [
+    { label: 'Accounts', count: db.accounts.length },
+    { label: 'Journal Entries', count: db.entries.length },
+    { label: 'Parties', count: db.parties.length },
+    { label: 'Sales Invoices', count: (db.sales || []).length },
+    { label: 'Purchase Bills', count: (db.bills || []).length },
+    { label: 'Products', count: (db.products || []).length }
+  ];
+
+  const jsonStr = JSON.stringify(db, null, 2);
+  const bytes = new Blob([jsonStr]).size;
+  const sizeStr = bytes > 1024 * 1024 
+    ? `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+    : `${(bytes / 1024).toFixed(1)} KB`;
+
+  const statsHtml = stats.map(s => `
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:12.5px;color:#64748b;font-weight:500;">${s.label}</span>
+      <b style="font-size:13.5px;color:#0f172a;">${s.count}</b>
+    </div>
+  `).join('');
+
+  modal(`
+    <div style="padding:4px 0;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </div>
+        <div>
+          <h3 style="margin:0;font-size:17px;font-weight:700;color:#0f172a;">Download Ledger Backup</h3>
+          <div style="font-size:12px;color:#64748b;margin-top:2px;">Complete snapshot of your accounts, journal, and business ledger.</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px;margin-bottom:14px;">
+        ${statsHtml}
+      </div>
+
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:12px;color:#166534;font-weight:600;">Backup Size: ${sizeStr}</span>
+        <span style="font-size:11.5px;color:#15803d;">Date: ${new Date().toLocaleDateString('en-IN')}</span>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <button type="button" id="btnDownloadBackup" class="p" style="flex:1;min-width:180px;height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Download Backup File (.json)</span>
+        </button>
+        <button type="button" id="btnCopyBackup" style="height:40px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>Copy JSON</span>
+        </button>
+      </div>
+
+      <details style="margin-top:10px;">
+        <summary style="font-size:12px;color:#64748b;cursor:pointer;padding:4px 0;">View Raw JSON</summary>
+        <textarea id="ta" rows="6" readonly style="width:100%;font-size:11px;font-family:monospace;margin-top:6px;box-sizing:border-box;">${esc(jsonStr)}</textarea>
+      </details>
+    </div>
+  `);
+
+  $('#btnDownloadBackup').onclick = () => {
+    downloadJSON(db, `bufin_backup_${(db.biz.name || 'PD_ENTERPRISES').replace(/\s+/g, '_')}`);
+    toast('Backup file downloaded');
+  };
+
+  $('#btnCopyBackup').onclick = () => {
+    navigator.clipboard?.writeText(jsonStr).then(() => toast('Backup JSON copied to clipboard')).catch(() => {
+      $('#ta').select();
+      document.execCommand('copy');
+      toast('Backup JSON copied');
+    });
+  };
+}
+
+export function showRestoreModal() {
+  modal(`
+    <div style="padding:4px 0;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#fef2f2;color:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 style="margin:0;font-size:17px;font-weight:700;color:#0f172a;">Restore Ledger from Backup</h3>
+          <div style="font-size:12px;color:#64748b;margin-top:2px;">Upload a previously downloaded .json backup file or paste JSON data.</div>
+        </div>
+      </div>
+
+      <!-- File Drop / Select Area -->
+      <div id="restoreDropZone" style="border:2px dashed #cbd5e1;border-radius:12px;padding:22px 14px;text-align:center;background:#f8fafc;cursor:pointer;transition:all 0.2s;margin-bottom:14px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <div style="font-size:13.5px;font-weight:600;color:#1e293b;">Click to upload backup file (.json)</div>
+        <div style="font-size:11.5px;color:#64748b;margin-top:3px;">or drag &amp; drop your BUFIN backup file here</div>
+        <input type="file" id="restoreFileInput" accept=".json,application/json" style="display:none;">
+      </div>
+
+      <!-- Verification / Preview Block -->
+      <div id="restorePreview" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:6px;color:#15803d;font-weight:700;font-size:13px;margin-bottom:6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Valid BUFIN Backup Verified</span>
+        </div>
+        <div id="restoreStats" style="font-size:12px;color:#166534;line-height:1.5;"></div>
+      </div>
+
+      <!-- Error Block -->
+      <div id="restoreError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;margin-bottom:12px;color:#b91c1c;font-size:12.5px;font-weight:500;"></div>
+
+      <details style="margin-bottom:14px;">
+        <summary style="font-size:12px;color:#64748b;cursor:pointer;padding:4px 0;">Or Paste Backup JSON Text</summary>
+        <textarea id="restoreTextarea" rows="4" placeholder="Paste BUFIN JSON backup text here..." style="width:100%;font-size:12px;box-sizing:border-box;margin-top:6px;"></textarea>
+      </details>
+
+      <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:8px 12px;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:14px;">⚠️</span>
+        <span style="font-size:11.5px;color:#92400e;line-height:1.35;">Restoring will completely overwrite the active ledger in this browser and sync with the database.</span>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" id="btnCancelRestore">Cancel</button>
+        <button type="button" id="btnConfirmRestore" class="d" disabled style="opacity:0.5;cursor:not-allowed;">Confirm &amp; Restore</button>
+      </div>
+    </div>
+  `);
+
+  let parsedData = null;
+
+  const validateAndShow = (rawText) => {
+    try {
+      const o = JSON.parse(rawText);
+      if (!o || !o.accounts || !o.entries) {
+        throw new Error('Invalid file: Missing BUFIN accounts or journal entries structure.');
+      }
+      parsedData = o;
+      $('#restoreError').style.display = 'none';
+      $('#restoreStats').innerHTML = `
+        <b>Business:</b> ${esc(o.biz?.name || 'BUFIN')} | 
+        <b>Accounts:</b> ${o.accounts.length} | 
+        <b>Entries:</b> ${o.entries.length} | 
+        <b>Parties:</b> ${(o.parties || []).length}
+      `;
+      $('#restorePreview').style.display = 'block';
+      const btn = $('#btnConfirmRestore');
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+      btn.classList.remove('d');
+      btn.classList.add('p');
+      btn.textContent = 'Restore Ledger Now';
+    } catch (err) {
+      parsedData = null;
+      $('#restorePreview').style.display = 'none';
+      $('#restoreError').textContent = '⚠️ ' + err.message;
+      $('#restoreError').style.display = 'block';
+      const btn = $('#btnConfirmRestore');
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+    }
+  };
+
+  const fileInput = $('#restoreFileInput');
+  const dropZone = $('#restoreDropZone');
+
+  dropZone.onclick = () => fileInput.click();
+  dropZone.ondragover = e => { e.preventDefault(); dropZone.style.borderColor = '#2563eb'; dropZone.style.background = '#eff6ff'; };
+  dropZone.ondragleave = e => { e.preventDefault(); dropZone.style.borderColor = '#cbd5e1'; dropZone.style.background = '#f8fafc'; };
+  dropZone.ondrop = e => {
+    e.preventDefault();
+    dropZone.style.borderColor = '#cbd5e1';
+    dropZone.style.background = '#f8fafc';
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  };
+
+  fileInput.onchange = e => {
+    if (e.target.files.length) handleFile(e.target.files[0]);
+  };
+
+  const handleFile = file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      validateAndShow(ev.target.result);
+      dropZone.innerHTML = `
+        <div style="color:#16a34a;font-weight:600;font-size:13.5px;">✓ File Loaded: ${esc(file.name)}</div>
+        <div style="font-size:11.5px;color:#64748b;margin-top:2px;">${(file.size / 1024).toFixed(1)} KB — Click to choose different file</div>
+      `;
+    };
+    reader.readAsText(file);
+  };
+
+  $('#restoreTextarea').oninput = e => {
+    if (e.target.value.trim()) validateAndShow(e.target.value.trim());
+  };
+
+  $('#btnCancelRestore').onclick = closeM;
+  $('#btnConfirmRestore').onclick = () => {
+    if (!parsedData) return;
+    try {
+      setDb(parsedData);
+      save();
+      closeM();
+      window.dispatchEvent(new Event('bufin-render'));
+      toast('Ledger successfully restored from backup!');
+    } catch (e) {
+      toast('Restore failed: ' + e.message);
+    }
+  };
 }

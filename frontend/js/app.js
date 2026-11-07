@@ -26,7 +26,7 @@ import {
   showEnt, showDoc, payForm, partyPay, docForm2, partyForm, stmt2,
   txnForm, newExpForm, newTransferForm, showLoan2, loanForm2, repayForm2,
   editLoanModal, deleteLoanAction, exportLoanCsv,
-  jvForm2, quickAddModal, showCsvModal, showBackupModal
+  jvForm2, quickAddModal, showCsvModal, showBackupModal, showRestoreModal
 } from './modules/actions.js';
 
 // ---- Helpers used by the loan actions (fee / top-up / settle) ----
@@ -817,6 +817,27 @@ function bindViewEvents() {
         toast('Network error saving settings');
       }
     });
+
+    $('#btnTestCloudinary')?.addEventListener('click', async () => {
+      const resEl = $('#c_test_result');
+      if (resEl) resEl.innerHTML = '<span style="color:#2563eb;">Checking Cloudinary server configuration...</span>';
+      try {
+        const res = await fetch('/api/cloudinary/config');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.hasSecret) {
+            if (resEl) resEl.innerHTML = `<span style="color:#16a34a;">✓ Connected to Cloudinary (Account: ${esc(data.cloudName)}) — Backend storage active.</span>`;
+            toast('Cloudinary connection verified');
+          } else {
+            if (resEl) resEl.innerHTML = '<span style="color:#b45309;">⚠️ Cloudinary is configured but API Secret is missing in backend environment.</span>';
+          }
+        } else {
+          if (resEl) resEl.innerHTML = '<span style="color:#dc2626;">✕ Cloudinary service check returned status ' + res.status + '</span>';
+        }
+      } catch (err) {
+        if (resEl) resEl.innerHTML = '<span style="color:#dc2626;">✕ Could not connect to backend server: ' + esc(err.message) + '</span>';
+      }
+    });
   }
 }
 
@@ -1201,17 +1222,7 @@ const ACTIONS = {
   stmt: stmt2,
   csv: showCsvModal,
   backup: showBackupModal,
-  restore: () => form('Restore from backup',
-    '<label>Paste backup text<textarea name="j" rows="8" required></textarea></label><small>This replaces all current data.</small>',
-    v => {
-      const o = JSON.parse(v.j);
-      if (!o.accounts || !o.entries) throw Error('Not a BUFIN backup');
-      setDb(o);
-      save();
-      render();
-    },
-    'Restore'
-  ),
+  restore: showRestoreModal,
   wipe: () => {
     if (confirm('Erase ALL data in this browser? Take a backup first.') && confirm('This cannot be undone. Erase now?')) {
       localStorage.removeItem('bufin-v1');
