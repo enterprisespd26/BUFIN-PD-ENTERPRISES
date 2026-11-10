@@ -67,6 +67,7 @@ import { taxSplit } from '../frontend/js/modules/actions.js';
 import { saveAttachments, getAttachments } from '../frontend/js/modules/attachments.js';
 import { detectHsnCode, renderSheet } from '../frontend/js/views/sales.js';
 import { renderCoa } from '../frontend/js/views/accounting.js';
+import { renderParties, partiesState } from '../frontend/js/views/parties.js';
 
 // Reset database helper
 function resetTestDb() {
@@ -697,6 +698,44 @@ test('TC-PARTY-02: Party Ledger Statement running balance calculation', () => {
   assert.equal(statement[0].balance, 5000000, 'Balance after first sale must be ₹50,000');
   assert.equal(statement[1].balance, 2000000, 'Balance after receipt must be ₹20,000');
   assert.equal(statement[2].balance, 4500000, 'Closing balance must be ₹45,000');
+});
+
+test('TC-PARTY-FILTER-01: Responsive segmented filter track and dedicated mobile search bar for parties view', () => {
+  resetTestDb();
+
+  // 1. Initial render with 'all' filter
+  partiesState.pt = 'all';
+  partiesState.pq = '';
+  let html = renderParties();
+
+  // Verify segmented track and buttons
+  assert.ok(html.includes('class="filters parties-filter-bar"'), 'Filter container must have parties-filter-bar class');
+  assert.ok(html.includes('class="parties-segment-track"'), 'Segmented track container must exist');
+  assert.ok(html.includes('data-a="ptab" data-i="all"'), 'All tab button must exist');
+  assert.ok(html.includes('data-a="ptab" data-i="customer"'), 'Customer tab button must exist');
+  assert.ok(html.includes('data-a="ptab" data-i="supplier"'), 'Supplier tab button must exist');
+  assert.ok(html.includes('data-a="ptab" data-i="other"'), 'Other tab button must exist');
+  assert.ok(html.includes('aria-selected="true" class="parties-seg-btn p active" data-a="ptab" data-i="all"'), 'All tab must be active when pt="all"');
+
+  // Verify search bar wrapper, input and icon
+  assert.ok(html.includes('class="parties-search-wrap"'), 'Search bar wrapper must exist');
+  assert.ok(html.includes('class="parties-search-ico"'), 'Search icon SVG must exist');
+  assert.ok(html.includes('data-k="pq" class="parties-search-input"'), 'Search input with data-k="pq" must exist');
+
+  // 2. Filter switch to 'customer'
+  partiesState.pt = 'customer';
+  html = renderParties();
+  assert.ok(html.includes('aria-selected="true" class="parties-seg-btn p active" data-a="ptab" data-i="customer"'), 'Customer tab must be active when pt="customer"');
+
+  // 3. Search query with clear button
+  partiesState.pq = 'Copper';
+  html = renderParties();
+  assert.ok(html.includes('data-a="clearpartiessearch"'), 'Clear search button must be rendered when pq has text');
+  assert.ok(html.includes('value="Copper"'), 'Input must have current search value');
+
+  // Reset
+  partiesState.pt = 'all';
+  partiesState.pq = '';
 });
 
 // ========================================================

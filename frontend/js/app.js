@@ -589,7 +589,14 @@ function bindViewEvents() {
       pq.oninput = () => {
         partiesState.pq = pq.value;
         clearTimeout(partiesState.h);
-        partiesState.h = setTimeout(render, 300);
+        partiesState.h = setTimeout(() => {
+          render();
+          const el = $('[data-k="pq"]');
+          if (el) {
+            el.focus();
+            el.selectionStart = el.selectionEnd = el.value.length;
+          }
+        }, 250);
       };
     }
   }
@@ -1094,6 +1101,12 @@ const ACTIONS = {
   ptab: i => {
     partiesState.pt = i;
     render();
+  },
+  clearpartiessearch: () => {
+    partiesState.pq = '';
+    render();
+    const el = $('[data-k="pq"]');
+    if (el) el.focus();
   },
   psale: i => {
     salesState.tab = 'new';

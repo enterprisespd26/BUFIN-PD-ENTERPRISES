@@ -3046,6 +3046,194 @@ aside.open ~ #ov {
   }
 }
 
+/* ======================================================
+   PARTIES PAGE: RESPONSIVE SEGMENTED FILTER & SEARCH BAR
+   ====================================================== */
+.parties-filter-bar {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin-bottom: 14px !important;
+}
+
+.parties-segment-track {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  background: var(--mu, #f1f5f9) !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--bd, #e2e8f0) !important;
+  box-sizing: border-box !important;
+  gap: 3px !important;
+  min-height: 42px !important;
+  flex: 0 0 auto !important;
+}
+
+.parties-seg-btn {
+  flex: 1 1 auto !important;
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 14px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--t2, #64748b) !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.parties-seg-btn:hover:not(.p):not(.active) {
+  background: rgba(255, 255, 255, 0.6) !important;
+  color: var(--tx, #0f172a) !important;
+}
+
+.parties-seg-btn.p,
+.parties-seg-btn.active {
+  background: var(--ac, #2563eb) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25) !important;
+}
+
+.parties-search-wrap {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  min-width: 260px !important;
+  flex: 1 1 280px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.parties-search-ico {
+  position: absolute !important;
+  left: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: var(--t2, #94a3b8) !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+.parties-search-input {
+  width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 36px 0 38px !important;
+  font-size: 14px !important;
+  background: var(--sf, #ffffff) !important;
+  border: 1px solid var(--bd, #cbd5e1) !important;
+  border-radius: 10px !important;
+  color: var(--tx, #0f172a) !important;
+  box-sizing: border-box !important;
+  transition: all 0.15s ease !important;
+}
+
+.parties-search-input:focus {
+  outline: none !important;
+  border-color: var(--ac, #2563eb) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+.parties-search-clear {
+  position: absolute !important;
+  right: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: var(--bd, #e2e8f0) !important;
+  color: var(--t2, #64748b) !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 2 !important;
+  transition: all 0.15s ease !important;
+}
+
+.parties-search-clear:hover {
+  background: #cbd5e1 !important;
+  color: var(--tx, #0f172a) !important;
+}
+
+@media (max-width: 768px) {
+  .parties-filter-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+  .parties-segment-track {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex: 1 1 100% !important;
+    padding: 3px !important;
+    background: #edf1ff !important;
+    border-radius: 10px !important;
+    gap: 3px !important;
+    box-sizing: border-box !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .parties-segment-track::-webkit-scrollbar {
+    display: none !important;
+  }
+  .parties-seg-btn {
+    flex: 1 1 25% !important;
+    min-width: 0 !important;
+    text-align: center !important;
+    padding: 7px 2px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .parties-search-wrap {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+  }
+  .parties-search-input {
+    height: 44px !important;
+    min-height: 44px !important;
+    font-size: 14.5px !important;
+    border-radius: 10px !important;
+    padding: 0 38px 0 40px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .parties-seg-btn {
+    font-size: 12px !important;
+    padding: 6px 1px !important;
+  }
+}
+
 /* 4. Structured Fintech Loans Table with Explicit CSS Grid Columns */
 .loan-table-wrap {
   width: 100% !important;
