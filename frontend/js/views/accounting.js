@@ -333,7 +333,23 @@ export function renderJv() {
   const q = (accountingState.jq || '').toLowerCase();
   const L = db.entries.filter(e => !q || (e.narr + e.ref + e.src).toLowerCase().includes(q)).slice().reverse();
   return head('Journal Entries', `<button class="p" data-a="newjv">New journal</button>`) +
-    `<div class="filters"><input data-k="jq" placeholder="Search journals" value="${esc(accountingState.jq || '')}"></div>` +
+    `<div class="money-search-wrap">
+      <div class="money-search-inner">
+        <svg class="money-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" data-k="jq" class="money-search-input" placeholder="Search journal entries..." value="${esc(accountingState.jq || '')}" autocomplete="off" spellcheck="false" aria-label="Search journals">
+        ${accountingState.jq ? `
+          <button type="button" class="money-search-clear" data-a="clearjournalsearch" aria-label="Clear search" title="Clear search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        ` : ''}
+      </div>
+    </div>` +
     entTable(L, 'No journals match.');
 }
 
@@ -532,7 +548,7 @@ export function renderGl() {
       <div class="cb-search-wrap gl-search-wrap">
         <div class="cb-search-inner">
           <svg class="cb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input data-k="glq" placeholder="Search narration, ref, party, counter-account..." value="${esc(u.q || '')}" aria-label="Search ledger">
+          <input data-k="glq" placeholder="Search narration, ref, party..." value="${esc(u.q || '')}" aria-label="Search ledger">
         </div>
       </div>
     </div>
@@ -842,7 +858,7 @@ export function renderBook() {
       <div class="cb-search-wrap">
         <div class="cb-search-inner">
           <svg class="cb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input data-k="bkq" placeholder="Search narration, ref, party, account..." value="${esc(u.q || '')}" aria-label="Search transactions">
+          <input data-k="bkq" placeholder="Search narration, ref, party..." value="${esc(u.q || '')}" aria-label="Search transactions">
         </div>
       </div>
     </div>

@@ -1159,6 +1159,18 @@ const ACTIONS = {
     const el = $('[data-k="pq"]');
     if (el) el.focus();
   },
+  clearmoneysearch: () => {
+    moneyState.q = '';
+    render();
+    const el = $('[data-k="q"]');
+    if (el) el.focus();
+  },
+  clearjournalsearch: () => {
+    accountingState.jq = '';
+    render();
+    const el = $('[data-k="jq"]');
+    if (el) el.focus();
+  },
   psale: i => {
     salesState.tab = 'new';
     salesState.editNo = null;

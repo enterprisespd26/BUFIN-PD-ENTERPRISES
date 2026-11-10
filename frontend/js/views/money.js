@@ -170,8 +170,51 @@ export function getTxnRowData(e) {
   };
 }
 
+export function renderMoneySearchBar(placeholder = 'Search transactions...', key = 'q') {
+  const val = moneyState.q || '';
+  return `<div class="money-search-wrap">
+    <div class="money-search-inner">
+      <svg class="money-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" data-k="${key}" class="money-search-input" placeholder="${esc(placeholder)}" value="${esc(val)}" autocomplete="off" spellcheck="false" aria-label="${esc(placeholder)}">
+      ${val ? `
+        <button type="button" class="money-search-clear" data-a="clearmoneysearch" aria-label="Clear search" title="Clear search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      ` : ''}
+    </div>
+  </div>`;
+}
+
 function renderTxnTable(list, kind, emptyMsg) {
-  if (!list.length) return `<div class="wrap"><div class="empty">${emptyMsg || 'No transactions found.'}</div></div>`;
+  if (!list.length) {
+    const isFiltered = Boolean(moneyState.q);
+    return `<div class="wrap">
+      <div class="empty txns-empty-state">
+        <div class="txns-empty-icon" aria-hidden="true">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            ${isFiltered ? `
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            ` : `
+              <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+            `}
+          </svg>
+        </div>
+        <div class="txns-empty-title">${isFiltered ? 'No transactions match' : (emptyMsg || 'No transactions found.')}</div>
+        ${isFiltered ? `
+          <div class="txns-empty-sub">Try searching with a different keyword, account, or reference.</div>
+          <button type="button" class="btn alt sm txns-empty-clear-btn" data-a="clearmoneysearch">Clear search</button>
+        ` : ''}
+      </div>
+    </div>`;
+  }
 
   if (kind === 'in') {
     return `<div class="wrap"><table>
@@ -293,7 +336,7 @@ export function renderTxns() {
   });
 
   return head('All Transactions', `<button data-a="csv">Export CSV</button>`) +
-    `<div class="filters"><input data-k="q" placeholder="Search narration, party, reference, type, account..." value="${esc(moneyState.q || '')}"></div>` +
+    renderMoneySearchBar('Search transactions...', 'q') +
     renderTxnTable(L, 'all', 'No transactions match.');
 }
 
@@ -327,10 +370,8 @@ export function renderMoneyIn() {
       ${kpi('This Month', fmt(monthAmt))}
       ${kpi('Cash Inflow', fmt(cashAmt))}
       ${kpi('Bank Inflow', fmt(bankAmt))}
-    </div>
-    <div class="filters">
-      <input data-k="q" placeholder="Search customer, account, category, reference, description..." value="${esc(moneyState.q || '')}">
     </div>` +
+    renderMoneySearchBar('Search income, customer, ref...', 'q') +
     renderTxnTable(L, 'in', 'Nothing recorded yet. Click "+ Record money received" to record income.');
 }
 
@@ -362,10 +403,8 @@ export function renderMoneyOut() {
       ${kpi('This Month', fmt(monthAmt))}
       ${kpi('Cash Outflow', fmt(cashAmt))}
       ${kpi('Bank Outflow', fmt(bankAmt))}
-    </div>
-    <div class="filters">
-      <input data-k="q" placeholder="Search payee, account, category, reference, description..." value="${esc(moneyState.q || '')}">
     </div>` +
+    renderMoneySearchBar('Search payments, payee, ref...', 'q') +
     renderTxnTable(L, 'out', 'Nothing recorded yet. Click "+ Record money paid" to record an outgoing payment.');
 }
 
@@ -411,10 +450,8 @@ export function renderTransfers() {
       ${kpi('This Month', fmt(monthAmt))}
       ${kpi('Cash Deposits (Cash → Bank)', fmt(depositAmt))}
       ${kpi('Cash Withdrawals (Bank → Cash)', fmt(withdrawalAmt))}
-    </div>
-    <div class="filters">
-      <input data-k="q" placeholder="Search transfer type, accounts, reference, notes..." value="${esc(moneyState.q || '')}">
     </div>` +
+    renderMoneySearchBar('Search transfers, accounts, ref...', 'q') +
     (L.length ? `<div class="wrap"><table>
       <thead>
         <tr>

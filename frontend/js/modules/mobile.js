@@ -62,6 +62,18 @@ const CSS = String.raw`
     max-width: 100% !important;
     box-sizing: border-box !important;
   }
+  .cb-search-inner input,
+  .money-search-inner input,
+  .parties-search-input,
+  .loan-search-input {
+    padding-left: 40px !important;
+    padding-right: 40px !important;
+    border-radius: 12px !important;
+  }
+  .money-search-wrap {
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
   .filters select[style*="min-width"], #glAccSelect { min-width: 0 !important; width: 100% !important; max-width: 100% !important; min-height: 48px !important; box-sizing: border-box !important; }
   #glAccSelect.gl-account-select { min-height: 48px !important; height: 48px !important; padding: 0 40px 0 40px !important; font-size: 14.5px !important; border: 2px solid #3b82f6 !important; border-radius: 11px !important; }
 

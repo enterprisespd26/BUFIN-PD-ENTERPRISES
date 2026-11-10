@@ -69,6 +69,7 @@ import { saveAttachments, getAttachments } from '../frontend/js/modules/attachme
 import { detectHsnCode, renderSheet } from '../frontend/js/views/sales.js';
 import { renderCoa, renderBook, accountingState } from '../frontend/js/views/accounting.js';
 import { renderParties, partiesState } from '../frontend/js/views/parties.js';
+import { renderTxns, renderMoneyIn, renderMoneyOut, renderTransfers, moneyState } from '../frontend/js/views/money.js';
 
 // Reset database helper
 function resetTestDb() {
@@ -1660,6 +1661,46 @@ test('TC-INV-MOBILE-01: Inventory Stock mobile UX and top-right Export CSV heade
 
   // 3. Verify empty state card structure
   assert.ok(html.includes('inv-empty-state'), 'Must contain polished .inv-empty-state card');
+});
+
+test('TC-SEARCH-MOBILE-01: Modern mobile search bars with embedded SVG icon, uncluttered placeholders, clear buttons, and touch padding across views', () => {
+  resetTestDb();
+
+  // 1. All Transactions view: clean placeholder, search icon, and clear button
+  moneyState.q = '';
+  let txnsHtml = renderTxns();
+  assert.ok(txnsHtml.includes('money-search-wrap'), 'Must wrap search in .money-search-wrap');
+  assert.ok(txnsHtml.includes('money-search-icon'), 'Must include embedded SVG magnifying glass icon');
+  assert.ok(txnsHtml.includes('placeholder="Search transactions..."'), 'Placeholder must be concise and uncluttered on mobile');
+  assert.ok(!txnsHtml.includes('placeholder="Search narration, party, reference, type, account..."'), 'Old 56-character overflowing placeholder must be eliminated');
+
+  // Verify clear button appears when query is present
+  moneyState.q = 'Invoice 101';
+  txnsHtml = renderTxns();
+  assert.ok(txnsHtml.includes('data-a="clearmoneysearch"'), 'Must render clear button when query is active');
+  assert.ok(txnsHtml.includes('txns-empty-state'), 'Must render modern empty state card when zero transactions match query');
+
+  // 2. Money In, Money Out, and Transfers views uncluttered placeholders
+  moneyState.q = '';
+  const inHtml = renderMoneyIn();
+  assert.ok(inHtml.includes('placeholder="Search income, customer, ref..."'), 'Money In search placeholder must be concise');
+  assert.ok(inHtml.includes('money-search-wrap'), 'Money In must use .money-search-wrap');
+
+  const outHtml = renderMoneyOut();
+  assert.ok(outHtml.includes('placeholder="Search payments, payee, ref..."'), 'Money Out search placeholder must be concise');
+  assert.ok(outHtml.includes('money-search-wrap'), 'Money Out must use .money-search-wrap');
+
+  const xferHtml = renderTransfers();
+  assert.ok(xferHtml.includes('placeholder="Search transfers, accounts, ref..."'), 'Transfers search placeholder must be concise');
+  assert.ok(xferHtml.includes('money-search-wrap'), 'Transfers must use .money-search-wrap');
+
+  // 3. CSS touch padding verification (no icon-text collision)
+  const css = nodeFs.readFileSync('frontend/css/style.css', 'utf8');
+  assert.match(css, /\.money-search-input[\s\S]*?padding:\s*0\s+40px\s+0\s+42px\s*!important/, 'Input must have left and right padding to clear icon and clear button');
+  assert.match(css, /\.money-search-input[\s\S]*?border-radius:\s*12px\s*!important/, 'Input must have modern 12px border radius');
+
+  const mobileJs = nodeFs.readFileSync('frontend/js/modules/mobile.js', 'utf8');
+  assert.match(mobileJs, /\.money-search-inner\s+input[\s\S]*?padding-left:\s*40px\s*!important/, 'mobile.js must guarantee 40px left padding on search input');
 });
 
 

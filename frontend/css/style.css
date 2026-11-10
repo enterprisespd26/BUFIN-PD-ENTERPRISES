@@ -1708,6 +1708,14 @@ aside.open ~ #ov {
     max-width: 100%;
     box-sizing: border-box;
   }
+  .cb-search-inner input,
+  .money-search-inner input,
+  .parties-search-wrap input,
+  .loan-search-wrap input {
+    padding-left: 40px !important;
+    padding-right: 40px !important;
+    border-radius: 12px !important;
+  }
   .filters > div[style*="min-width"],
   .filters > div[style*="flex:1"],
   .filters select[style*="min-width"],
@@ -5331,5 +5339,135 @@ dialog:has(.xfer-form) form #sb:disabled {
   font-size: 0.9375rem !important; /* text-sm/base font-bold */
   font-weight: 700 !important;
   color: #e11d48 !important; /* text-rose-600 */
+}
+
+/* ======================================================
+   MODERN UNCLUTTERED SEARCH BAR (MONEY & TRANSACTIONS)
+   ====================================================== */
+.money-search-wrap {
+  width: 100%;
+  margin-bottom: 14px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.money-search-inner {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.money-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.money-search-input {
+  width: 100% !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 40px 0 42px !important;
+  font-size: 14.5px !important;
+  border-radius: 12px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  color: var(--tx, #0f172a) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  outline: none !important;
+}
+
+.money-search-input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
+  background: #ffffff !important;
+}
+
+.money-search-input::placeholder {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.money-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-height: 24px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  border-radius: 50% !important;
+  cursor: pointer;
+  z-index: 3;
+  transition: all 0.15s ease;
+}
+
+.money-search-clear:hover,
+.money-search-clear:active {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  transform: translateY(-50%) scale(1.08);
+}
+
+/* Empty State for Transactions */
+.txns-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 36px 16px !important;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  margin: 8px 0;
+}
+
+.txns-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: #f8fafc;
+  border-radius: 50%;
+  margin-bottom: 12px;
+}
+
+.txns-empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.txns-empty-sub {
+  font-size: 13px;
+  color: #64748b;
+  max-width: 320px;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.txns-empty-clear-btn {
+  margin-top: 4px;
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
 }
 
