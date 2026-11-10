@@ -651,22 +651,23 @@ const CSS = String.raw`
   table.mcard.coa-table td.mc-actions button.coa-btn-edit,
   table.coa-table.mcard td.mc-actions button.coa-btn-edit,
   table.coa-table .coa-btn-edit,
-  table.mcard.coa-table button[data-a="editacc"] {
-    min-height: 32px !important;
-    height: 32px !important;
-    min-width: 58px !important;
-    padding: 0 12px !important;
-    font-size: 12.5px !important;
-    font-weight: 600 !important;
-    border-radius: 7px !important;
+  table.mcard.coa-table button[data-a="editacc"],
+  .wrap:not(.no-cards) table.coa-table button.coa-btn-edit {
+    min-height: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    width: 34px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
     background: #f8fafc !important;
-    border: 1px solid #cbd5e1 !important;
-    color: #1e293b !important;
+    border: 1.5px solid #cbd5e1 !important;
+    color: #334155 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
     cursor: pointer !important;
+    transition: all 0.15s ease !important;
   }
 
   table.mcard.coa-table td.mc-actions button.coa-btn-edit:hover,
@@ -675,28 +676,44 @@ const CSS = String.raw`
   table.mcard.coa-table td.mc-actions button.coa-btn-edit:active,
   table.coa-table.mcard td.mc-actions button.coa-btn-edit:active,
   table.coa-table .coa-btn-edit:active {
-    background: #f1f5f9 !important;
-    border-color: #94a3b8 !important;
-    color: #0284c7 !important;
+    background: #eff6ff !important;
+    border-color: #93c5fd !important;
+    color: #2563eb !important;
+    transform: scale(0.95) !important;
   }
 
   table.mcard.coa-table td.mc-actions button.coa-btn-del,
   table.coa-table.mcard td.mc-actions button.coa-btn-del,
   table.coa-table .coa-btn-del,
-  table.coa-table td.coa-act-td button.d {
-    min-height: 32px !important;
-    height: 32px !important;
-    padding: 0 10px !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    border-radius: 7px !important;
+  table.coa-table td.coa-act-td button.d,
+  table.coa-table td.coa-act-td button.coa-btn-del {
+    min-height: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    width: 34px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
     background: #fef2f2 !important;
-    border: 1px solid #fecaca !important;
+    border: 1.5px solid #fecaca !important;
     color: #dc2626 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    box-shadow: 0 1px 2px rgba(220, 38, 38, 0.05) !important;
     cursor: pointer !important;
+    transition: all 0.15s ease !important;
+  }
+
+  table.mcard.coa-table td.mc-actions button.coa-btn-del:hover,
+  table.coa-table.mcard td.mc-actions button.coa-btn-del:hover,
+  table.coa-table .coa-btn-del:hover,
+  table.mcard.coa-table td.mc-actions button.coa-btn-del:active,
+  table.coa-table.mcard td.mc-actions button.coa-btn-del:active,
+  table.coa-table .coa-btn-del:active {
+    background: #fee2e2 !important;
+    border-color: #fca5a5 !important;
+    color: #b91c1c !important;
+    transform: scale(0.95) !important;
   }
 
   table.mcard.coa-table td.mc-cell[data-label="Balance"],

@@ -551,13 +551,19 @@ test('TC-ACC-02: Profit & Loss statement revenue, COGS and net calculation', () 
   assert.equal(netProfit, 2500000, 'Net Profit must be ₹25,000.00');
 });
 
-test('TC-ACC-COA-01: Chart of Accounts table markup and top-right card Edit button alignment', () => {
+test('TC-ACC-COA-01: Chart of Accounts table markup, top-right card alignment, and icon-only Edit/Delete buttons', () => {
   resetTestDb();
   const html = renderCoa();
   assert.ok(html.includes('coa-table'), 'Must render coa-table class on accounts table');
   assert.ok(html.includes('coa-title-td'), 'Must render coa-title-td on account title cell');
   assert.ok(html.includes('coa-act-td'), 'Must render coa-act-td on account actions cell');
   assert.ok(html.includes('coa-btn-edit'), 'Must render coa-btn-edit button');
+  assert.ok(html.includes('aria-label="Edit '), 'Edit button must have accessible aria-label');
+  assert.ok(!html.includes('>Edit<'), 'Edit button must be icon-only without raw text');
+  if (html.includes('coa-btn-del')) {
+    assert.ok(!html.includes('>Delete<'), 'Delete button must be icon-only without raw text');
+    assert.ok(html.includes('aria-label="Delete '), 'Delete button must have accessible aria-label');
+  }
 });
 
 // ========================================================
