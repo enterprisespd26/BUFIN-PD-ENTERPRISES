@@ -1,5 +1,5 @@
 // BUFIN Service Worker - Offline Caching & App Shell Acceleration
-const CACHE_NAME = 'bufin-v8.1-cache';
+const CACHE_NAME = 'bufin-v8.2-cache';
 
 const PRECACHE_ASSETS = [
   '/',
@@ -20,6 +20,8 @@ const PRECACHE_ASSETS = [
   '/icons/favicon.svg',
   '/icons/android-chrome-192x192.png',
   '/icons/android-chrome-512x512.png',
+  '/icons/maskable-icon-512x512.png',
+  '/icons/apple-touch-icon.png',
   '/svg/app-icon.svg'
 ];
 
@@ -46,12 +48,12 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: Stale-While-Revalidate for static assets, Network-First for state API
+// Fetch: Instant Stale-While-Revalidate for static assets, Network-First for state API
 self.addEventListener('fetch', event => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Skip non-GET requests and Cloudinary/external analytics
+  // Skip non-GET requests and external analytics
   if (req.method !== 'GET') return;
 
   // 1. API state requests: Network-First with Cache fallback
@@ -78,22 +80,27 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. Static Assets (CSS, JS, Fonts, Images, SVG): Network-First when online, Cache fallback when offline
+  // 2. Static Assets (HTML, CSS, JS, Fonts, Images, SVG): Instant Stale-While-Revalidate (0ms Cache, background refresh)
   event.respondWith(
-    fetch(req)
-      .then(networkRes => {
-        if (networkRes && networkRes.status === 200) {
-          const resClone = networkRes.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, resClone));
-        }
-        return networkRes;
-      })
-      .catch(async () => {
-        const cached = await caches.match(req);
-        if (cached) return cached;
+    caches.match(req).then(cached => {
+      const networkUpdate = fetch(req)
+        .then(networkRes => {
+          if (networkRes && networkRes.status === 200) {
+            const resClone = networkRes.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(req, resClone));
+          }
+          return networkRes;
+        })
+        .catch(() => null);
+
+      if (cached) return cached;
+
+      return networkUpdate.then(res => {
+        if (res) return res;
         if (req.mode === 'navigate') {
           return caches.match('/index.html') || caches.match('/');
         }
-      })
+      });
+    })
   );
 });

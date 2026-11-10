@@ -1503,6 +1503,28 @@ test('TC-MOBILE-PERF-01: Native Android app performance, PWA manifest, offline s
   assert.match(attCode, /loading="lazy"/, 'attachments.js must use loading="lazy"');
 });
 
+test('TC-PRELOADER-PERF-01: Instant PWA splash screen transition, clean white maskable icon, and deferred PDF parser', async () => {
+  const fs = await import('node:fs');
+
+  // 1. Verify manifest.json splash background and theme color alignment
+  const manifest = JSON.parse(fs.readFileSync('frontend/manifest.json', 'utf8'));
+  assert.strictEqual(manifest.background_color, '#FFFFFF', 'PWA splash background must be #FFFFFF to match clean app canvas');
+  assert.strictEqual(manifest.theme_color, '#FFFFFF', 'PWA theme color must be #FFFFFF');
+  assert.ok(manifest.icons.some(i => i.src === '/icons/maskable-icon-512x512.png' && i.purpose === 'maskable'), 'Maskable 512x512 icon must exist');
+  assert.ok(manifest.icons.some(i => i.src === '/icons/android-chrome-512x512.png' && i.purpose === 'any'), 'High-res 512x512 standard icon must exist');
+
+  // 2. Verify index.html critical rendering path: deferred jsPDF and preconnected fonts
+  const indexHtml = fs.readFileSync('frontend/index.html', 'utf8');
+  assert.match(indexHtml, /<script\s+defer\s+src="[^"]*jspdf/i, 'jsPDF must be deferred to eliminate parser blocking during startup');
+  assert.match(indexHtml, /name="theme-color"\s+content="#FFFFFF"/i, 'index.html must define #FFFFFF theme color');
+  assert.match(indexHtml, /rel="preconnect"\s+href="https:\/\/fonts\.googleapis\.com"/, 'index.html must preconnect to fonts');
+
+  // 3. Verify service worker instant cache-first / stale-while-revalidate resolution
+  const swCode = fs.readFileSync('frontend/sw.js', 'utf8');
+  assert.match(swCode, /caches\.match\(req\)\.then\(cached/, 'sw.js must resolve cached assets before waiting on network');
+  assert.match(swCode, /'\/icons\/maskable-icon-512x512\.png'/, 'sw.js must precache maskable icon');
+});
+
 test('TC-SYS-BACKUP-01: ZIP archive with separate entity CSVs, master consolidated CSV, and system JSON restore', async () => {
   const { createZip, readZipFile, crc32 } = await import('../frontend/js/modules/utils.js');
   const { buildAllBackupFiles } = await import('../frontend/js/modules/actions.js');
