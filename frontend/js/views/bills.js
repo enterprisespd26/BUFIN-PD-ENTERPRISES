@@ -33,6 +33,8 @@ export const billsState = {
   q: '',
   invQ: '',
   invSupplier: '',
+  invMaterial: '',
+  invStatus: 'all',
   invFromDate: '',
   invToDate: ''
 };
@@ -335,18 +337,44 @@ export function renderBills() {
   // Calculate Inventory Stock dynamically from Purchase Bills & Sales Outflow
   const allStock = getInventoryStock();
 
-  // Extract unique suppliers from all stock items
+  // Extract unique materials & registered suppliers
+  const uniqueMaterialsSet = new Set();
+  (db.items || []).forEach(it => {
+    if (it.n && it.n.trim()) uniqueMaterialsSet.add(it.n.trim());
+  });
+  allStock.forEach(s => {
+    if (s.name && s.name.trim()) uniqueMaterialsSet.add(s.name.trim());
+  });
+  const uniqueMaterials = Array.from(uniqueMaterialsSet).sort((a, b) => a.localeCompare(b));
+
   const uniqueSuppliersSet = new Set();
-  allStock.forEach(s => (s.suppliers || []).forEach(sup => uniqueSuppliersSet.add(sup)));
-  const uniqueSuppliers = Array.from(uniqueSuppliersSet).sort();
+  (db.parties || []).filter(p => p.type === 'supplier' || p.type === 'both').forEach(p => {
+    if (p.name && p.name.trim()) uniqueSuppliersSet.add(p.name.trim());
+  });
+  (db.docs || []).filter(d => (d.type === 'bill' || d.t === 'bill') && !d.cancelled).forEach(d => {
+    const sup = d.sup || pn(d.party);
+    if (sup && sup.trim()) uniqueSuppliersSet.add(sup.trim());
+  });
+  allStock.forEach(s => (s.suppliers || []).forEach(sup => {
+    if (sup && sup.trim()) uniqueSuppliersSet.add(sup.trim());
+  }));
+  const uniqueSuppliers = Array.from(uniqueSuppliersSet).sort((a, b) => a.localeCompare(b));
 
   // Filter inventory
   const invQ = (billsState.invQ || '').trim().toLowerCase();
   const invSup = (billsState.invSupplier || '').trim().toLowerCase();
+  const invMat = (billsState.invMaterial || '').trim().toLowerCase();
+  const invStatus = billsState.invStatus || 'all';
   const invFrom = billsState.invFromDate || '';
   const invTo = billsState.invToDate || '';
 
   const filteredStock = allStock.filter(item => {
+    if (invStatus === 'instock' && item.currentStock <= 0) return false;
+    if (invStatus === 'lowstock' && !item.isLowStock) return false;
+    if (invStatus === 'outstock' && item.currentStock > 0) return false;
+
+    if (invMat && item.name.toLowerCase() !== invMat) return false;
+
     if (invQ) {
       const matMatch = item.name.toLowerCase().includes(invQ);
       const supMatch = item.suppliers.some(s => s.toLowerCase().includes(invQ));
@@ -368,6 +396,11 @@ export function renderBills() {
   });
 
   const totalMaterials = allStock.length;
+  const totalStockCount = totalMaterials;
+  const inStockCount = allStock.filter(s => s.currentStock > 0).length;
+  const lowStockCount = allStock.filter(s => s.isLowStock).length;
+  const outStockCount = allStock.filter(s => s.currentStock <= 0).length;
+  const hasActiveFilter = Boolean(invQ || invSup || invMat || (invStatus && invStatus !== 'all') || invFrom || invTo);
   const totalAcquiredKg = allStock.filter(s => s.isWeight).reduce((acc, s) => acc + s.purchasedQty, 0);
   const totalSoldKg = allStock.filter(s => s.isWeight).reduce((acc, s) => acc + s.soldQty, 0);
   const totalCurrentStockKg = allStock.filter(s => s.isWeight).reduce((acc, s) => acc + s.currentStock, 0);
@@ -632,26 +665,67 @@ export function renderBills() {
       </div>
 
       <div class="pd-card inv-filter-card">
+        <!-- Quick Stock Status Segmented Filter Pills -->
+        <div class="inv-status-track" role="tablist" aria-label="Filter by stock status">
+          <button type="button" class="inv-status-pill ${billsState.invStatus === 'all' ? 'active' : ''}" data-inv-status="all">
+            All Stock (${totalStockCount})
+          </button>
+          <button type="button" class="inv-status-pill ${billsState.invStatus === 'instock' ? 'active' : ''}" data-inv-status="instock">
+            In Stock (${inStockCount})
+          </button>
+          <button type="button" class="inv-status-pill ${billsState.invStatus === 'lowstock' ? 'active' : ''}" data-inv-status="lowstock">
+            Low Stock (${lowStockCount})
+          </button>
+          <button type="button" class="inv-status-pill ${billsState.invStatus === 'outstock' ? 'active' : ''}" data-inv-status="outstock">
+            Out of Stock (${outStockCount})
+          </button>
+        </div>
+
         <div class="inv-filter-grid">
-          <!-- Search Row -->
+          <!-- Search Row with Crisp Professional Icon and Touch Clear Button -->
           <div class="cb-search-wrap inv-search-wrap">
-            <div class="cb-search-inner">
-              <svg class="cb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <div class="inv-search-inner">
+              <svg class="inv-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
               <input type="text" id="inv_search_q" value="${esc(billsState.invQ || '')}" placeholder="Search material, supplier, bill..." aria-label="Search materials">
+              ${billsState.invQ ? `
+                <button type="button" class="inv-search-clear" id="inv_search_clear" aria-label="Clear search" title="Clear search">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              ` : ''}
             </div>
           </div>
 
-          <!-- Supplier Filter Dropdown -->
-          <div class="inv-select-wrap">
-            <div class="inv-select-icon-left" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <!-- Dropdowns Row: Material & Supplier Filters -->
+          <div class="inv-dropdowns-row">
+            <!-- Material Filter Dropdown -->
+            <div class="inv-select-wrap">
+              <div class="inv-select-icon-left" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              </div>
+              <select id="inv_filter_mat" class="inv-select" aria-label="Filter by material">
+                <option value="">All Materials${uniqueMaterials.length ? ` (${uniqueMaterials.length})` : ''}</option>
+                ${uniqueMaterials.map(m => `<option value="${esc(m.toLowerCase())}" ${billsState.invMaterial?.toLowerCase() === m.toLowerCase() ? 'selected' : ''}>${esc(m)}</option>`).join('')}
+              </select>
+              <div class="inv-select-chevron" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
             </div>
-            <select id="inv_filter_sup" class="inv-select" aria-label="Filter by supplier">
-              <option value="">All Suppliers (${uniqueSuppliers.length})</option>
-              ${uniqueSuppliers.map(s => `<option value="${esc(s.toLowerCase())}" ${billsState.invSupplier?.toLowerCase() === s.toLowerCase() ? 'selected' : ''}>${esc(s)}</option>`).join('')}
-            </select>
-            <div class="inv-select-chevron" aria-hidden="true">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+
+            <!-- Supplier Filter Dropdown -->
+            <div class="inv-select-wrap">
+              <div class="inv-select-icon-left" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              </div>
+              <select id="inv_filter_sup" class="inv-select" aria-label="Filter by supplier">
+                <option value="">All Suppliers${uniqueSuppliers.length ? ` (${uniqueSuppliers.length})` : ''}</option>
+                ${uniqueSuppliers.map(s => `<option value="${esc(s.toLowerCase())}" ${billsState.invSupplier?.toLowerCase() === s.toLowerCase() ? 'selected' : ''}>${esc(s)}</option>`).join('')}
+              </select>
+              <div class="inv-select-chevron" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
             </div>
           </div>
 
@@ -679,7 +753,7 @@ export function renderBills() {
           </div>
         </div>
 
-        ${(billsState.invQ || billsState.invSupplier || billsState.invFromDate || billsState.invToDate) ? `
+        ${hasActiveFilter ? `
           <div class="inv-active-filters-bar">
             <span class="inv-filter-badge">Active Filters</span>
             <button type="button" class="btn alt sm inv-clear-btn" id="inv_btn_reset">
@@ -746,13 +820,13 @@ export function renderBills() {
                   <td colspan="10" style="padding:0;border:none;background:transparent;">
                     <div class="inv-empty-state">
                       <div class="inv-empty-icon">📦</div>
-                      <div class="inv-empty-title">${(billsState.invQ || billsState.invSupplier || billsState.invFromDate || billsState.invToDate) ? 'No matching materials found' : 'No inventory materials found'}</div>
+                      <div class="inv-empty-title">${hasActiveFilter ? 'No matching materials found' : 'No inventory materials found'}</div>
                       <div class="inv-empty-sub">
-                        ${(billsState.invQ || billsState.invSupplier || billsState.invFromDate || billsState.invToDate) 
-                          ? 'Try adjusting your search query, supplier filter, or date range.' 
+                        ${hasActiveFilter 
+                          ? 'Try adjusting your search query, status tab, or material / supplier / date filter.' 
                           : 'Materials will automatically appear here once you record your first Purchase Bill.'}
                       </div>
-                      ${(billsState.invQ || billsState.invSupplier || billsState.invFromDate || billsState.invToDate) ? `
+                      ${hasActiveFilter ? `
                         <button type="button" class="btn alt sm" id="inv_btn_reset_empty" style="margin-top:10px;">Clear all filters</button>
                       ` : ''}
                     </div>
@@ -1620,6 +1694,15 @@ export function bindBillsEvents() {
   });
 
   // ================= INVENTORY STOCK EVENT LISTENERS =================
+  // Inventory: Status pills
+  container.querySelectorAll('[data-inv-status]').forEach(btn => {
+    btn.onclick = () => {
+      billsState.invStatus = btn.dataset.invStatus;
+      container.innerHTML = renderBills();
+      bindBillsEvents();
+    };
+  });
+
   // Inventory: Search input (debounced 300ms)
   const invSearch = $('#inv_search_q');
   if (invSearch) {
@@ -1633,6 +1716,28 @@ export function bindBillsEvents() {
         n.setSelectionRange(n.value.length, n.value.length);
       }
     }, 300);
+  }
+
+  // Inventory: Search clear button
+  const invSearchClear = $('#inv_search_clear');
+  if (invSearchClear) {
+    invSearchClear.onclick = () => {
+      billsState.invQ = '';
+      container.innerHTML = renderBills();
+      bindBillsEvents();
+      const n = $('#inv_search_q');
+      if (n) n.focus();
+    };
+  }
+
+  // Inventory: Material filter
+  const invMatFilter = $('#inv_filter_mat');
+  if (invMatFilter) {
+    invMatFilter.onchange = () => {
+      billsState.invMaterial = invMatFilter.value;
+      container.innerHTML = renderBills();
+      bindBillsEvents();
+    };
   }
 
   // Inventory: Supplier filter
@@ -1666,29 +1771,22 @@ export function bindBillsEvents() {
   }
 
   // Inventory: Reset filters
+  const resetAllInvFilters = () => {
+    billsState.invQ = '';
+    billsState.invSupplier = '';
+    billsState.invMaterial = '';
+    billsState.invStatus = 'all';
+    billsState.invFromDate = '';
+    billsState.invToDate = '';
+    container.innerHTML = renderBills();
+    bindBillsEvents();
+  };
+
   const invReset = $('#inv_btn_reset');
-  if (invReset) {
-    invReset.onclick = () => {
-      billsState.invQ = '';
-      billsState.invSupplier = '';
-      billsState.invFromDate = '';
-      billsState.invToDate = '';
-      container.innerHTML = renderBills();
-      bindBillsEvents();
-    };
-  }
+  if (invReset) invReset.onclick = resetAllInvFilters;
 
   const invResetEmpty = $('#inv_btn_reset_empty');
-  if (invResetEmpty) {
-    invResetEmpty.onclick = () => {
-      billsState.invQ = '';
-      billsState.invSupplier = '';
-      billsState.invFromDate = '';
-      billsState.invToDate = '';
-      container.innerHTML = renderBills();
-      bindBillsEvents();
-    };
-  }
+  if (invResetEmpty) invResetEmpty.onclick = resetAllInvFilters;
 
   // Inventory: Date picker click delegation
   const invFromBox = $('#invFromBox');

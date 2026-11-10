@@ -1653,8 +1653,11 @@ test('TC-INV-MOBILE-01: Inventory Stock mobile UX and top-right Export CSV heade
 
   // 2. Verify dedicated mobile filter card elements
   assert.ok(html.includes('inv-filter-card'), 'Must contain .inv-filter-card container');
+  assert.ok(html.includes('inv-status-track'), 'Must contain quick status pills track .inv-status-track');
   assert.ok(html.includes('inv-search-wrap'), 'Must contain dedicated .inv-search-wrap with embedded search icon');
-  assert.ok(html.includes('inv-select-wrap'), 'Must contain .inv-select-wrap for supplier selection');
+  assert.ok(html.includes('inv-search-icon'), 'Must contain professional .inv-search-icon SVG');
+  assert.ok(html.includes('id="inv_filter_mat"'), 'Must contain material dropdown filter #inv_filter_mat');
+  assert.ok(html.includes('id="inv_filter_sup"'), 'Must contain supplier dropdown filter #inv_filter_sup');
   assert.ok(html.includes('inv-date-range-card'), 'Must contain .inv-date-range-card for mobile date filtering');
   assert.ok(html.includes('id="invFromBox"'), 'Must have dedicated #invFromBox touch tile');
   assert.ok(html.includes('id="invToBox"'), 'Must have dedicated #invToBox touch tile');
@@ -1700,7 +1703,7 @@ test('TC-SEARCH-MOBILE-01: Modern mobile search bars with embedded SVG icon, unc
   assert.match(css, /\.money-search-input[\s\S]*?border-radius:\s*12px\s*!important/, 'Input must have modern 12px border radius');
 
   const mobileJs = nodeFs.readFileSync('frontend/js/modules/mobile.js', 'utf8');
-  assert.match(mobileJs, /\.money-search-inner\s+input[\s\S]*?padding-left:\s*40px\s*!important/, 'mobile.js must guarantee 40px left padding on search input');
+  assert.match(mobileJs, /\.money-search-inner\s+input[\s\S]*?padding-left:\s*(?:40|44)px\s*!important/, 'mobile.js must guarantee 40px+ left padding on search input');
 });
 
 
