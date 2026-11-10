@@ -63,7 +63,7 @@ global.document = {
 // 2. IMPORT BUFIN CORE MODULES
 import { convertRate, UNIT_FACTORS, fmt, uid, fmtDate, isoToDmy, dmyToIso } from '../frontend/js/modules/utils.js';
 import { db, setDb, post, checkCashLiquidity, net, dstat, out, sgn, acc, reverse } from '../frontend/js/modules/state.js';
-import { getInventoryStock } from '../frontend/js/views/bills.js';
+import { getInventoryStock, renderBills, billsState } from '../frontend/js/views/bills.js';
 import { taxSplit } from '../frontend/js/modules/actions.js';
 import { saveAttachments, getAttachments } from '../frontend/js/modules/attachments.js';
 import { detectHsnCode, renderSheet } from '../frontend/js/views/sales.js';
@@ -1639,6 +1639,29 @@ test('TC-DATE-FILTER-01: DD/MM/YYYY date formatting, dedicated mobile date range
   // 6. Verify opening balance is formatted as DD/MM/YYYY
   assert.ok(html.includes(`as of ${fmtDate(accountingState.cb.f)}`), 'Opening balance subtitle must format date as DD/MM/YYYY');
 });
+
+test('TC-INV-MOBILE-01: Inventory Stock mobile UX and top-right Export CSV header placement', () => {
+  resetTestDb();
+  billsState.tab = 'inventory';
+  const html = renderBills();
+
+  // 1. Verify Export CSV button is in the top-right header
+  assert.ok(html.includes('id="inv_btn_csv"'), 'Must render #inv_btn_csv');
+  const headerMatch = html.match(/<div class="bar[^>]*>([\s\S]*?)<\/div>/);
+  assert.ok(headerMatch && headerMatch[1].includes('inv_btn_csv'), 'Export CSV button must be located in header bar');
+
+  // 2. Verify dedicated mobile filter card elements
+  assert.ok(html.includes('inv-filter-card'), 'Must contain .inv-filter-card container');
+  assert.ok(html.includes('inv-search-wrap'), 'Must contain dedicated .inv-search-wrap with embedded search icon');
+  assert.ok(html.includes('inv-select-wrap'), 'Must contain .inv-select-wrap for supplier selection');
+  assert.ok(html.includes('inv-date-range-card'), 'Must contain .inv-date-range-card for mobile date filtering');
+  assert.ok(html.includes('id="invFromBox"'), 'Must have dedicated #invFromBox touch tile');
+  assert.ok(html.includes('id="invToBox"'), 'Must have dedicated #invToBox touch tile');
+
+  // 3. Verify empty state card structure
+  assert.ok(html.includes('inv-empty-state'), 'Must contain polished .inv-empty-state card');
+});
+
 
 
 

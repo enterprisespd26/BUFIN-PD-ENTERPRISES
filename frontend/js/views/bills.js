@@ -1,4 +1,4 @@
-import { $, $$, esc, fmt, head, kpi, toast, today, uid, P, convertRate, downloadCSV, debounce as _utilsDebounce } from '../modules/utils.js';
+import { $, $$, esc, fmt, fmtDate, head, kpi, toast, today, uid, P, convertRate, downloadCSV, debounce as _utilsDebounce } from '../modules/utils.js';
 import { db, save, post, reverse, out, dstat, pn, isS, net, checkCashLiquidity } from '../modules/state.js';
 import { partyForm, markBillPaid, showDoc, isIntraState } from '../modules/actions.js';
 import { showActionSheet } from '../modules/components.js';
@@ -374,8 +374,18 @@ export function renderBills() {
   const totalInvested = allStock.reduce((acc, s) => acc + s.totalInvestment, 0);
   const totalStockValuation = allStock.reduce((acc, s) => acc + s.stockValuation, 0);
 
+  const invHeaderActions = `
+    <button type="button" class="btn alt sm" id="inv_btn_csv" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:8px;font-weight:600;font-size:13px;white-space:nowrap;box-shadow:0 1px 2px rgba(15,23,42,0.05);">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      <span>Export CSV</span>
+    </button>`;
+
   return `
-    ${head(isInventory ? 'Inventory Stock' : 'Purchase Bills', isInventory ? '' : `<button class="p" id="u_head_add">${currentTab === 'new' ? 'View records' : '+ New purchase'}</button>`)}
+    ${head(isInventory ? 'Inventory Stock' : 'Purchase Bills', isInventory ? invHeaderActions : `<button class="p" id="u_head_add">${currentTab === 'new' ? 'View records' : '+ New purchase'}</button>`)}
 
     ${isInventory ? '' : `
     <div class="pd-nav-tabs noprint">
@@ -621,25 +631,67 @@ export function renderBills() {
         ${kpi('Stock Valuation', fmt(Math.round(totalStockValuation * 100)))}
       </div>
 
-      <div class="pd-card">
-        <!-- Filter Toolbar (Matches Purchase records & Sales records standard layout) -->
-        <div class="pd-btn-row" style="margin-bottom:14px;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;">
-            <input type="text" id="inv_search_q" value="${esc(billsState.invQ || '')}" placeholder="Search material, supplier, bill..." style="width:240px;max-width:100%;">
-            <select id="inv_filter_sup" style="width:auto;min-width:160px;">
+      <div class="pd-card inv-filter-card">
+        <div class="inv-filter-grid">
+          <!-- Search Row -->
+          <div class="cb-search-wrap inv-search-wrap">
+            <div class="cb-search-inner">
+              <svg class="cb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="inv_search_q" value="${esc(billsState.invQ || '')}" placeholder="Search material, supplier, bill..." aria-label="Search materials">
+            </div>
+          </div>
+
+          <!-- Supplier Filter Dropdown -->
+          <div class="inv-select-wrap">
+            <div class="inv-select-icon-left" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
+            <select id="inv_filter_sup" class="inv-select" aria-label="Filter by supplier">
               <option value="">All Suppliers (${uniqueSuppliers.length})</option>
               ${uniqueSuppliers.map(s => `<option value="${esc(s.toLowerCase())}" ${billsState.invSupplier?.toLowerCase() === s.toLowerCase() ? 'selected' : ''}>${esc(s)}</option>`).join('')}
             </select>
-            <input type="date" id="inv_from_date" value="${esc(billsState.invFromDate || '')}" title="From date" style="width:auto;">
-            <input type="date" id="inv_to_date" value="${esc(billsState.invToDate || '')}" title="To date" style="width:auto;">
-            ${(billsState.invQ || billsState.invSupplier || billsState.invFromDate || billsState.invToDate) ? `<button type="button" class="btn alt sm" id="inv_btn_reset">Clear</button>` : ''}
+            <div class="inv-select-chevron" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
           </div>
-          <button type="button" class="btn alt sm" id="inv_btn_csv">Export CSV</button>
+
+          <!-- Dedicated Date Range Card with DD/MM/YYYY -->
+          <div class="cb-date-range-card inv-date-range-card">
+            <div class="cb-date-box" id="invFromBox" title="Filter From Date">
+              <div class="cb-date-header">
+                <svg class="cb-date-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span class="cb-date-tag">FROM</span>
+              </div>
+              <div class="cb-date-val" id="invFromVal">${fmtDate(billsState.invFromDate) || 'DD/MM/YYYY'}</div>
+              <input type="date" id="inv_from_date" class="cb-native-date-input" value="${esc(billsState.invFromDate || '')}" aria-label="From date">
+            </div>
+            <div class="cb-date-divider" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 19"></polyline></svg>
+            </div>
+            <div class="cb-date-box" id="invToBox" title="Filter To Date">
+              <div class="cb-date-header">
+                <svg class="cb-date-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span class="cb-date-tag">TO</span>
+              </div>
+              <div class="cb-date-val" id="invToVal">${fmtDate(billsState.invToDate) || 'DD/MM/YYYY'}</div>
+              <input type="date" id="inv_to_date" class="cb-native-date-input" value="${esc(billsState.invToDate || '')}" aria-label="To date">
+            </div>
+          </div>
         </div>
 
+        ${(billsState.invQ || billsState.invSupplier || billsState.invFromDate || billsState.invToDate) ? `
+          <div class="inv-active-filters-bar">
+            <span class="inv-filter-badge">Active Filters</span>
+            <button type="button" class="btn alt sm inv-clear-btn" id="inv_btn_reset">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <span>Clear Filters</span>
+            </button>
+          </div>
+        ` : ''}
+
         <!-- Inventory Table -->
-        <div class="pd-table-wrap">
-          <table class="pd-table">
+        <div class="pd-table-wrap inv-table-wrap">
+          <table class="pd-table inv-table">
             <thead>
               <tr>
                 <th style="width:36px">#</th>
@@ -665,7 +717,7 @@ export function renderBills() {
                   </td>
                   <td class="num">${formatStockQty(s.purchasedQty, s.isWeight)}</td>
                   <td class="num" style="color:var(--t2);">${formatStockQty(s.soldQty, s.isWeight)}</td>
-                  <td class="num" style="font-weight:600;">${formatStockQty(s.currentStock, s.isWeight)}</td>
+                  <td class="num" style="font-weight:600;color:${isDepleted ? '#dc2626' : '#15803d'};">${formatStockQty(s.currentStock, s.isWeight)}</td>
                   <td>
                     <span class="b ${isDepleted ? 'rd' : (s.isLowStock ? 'wn' : 'ok')}">${s.status || (isDepleted ? 'Depleted' : 'In Stock')}</span>
                   </td>
@@ -682,7 +734,7 @@ export function renderBills() {
                   <td>
                     <div style="display:flex;flex-wrap:wrap;gap:4px;">
                       ${s.bills.map(b => `
-                        <button type="button" class="btn alt sm" data-bill-id="${esc(b.id)}" title="${esc(b.date)} · ${esc(b.sup)} · ${b.qty} ${esc(b.unit)} @ ₹${b.rate}" style="padding:2px 7px;font-size:11px;">
+                        <button type="button" class="btn alt sm" data-bill-id="${esc(b.id)}" title="${fmtDate(b.date)} · ${esc(b.sup)} · ${b.qty} ${esc(b.unit)} @ ₹${b.rate}" style="padding:2px 7px;font-size:11px;">
                           ${esc(b.ref)}
                         </button>
                       `).join('')}
@@ -691,8 +743,19 @@ export function renderBills() {
                 </tr>`;
               }).join('') : `
                 <tr>
-                  <td colspan="10" style="text-align:center;padding:32px;color:var(--t2);">
-                    No inventory materials found. Materials will automatically appear here once you record your first Purchase Bill.
+                  <td colspan="10" style="padding:0;border:none;background:transparent;">
+                    <div class="inv-empty-state">
+                      <div class="inv-empty-icon">📦</div>
+                      <div class="inv-empty-title">${(billsState.invQ || billsState.invSupplier || billsState.invFromDate || billsState.invToDate) ? 'No matching materials found' : 'No inventory materials found'}</div>
+                      <div class="inv-empty-sub">
+                        ${(billsState.invQ || billsState.invSupplier || billsState.invFromDate || billsState.invToDate) 
+                          ? 'Try adjusting your search query, supplier filter, or date range.' 
+                          : 'Materials will automatically appear here once you record your first Purchase Bill.'}
+                      </div>
+                      ${(billsState.invQ || billsState.invSupplier || billsState.invFromDate || billsState.invToDate) ? `
+                        <button type="button" class="btn alt sm" id="inv_btn_reset_empty" style="margin-top:10px;">Clear all filters</button>
+                      ` : ''}
+                    </div>
                   </td>
                 </tr>
               `}
@@ -1612,6 +1675,39 @@ export function bindBillsEvents() {
       billsState.invToDate = '';
       container.innerHTML = renderBills();
       bindBillsEvents();
+    };
+  }
+
+  const invResetEmpty = $('#inv_btn_reset_empty');
+  if (invResetEmpty) {
+    invResetEmpty.onclick = () => {
+      billsState.invQ = '';
+      billsState.invSupplier = '';
+      billsState.invFromDate = '';
+      billsState.invToDate = '';
+      container.innerHTML = renderBills();
+      bindBillsEvents();
+    };
+  }
+
+  // Inventory: Date picker click delegation
+  const invFromBox = $('#invFromBox');
+  if (invFromBox) {
+    invFromBox.onclick = e => {
+      const inp = $('#inv_from_date');
+      if (e.target !== inp && inp && typeof inp.showPicker === 'function') {
+        try { inp.showPicker(); } catch (err) {}
+      }
+    };
+  }
+
+  const invToBox = $('#invToBox');
+  if (invToBox) {
+    invToBox.onclick = e => {
+      const inp = $('#inv_to_date');
+      if (e.target !== inp && inp && typeof inp.showPicker === 'function') {
+        try { inp.showPicker(); } catch (err) {}
+      }
     };
   }
 
