@@ -1523,6 +1523,13 @@ test('TC-PRELOADER-PERF-01: Instant PWA splash screen transition, clean white ma
   const swCode = fs.readFileSync('frontend/sw.js', 'utf8');
   assert.match(swCode, /caches\.match\(req\)\.then\(cached/, 'sw.js must resolve cached assets before waiting on network');
   assert.match(swCode, /'\/icons\/maskable-icon-512x512\.png'/, 'sw.js must precache maskable icon');
+  assert.match(swCode, /'\/icons\/android-chrome-512x512\.png'/, 'sw.js must precache android-chrome-512 icon');
+
+  // 4. Verify login screen seamless background continuity and full-bleed app-icon.svg
+  const loginCss = fs.readFileSync('frontend/css/login.css', 'utf8');
+  assert.match(loginCss, /\.login-screen\s*\{[^}]*background:\s*#FFFFFF/i, 'login-screen background must be #FFFFFF to match splash');
+  const appIconSvg = fs.readFileSync('frontend/svg/app-icon.svg', 'utf8');
+  assert.match(appIconSvg, /<rect width="1158" height="1158" fill="#FFFFFF"\/>/, 'app-icon.svg must have full-bleed #FFFFFF rect without rounded corners');
 });
 
 test('TC-SYS-BACKUP-01: ZIP archive with separate entity CSVs, master consolidated CSV, and system JSON restore', async () => {

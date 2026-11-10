@@ -5,7 +5,7 @@
   width: 100vw;
   height: 100vh;
   height: 100dvh;
-  background: #F8FAFC;
+  background: #FFFFFF;
   color: #0F172A;
   display: flex;
   align-items: center;
@@ -47,7 +47,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fdfdfb;
+  background: #FFFFFF;
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
