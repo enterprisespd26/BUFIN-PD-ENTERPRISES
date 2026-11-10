@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import nodeCrypto from 'node:crypto';
+import nodeFs from 'node:fs';
 
 // 1. SETUP DOM & STORAGE MOCKS FOR HEADLESS NODE ENVIRONMENT
 global.localStorage = {
@@ -607,6 +608,14 @@ test('TC-SYS-AUTH-01: Instant 0ms PIN SHA-256 verification and client fast-unloc
   const expectedHash = '8cfecd937a9328ecb71d3c08e5dd312058ca7d75171e7ba6e3af7573e210cd6c';
   const cryptoHash = nodeCrypto.createHash('sha256').update(pin).digest('hex');
   assert.equal(cryptoHash, expectedHash, 'PIN hash must match 8cfecd937a9328ecb71d3c08e5dd312058ca7d75171e7ba6e3af7573e210cd6c for 0ms unlock');
+
+  // Verify mobile edge-to-edge lockscreen keypad styling (no floating card)
+  const loginCss = nodeFs.readFileSync('frontend/css/login.css', 'utf8');
+  assert.match(loginCss, /@media\s*\(max-width:\s*640px\)/, 'login.css must define dedicated mobile breakpoint');
+  assert.match(loginCss, /\.login-card\s*\{[^}]*border:\s*none\s*!important/i, 'mobile login-card must remove border');
+  assert.match(loginCss, /\.login-card\s*\{[^}]*border-radius:\s*0\s*!important/i, 'mobile login-card must remove border-radius');
+  assert.match(loginCss, /\.login-card\s*\{[^}]*box-shadow:\s*none\s*!important/i, 'mobile login-card must remove box-shadow');
+  assert.match(loginCss, /\.pin-btn\s*\{[^}]*width:\s*72px\s*!important/i, 'mobile keypad buttons must use 72px touch targets');
 });
 
 // ========================================================

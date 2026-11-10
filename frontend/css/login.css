@@ -11,21 +11,165 @@
   align-items: center;
   justify-content: center;
   z-index: 999999;
-  padding: 16px;
   box-sizing: border-box;
 }
 
-.login-card {
-  width: 100%;
-  max-width: 360px;
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-  border-radius: 24px;
-  padding: 36px 24px 30px;
-  text-align: center;
-  box-sizing: border-box;
-  animation: cardFadeIn 0.25s ease-out;
+/* Desktop: Elegant framed card */
+@media (min-width: 641px) {
+  .login-screen {
+    padding: 24px;
+    background: #F8FAFC;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 380px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-radius: 28px;
+    padding: 38px 28px 30px;
+    text-align: center;
+    box-sizing: border-box;
+    animation: cardFadeIn 0.25s ease-out;
+  }
+
+  .login-header {
+    margin-bottom: 24px;
+  }
+
+  .logo-circle {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .pin-display {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 0 auto 26px;
+  }
+
+  .pin-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    max-width: 270px;
+    margin: 0 auto;
+  }
+
+  .pin-btn {
+    width: 64px;
+    height: 64px;
+    font-size: 24px !important;
+  }
+}
+
+/* Mobile: Native full-screen edge-to-edge lockscreen experience (no floating card) */
+@media (max-width: 640px) {
+  .login-screen {
+    padding: 0 !important;
+    background: #FFFFFF !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .login-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    height: 100% !important;
+    background: #FFFFFF !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: max(28px, env(safe-area-inset-top, 28px)) 24px max(24px, env(safe-area-inset-bottom, 24px)) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-evenly !important;
+    align-items: center !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    animation: none !important;
+  }
+
+  .login-header {
+    margin-bottom: 0 !important;
+    padding-top: 4px;
+  }
+
+  .logo-circle {
+    width: 68px !important;
+    height: 68px !important;
+    border-radius: 20px !important;
+    margin: 0 auto 12px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+    background: #FFFFFF !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  }
+
+  .login-card h2 {
+    font-size: 26px !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .login-card p {
+    font-size: 14px !important;
+    color: #64748B !important;
+  }
+
+  .pin-display {
+    display: flex !important;
+    justify-content: center !important;
+    margin: 12px auto 0 !important;
+    gap: 20px !important;
+  }
+
+  .pin-dot {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .pin-keypad {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    max-width: 320px !important;
+    width: 100% !important;
+    gap: 16px 22px !important;
+    margin: 10px auto 0 !important;
+  }
+
+  .pin-btn {
+    width: 72px !important;
+    height: 72px !important;
+    min-width: 72px !important;
+    min-height: 72px !important;
+    font-size: 28px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .pin-btn.fn {
+    font-size: 16px !important;
+  }
+
+  .pin-error {
+    margin-top: 10px !important;
+    min-height: 24px !important;
+    font-size: 14px !important;
+  }
 }
 
 @keyframes cardFadeIn {
@@ -33,22 +177,11 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.login-header {
-  margin-bottom: 24px;
-}
-
 .logo-circle {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 14px;
-  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #FFFFFF;
-  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .login-app-logo {
@@ -73,19 +206,10 @@
   line-height: 1.4;
 }
 
-.pin-display {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin: 0 auto 28px;
-}
-
 .pin-dot {
-  width: 16px;
-  height: 16px;
   border-radius: 50%;
   border: 2px solid #CBD5E1;
-  background: #F8FAFC;
+  background: #FFFFFF;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -96,22 +220,11 @@
   transform: scale(1.15);
 }
 
-.pin-keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  max-width: 270px;
-  margin: 0 auto;
-}
-
 .pin-btn {
-  width: 64px;
-  height: 64px;
   border-radius: 50% !important;
   border: 1px solid #E2E8F0 !important;
   background: #F8FAFC !important;
   color: #0F172A !important;
-  font-size: 24px !important;
   font-weight: 600 !important;
   display: flex !important;
   align-items: center !important;
@@ -123,7 +236,6 @@
   user-select: none !important;
   -webkit-user-select: none !important;
   -webkit-tap-highlight-color: transparent !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .pin-btn:hover {
@@ -133,19 +245,28 @@
 }
 
 .pin-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.94) !important;
   background: #EFF6FF !important;
   border-color: #2563EB !important;
   color: #2563EB !important;
 }
 
 .pin-btn.fn {
-  font-size: 15px !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   color: #64748B !important;
   border-color: transparent !important;
   background: transparent !important;
   box-shadow: none !important;
+}
+
+#pinClear {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+
+#pinBack {
+  font-size: 22px !important;
+  font-weight: 500 !important;
 }
 
 .pin-btn.fn:hover {
@@ -159,7 +280,6 @@
   font-size: 13px;
   font-weight: 500;
   color: #EF4444;
-  margin-top: 18px;
 }
 
 .shake {
@@ -171,19 +291,4 @@
   20%, 80% { transform: translate3d(5px, 0, 0); }
   30%, 50%, 70% { transform: translate3d(-7px, 0, 0); }
   40%, 60% { transform: translate3d(7px, 0, 0); }
-}
-
-@media (max-width: 480px) {
-  .login-card {
-    padding: 28px 18px 24px;
-    border-radius: 20px;
-  }
-  .pin-btn {
-    width: 60px;
-    height: 60px;
-    font-size: 22px !important;
-  }
-  .pin-keypad {
-    gap: 12px;
-  }
 }
