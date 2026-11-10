@@ -61,13 +61,13 @@ global.document = {
 };
 
 // 2. IMPORT BUFIN CORE MODULES
-import { convertRate, UNIT_FACTORS, fmt, uid } from '../frontend/js/modules/utils.js';
+import { convertRate, UNIT_FACTORS, fmt, uid, fmtDate, isoToDmy, dmyToIso } from '../frontend/js/modules/utils.js';
 import { db, setDb, post, checkCashLiquidity, net, dstat, out, sgn, acc, reverse } from '../frontend/js/modules/state.js';
 import { getInventoryStock } from '../frontend/js/views/bills.js';
 import { taxSplit } from '../frontend/js/modules/actions.js';
 import { saveAttachments, getAttachments } from '../frontend/js/modules/attachments.js';
 import { detectHsnCode, renderSheet } from '../frontend/js/views/sales.js';
-import { renderCoa } from '../frontend/js/views/accounting.js';
+import { renderCoa, renderBook, accountingState } from '../frontend/js/views/accounting.js';
 import { renderParties, partiesState } from '../frontend/js/views/parties.js';
 
 // Reset database helper
@@ -1592,6 +1592,48 @@ test('TC-SYS-BACKUP-01: ZIP archive with separate entity CSVs, master consolidat
   const restoredState = JSON.parse(jsonInZip.data);
   assert.ok(Array.isArray(restoredState.accounts), 'Restored JSON must have valid accounts');
 });
+
+test('TC-DATE-FILTER-01: DD/MM/YYYY date formatting, dedicated mobile date range card, and auto-select presets', () => {
+  // 1. Verify date formatting helpers enforce standard Indian DD/MM/YYYY
+  assert.equal(fmtDate('2026-11-01'), '01/11/2026');
+  assert.equal(fmtDate('2026-10-31'), '31/10/2026');
+  assert.equal(fmtDate('2026-04-01'), '01/04/2026');
+  assert.equal(fmtDate('01/11/2026'), '01/11/2026');
+  assert.equal(isoToDmy('2026-05-15'), '15/05/2026');
+  assert.equal(dmyToIso('15/05/2026'), '2026-05-15');
+
+  // 2. Verify Cash & Bank Book auto-initializes to "This Month"
+  accountingState.cb = { c: 'all', f: '', t: '', q: '' }; // reset state
+  const html = renderBook();
+
+  assert.equal(accountingState.cb.init, true, 'Cash & Bank Book must mark init=true on first visit');
+  assert.ok(accountingState.cb.f.endsWith('-01'), 'From date must auto-select start of current month');
+  assert.ok(accountingState.cb.t.length === 10, 'To date must auto-select today');
+
+  // 3. Verify dedicated mobile date range card structure
+  assert.ok(html.includes('cb-date-range-card'), 'Must contain .cb-date-range-card component');
+  assert.ok(html.includes('id="cbFromBox"'), 'Must have dedicated #cbFromBox touch tile');
+  assert.ok(html.includes('id="cbToBox"'), 'Must have dedicated #cbToBox touch tile');
+  assert.ok(html.includes('id="bookFromVal"'), 'Must have #bookFromVal formatted date display');
+  assert.ok(html.includes('id="bookToVal"'), 'Must have #bookToVal formatted date display');
+  assert.ok(html.includes(fmtDate(accountingState.cb.f)), 'Card must display DD/MM/YYYY formatted from date');
+  assert.ok(html.includes(fmtDate(accountingState.cb.t)), 'Card must display DD/MM/YYYY formatted to date');
+
+  // 4. Verify native date input overlay for seamless native picker trigger
+  assert.ok(html.includes('class="cb-native-date-input"'), 'Must have overlaid .cb-native-date-input for OS picker trigger');
+
+  // 5. Verify dedicated presets track
+  assert.ok(html.includes('cb-presets'), 'Must contain .cb-presets pill container');
+  assert.ok(html.includes('data-i="today"'), 'Must include Today preset');
+  assert.ok(html.includes('data-i="month"'), 'Must include This Month preset');
+  assert.ok(html.includes('data-i="lastmonth"'), 'Must include Last Month preset');
+  assert.ok(html.includes('data-i="fy"'), 'Must include This FY preset');
+  assert.ok(html.includes('data-i="all"'), 'Must include All Time preset');
+
+  // 6. Verify opening balance is formatted as DD/MM/YYYY
+  assert.ok(html.includes(`as of ${fmtDate(accountingState.cb.f)}`), 'Opening balance subtitle must format date as DD/MM/YYYY');
+});
+
 
 
 

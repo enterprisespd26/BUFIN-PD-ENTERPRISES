@@ -1,4 +1,4 @@
-import { $, esc, fmt } from './utils.js';
+import { $, esc, fmt, fmtDate } from './utils.js';
 import { db, save } from './state.js';
 
 let backdropBound = false;
@@ -70,7 +70,7 @@ export const partyOpts = (f, sel) => opts([['', 'None']].concat(db.parties.filte
 
 export function entTable(list, empty) {
   if (!list.length) return `<div class="wrap"><div class="empty">${empty || 'No entries yet.'}</div></div>`;
-  return `<div class="wrap"><table><tr><th>Date</th><th>Ref</th><th>Narration</th><th>Type</th><th class="num">Amount</th><th>Status</th></tr>${list.map(e => `<tr class="k" data-a="ent" data-i="${e.id}"><td>${e.date}</td><td>${e.ref}</td><td>${esc(e.narr)}</td><td>${e.src}</td><td class="num">${fmt(e.lines.reduce((s, l) => s + l.d, 0))}</td><td><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td></tr>`).join('')}</table></div>`;
+  return `<div class="wrap"><table><tr><th>Date</th><th>Ref</th><th>Narration</th><th>Type</th><th class="num">Amount</th><th>Status</th></tr>${list.map(e => `<tr class="k" data-a="ent" data-i="${e.id}"><td>${fmtDate(e.date)}</td><td>${e.ref}</td><td>${esc(e.narr)}</td><td>${e.src}</td><td class="num">${fmt(e.lines.reduce((s, l) => s + l.d, 0))}</td><td><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td></tr>`).join('')}</table></div>`;
 }
 
 export function showActionSheet(title, subtitle, items) {

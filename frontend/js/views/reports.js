@@ -1,4 +1,4 @@
-import { esc, fmt, today, head, kpi, toast, downloadCSV } from '../modules/utils.js';
+import { esc, fmt, fmtDate, today, head, kpi, toast, downloadCSV } from '../modules/utils.js';
 import { db, TN, acc, net, sgn } from '../modules/state.js';
 
 export const reportsState = {
@@ -567,7 +567,7 @@ export function renderPl() {
         </div>
         <div style="text-align:right;">
           <h3 style="margin:0;font-size:16px;font-weight:700;color:#0f172a;">Statement of Profit and Loss</h3>
-          <div style="font-size:12px;color:#475569;">Period: <b>${u.f || 'Beginning'}</b> to <b>${u.t}</b></div>
+          <div style="font-size:12px;color:#475569;">Period: <b>${fmtDate(u.f) || 'Beginning'}</b> to <b>${fmtDate(u.t)}</b></div>
         </div>
       </div>
     </div>`;
@@ -577,7 +577,12 @@ export function renderPl() {
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
   const thisMonthStart = `${today().slice(0, 7)}-01`;
-  const isThisMonth = u.f === thisMonthStart && u.t === today();
+  const thisMonthEnd = today();
+  const lastDayCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const currentMonthEnd = `${lastDayCurrentMonth.getFullYear()}-${pad(lastDayCurrentMonth.getMonth() + 1)}-${pad(lastDayCurrentMonth.getDate())}`;
+
+  const isToday = u.f === today() && u.t === today();
+  const isThisMonth = u.f === thisMonthStart && (u.t === thisMonthEnd || u.t === currentMonthEnd);
 
   const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -593,15 +598,33 @@ export function renderPl() {
 
   const filters = `
     <div class="filters plx-filters plx-noprint">
-      <div class="mc-chips plx-chips">
-        <button class="${isAll ? 'p' : ''}" data-a="plpreset" data-i="all">All Time</button>
+      <div class="mc-chips plx-chips cb-presets">
+        <button class="${isToday ? 'p' : ''}" data-a="plpreset" data-i="today">Today</button>
         <button class="${isThisMonth ? 'p' : ''}" data-a="plpreset" data-i="month">This Month</button>
         <button class="${isLastMonth ? 'p' : ''}" data-a="plpreset" data-i="lastmonth">Last Month</button>
         <button class="${isThisFy ? 'p' : ''}" data-a="plpreset" data-i="fy">This FY</button>
+        <button class="${isAll ? 'p' : ''}" data-a="plpreset" data-i="all">All Time</button>
       </div>
-      <div class="mc-row plx-dates">
-        <label>From <input type="date" id="plFrom" value="${u.f || ''}"></label>
-        <label>To <input type="date" id="plTo" value="${u.t || ''}"></label>
+      <div class="cb-date-range-card plx-date-range-card">
+        <div class="cb-date-box" id="plFromBox" title="Click to choose From Date">
+          <div class="cb-date-header">
+            <svg class="cb-date-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span class="cb-date-tag">FROM</span>
+          </div>
+          <div class="cb-date-val" id="plFromVal">${fmtDate(u.f) || 'Start'}</div>
+          <input type="date" id="plFrom" class="cb-native-date-input" value="${u.f || ''}" aria-label="From Date">
+        </div>
+        <div class="cb-date-divider" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 19"></polyline></svg>
+        </div>
+        <div class="cb-date-box" id="plToBox" title="Click to choose To Date">
+          <div class="cb-date-header">
+            <svg class="cb-date-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span class="cb-date-tag">TO</span>
+          </div>
+          <div class="cb-date-val" id="plToVal">${fmtDate(u.t) || 'Today'}</div>
+          <input type="date" id="plTo" class="cb-native-date-input" value="${u.t || ''}" aria-label="To Date">
+        </div>
       </div>
       <div class="plx-seg-wrap">
         <div class="plx-seg">

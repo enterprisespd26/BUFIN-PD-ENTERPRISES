@@ -7,6 +7,36 @@ export const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'A
 
 export const fmt = p => (p < 0 ? '-' : '') + '₹' + (Math.abs(p) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Formats ISO YYYY-MM-DD (or date string) to Indian standard DD/MM/YYYY
+export function fmtDate(d) {
+  if (!d) return '';
+  const str = String(d).trim();
+  if (/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(str)) {
+    return str.replace(/-/g, '/');
+  }
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    return `${m[3]}/${m[2]}/${m[1]}`;
+  }
+  return str;
+}
+
+export const isoToDmy = fmtDate;
+
+export function dmyToIso(str) {
+  if (!str) return '';
+  const s = String(str).trim();
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    const day = m[1].padStart(2, '0');
+    const month = m[2].padStart(2, '0');
+    const year = m[3];
+    return `${year}-${month}-${day}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return s;
+}
+
 export function P(s) {
   s = String(s || '').replace(/,/g, '').trim();
   if (!/^\d*\.?\d*$/.test(s) || s === '' || s === '.') throw Error('Enter a valid amount');

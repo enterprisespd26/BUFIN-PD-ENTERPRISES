@@ -1,4 +1,4 @@
-import { esc, fmt, today, head, kpi } from '../modules/utils.js';
+import { esc, fmt, fmtDate, today, head, kpi } from '../modules/utils.js';
 import { db, acc, an, pn } from '../modules/state.js';
 import { entTable, accOpts } from '../modules/components.js';
 
@@ -192,7 +192,7 @@ function renderTxnTable(list, kind, emptyMsg) {
         ${list.map(e => {
           const d = getTxnRowData(e);
           return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view payment receipt">
-            <td>${e.date}</td>
+            <td>${fmtDate(e.date)}</td>
             <td><b>${esc(d.partyName)}</b></td>
             <td>${esc(d.acctName)}</td>
             <td>${esc(d.catName)}</td>
@@ -226,7 +226,7 @@ function renderTxnTable(list, kind, emptyMsg) {
         ${list.map(e => {
           const d = getTxnRowData(e);
           return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view payment voucher">
-            <td>${e.date}</td>
+            <td>${fmtDate(e.date)}</td>
             <td><b>${esc(d.partyName)}</b></td>
             <td>${esc(d.acctName)}</td>
             <td>${esc(d.catName)}</td>
@@ -266,7 +266,7 @@ function renderTxnTable(list, kind, emptyMsg) {
         const amtColor = isIn ? '#0f5132' : isOut ? '#842029' : '';
         const amtSign = isIn ? '+' : isOut ? '-' : '';
         return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view payment receipt / voucher details">
-          <td>${e.date}</td>
+          <td>${fmtDate(e.date)}</td>
           <td><code>${esc(e.ref)}</code></td>
           <td><span class="pd-pill ${isIn ? '' : isOut ? 'u' : 'p'}">${esc(d.typeLabel)}</span></td>
           <td><b>${esc(d.partyName)}</b></td>
@@ -438,7 +438,7 @@ export function renderTransfers() {
           const refNo = e.meta?.ref || '-';
           const desc = e.meta?.desc || e.narr || '-';
           return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view transfer voucher">
-            <td>${e.date}</td>
+            <td>${fmtDate(e.date)}</td>
             <td><code>${esc(e.ref)}</code></td>
             <td><span class="pd-pill ${info.badgeClass}">${esc(info.label)}</span></td>
             <td>${esc(fromL ? an(fromL.a) : '-')}</td>

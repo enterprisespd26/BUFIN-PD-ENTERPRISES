@@ -1,4 +1,4 @@
-import { esc, fmt, head, kpi, today } from '../modules/utils.js';
+import { esc, fmt, fmtDate, head, kpi, today } from '../modules/utils.js';
 import { db, pn, sgn, acc, an, net, lstat, lacr } from '../modules/state.js';
 
 export const loansState = {
@@ -216,7 +216,7 @@ function renderLoanDetail(l) {
     const refNo = m.ref || m.docNo || e.ref;
 
     return `<tr>
-      <td>${e.date}</td>
+      <td>${fmtDate(e.date)}</td>
       <td><span class="pd-pill ${m.kind === 'disb' ? 'p' : m.kind === 'rep' ? 'ok' : 'u'}">${K2[m.kind] || m.kind || 'Transaction'}</span></td>
       <td><code>${esc(refNo)}</code></td>
       <td>${esc(acctName)}</td>

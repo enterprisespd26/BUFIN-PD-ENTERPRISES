@@ -681,6 +681,19 @@ function bindViewEvents() {
       toEl.addEventListener('input', handleTo);
     }
 
+    $('#glFromBox')?.addEventListener('click', e => {
+      const el = $('#glFrom');
+      if (e.target !== el && el && typeof el.showPicker === 'function') {
+        try { el.showPicker(); } catch (err) {}
+      }
+    });
+    $('#glToBox')?.addEventListener('click', e => {
+      const el = $('#glTo');
+      if (e.target !== el && el && typeof el.showPicker === 'function') {
+        try { el.showPicker(); } catch (err) {}
+      }
+    });
+
     const glq = $('[data-k="glq"]');
     if (glq) {
       glq.oninput = () => {
@@ -699,14 +712,31 @@ function bindViewEvents() {
   }
 
   if (currentPage === 'book') {
-    $('#bookFrom')?.addEventListener('change', e => {
-      accountingState.cb.f = e.target.value;
+    const bf = $('#bookFrom');
+    const bt = $('#bookTo');
+    const onDateChange = e => {
+      if (e.target === bf) accountingState.cb.f = bf.value;
+      if (e.target === bt) accountingState.cb.t = bt.value;
       render();
+    };
+    bf?.addEventListener('change', onDateChange);
+    bf?.addEventListener('input', onDateChange);
+    bt?.addEventListener('change', onDateChange);
+    bt?.addEventListener('input', onDateChange);
+
+    $('#cbFromBox')?.addEventListener('click', e => {
+      const el = $('#bookFrom');
+      if (e.target !== el && el && typeof el.showPicker === 'function') {
+        try { el.showPicker(); } catch (err) {}
+      }
     });
-    $('#bookTo')?.addEventListener('change', e => {
-      accountingState.cb.t = e.target.value;
-      render();
+    $('#cbToBox')?.addEventListener('click', e => {
+      const el = $('#bookTo');
+      if (e.target !== el && el && typeof el.showPicker === 'function') {
+        try { el.showPicker(); } catch (err) {}
+      }
     });
+
     const bkq = $('[data-k="bkq"]');
     if (bkq) {
       bkq.oninput = () => {
@@ -770,6 +800,18 @@ function bindViewEvents() {
       plTo.addEventListener('change', updatePlTo);
       plTo.addEventListener('input', updatePlTo);
     }
+    $('#plFromBox')?.addEventListener('click', e => {
+      const el = $('#plFrom');
+      if (e.target !== el && el && typeof el.showPicker === 'function') {
+        try { el.showPicker(); } catch (err) {}
+      }
+    });
+    $('#plToBox')?.addEventListener('click', e => {
+      const el = $('#plTo');
+      if (e.target !== el && el && typeof el.showPicker === 'function') {
+        try { el.showPicker(); } catch (err) {}
+      }
+    });
     attachPlChartTooltips();
   }
 
@@ -914,7 +956,10 @@ const ACTIONS = {
   glpreset: i => {
     const pad = n => String(n).padStart(2, '0');
     const now = new Date();
-    if (i === 'all') {
+    if (i === 'today') {
+      accountingState.gl.f = today();
+      accountingState.gl.t = today();
+    } else if (i === 'all') {
       accountingState.gl.f = '';
       accountingState.gl.t = '';
     } else if (i === 'month') {
@@ -961,7 +1006,10 @@ const ACTIONS = {
   plpreset: i => {
     const pad = n => String(n).padStart(2, '0');
     const now = new Date();
-    if (i === 'month') {
+    if (i === 'today') {
+      reportsState.pl.f = today();
+      reportsState.pl.t = today();
+    } else if (i === 'month') {
       reportsState.pl.f = `${today().slice(0, 7)}-01`;
       reportsState.pl.t = today();
     } else if (i === 'lastmonth') {
@@ -1005,7 +1053,10 @@ const ACTIONS = {
   bkpreset: i => {
     const pad = n => String(n).padStart(2, '0');
     const now = new Date();
-    if (i === 'all') {
+    if (i === 'today') {
+      accountingState.cb.f = today();
+      accountingState.cb.t = today();
+    } else if (i === 'all') {
       accountingState.cb.f = '';
       accountingState.cb.t = '';
     } else if (i === 'month') {

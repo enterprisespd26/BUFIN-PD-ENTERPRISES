@@ -1,4 +1,4 @@
-import { esc, fmt, today, prev, head, kpi, toast, downloadCSV } from '../modules/utils.js';
+import { esc, fmt, fmtDate, today, prev, head, kpi, toast, downloadCSV } from '../modules/utils.js';
 import { db, TN, SYS, acc, an, net, sgn, cashAcc, pn, sortEntries } from '../modules/state.js';
 import { entTable, accOpts } from '../modules/components.js';
 
@@ -405,7 +405,7 @@ export function renderGl() {
     </div>`;
 
     rows += `<tr class="k" data-a="ent" data-i="${e.id}" style="${isReversed ? 'opacity:0.65;background:rgba(239,68,68,0.03);' : ''}">
-      <td>${e.date}</td>
+      <td>${fmtDate(e.date)}</td>
       <td><code>${esc(e.ref)}</code></td>
       <td class="gl-details-cell">${details}</td>
       <td class="num">${l.d ? fmt(l.d) : ''}</td>
@@ -419,7 +419,11 @@ export function renderGl() {
   const pad = n => String(n).padStart(2, '0');
   const thisMonthStart = `${today().slice(0, 7)}-01`;
   const thisMonthEnd = today();
-  const isThisMonth = u.f === thisMonthStart && u.t === thisMonthEnd;
+  const lastDayCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const currentMonthEnd = `${lastDayCurrentMonth.getFullYear()}-${pad(lastDayCurrentMonth.getMonth() + 1)}-${pad(lastDayCurrentMonth.getDate())}`;
+
+  const isToday = u.f === today() && u.t === today();
+  const isThisMonth = u.f === thisMonthStart && (u.t === thisMonthEnd || u.t === currentMonthEnd);
 
   const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -430,7 +434,7 @@ export function renderGl() {
   const fyYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
   const fyStart = `${fyYear}-04-01`;
   const fyEnd = `${fyYear + 1}-03-31`;
-  const isThisFy = u.f === fyStart && u.t === fyEnd;
+  const isThisFy = u.f === fyStart && (u.t === fyEnd || u.t === today());
   const isAll = !u.f && !u.t;
 
   const sortedAccounts = db.accounts.slice().sort((x, y) => x.code.localeCompare(y.code));
@@ -438,12 +442,12 @@ export function renderGl() {
     `<option value="${esc(ac.code)}"${ac.code === a.code ? ' selected' : ''}>${esc(ac.code)} · ${esc(ac.name)} (${TN[ac.t] || ac.t})</option>`
   ).join('');
 
-  const actions = `<div class="bar-actions" style="display:flex;gap:8px;flex-wrap:wrap">
+  const actions = `<div class="bar-actions cb-bar-actions" style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="p" data-a="newjv">+ New Journal</button>
     <button data-a="glcsv">Export CSV</button>
   </div>`;
 
-  return head('General Ledger', actions) +
+  return head('General Ledger', actions, 'cb-header-bar') +
     `<div class="print-only gl-print-header" style="margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:10px;">
         <div>
@@ -458,7 +462,7 @@ export function renderGl() {
         <div style="text-align:right;">
           <div style="font-size:15px;font-weight:700;color:#0f172a;">${esc(a.code)} · ${esc(a.name)}</div>
           <div style="font-size:12px;color:#475569;margin-top:2px;">Account Type: <b>${TN[a.t] || a.t}</b></div>
-          <div style="font-size:11.5px;color:#64748b;margin-top:4px;">Period: <b>${u.f || 'Beginning'}</b> to <b>${u.t || 'Present'}</b></div>
+          <div style="font-size:11.5px;color:#64748b;margin-top:4px;">Period: <b>${fmtDate(u.f) || 'Beginning'}</b> to <b>${fmtDate(u.t) || 'Present'}</b></div>
         </div>
       </div>
     </div>
@@ -497,22 +501,39 @@ export function renderGl() {
       </div>
     </div>
     <div class="filters gl-filter-bar">
-      <div class="mc-chips gl-presets">
-        <button class="${isAll ? 'p' : ''}" data-a="glpreset" data-i="all">All Time</button>
+      <div class="mc-chips gl-presets cb-presets">
+        <button class="${isToday ? 'p' : ''}" data-a="glpreset" data-i="today">Today</button>
         <button class="${isThisMonth ? 'p' : ''}" data-a="glpreset" data-i="month">This Month</button>
         <button class="${isLastMonth ? 'p' : ''}" data-a="glpreset" data-i="lastmonth">Last Month</button>
         <button class="${isThisFy ? 'p' : ''}" data-a="glpreset" data-i="fy">This FY</button>
+        <button class="${isAll ? 'p' : ''}" data-a="glpreset" data-i="all">All Time</button>
       </div>
-      <div class="mc-row gl-dates">
-        <label>
-          From <input type="date" id="glFrom" value="${u.f || ''}">
-        </label>
-        <label>
-          To <input type="date" id="glTo" value="${u.t || ''}">
-        </label>
+      <div class="cb-date-range-card gl-date-range-card">
+        <div class="cb-date-box" id="glFromBox" title="Click to choose From Date">
+          <div class="cb-date-header">
+            <svg class="cb-date-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span class="cb-date-tag">FROM</span>
+          </div>
+          <div class="cb-date-val" id="glFromVal">${fmtDate(u.f) || 'Start'}</div>
+          <input type="date" id="glFrom" class="cb-native-date-input" value="${u.f || ''}" aria-label="From Date">
+        </div>
+        <div class="cb-date-divider" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 19"></polyline></svg>
+        </div>
+        <div class="cb-date-box" id="glToBox" title="Click to choose To Date">
+          <div class="cb-date-header">
+            <svg class="cb-date-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span class="cb-date-tag">TO</span>
+          </div>
+          <div class="cb-date-val" id="glToVal">${fmtDate(u.t) || 'Today'}</div>
+          <input type="date" id="glTo" class="cb-native-date-input" value="${u.t || ''}" aria-label="To Date">
+        </div>
       </div>
-      <div class="gl-search-wrap" style="width:100%">
-        <input data-k="glq" placeholder="Search narration, ref, party, counter-account..." value="${esc(u.q || '')}">
+      <div class="cb-search-wrap gl-search-wrap">
+        <div class="cb-search-inner">
+          <svg class="cb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input data-k="glq" placeholder="Search narration, ref, party, counter-account..." value="${esc(u.q || '')}" aria-label="Search ledger">
+        </div>
       </div>
     </div>
     <div class="wrap">
@@ -532,7 +553,7 @@ export function renderGl() {
             <td colspan="5">
               <div class="gl-op-label-wrap">
                 <span class="gl-op-title">Opening balance</span>
-                <span class="gl-op-sub">(as of ${u.f || 'period start'})</span>
+                <span class="gl-op-sub">(as of ${fmtDate(u.f) || 'period start'})</span>
               </div>
             </td>
             <td class="num gl-op-val" style="font-weight:700;">${fmt(op)}</td>
@@ -631,6 +652,20 @@ export function exportGlCsv() {
 
 export function renderBook() {
   const u = accountingState.cb;
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const thisMonthStart = `${today().slice(0, 7)}-01`;
+  const thisMonthEnd = today();
+  const lastDayCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const currentMonthEnd = `${lastDayCurrentMonth.getFullYear()}-${pad(lastDayCurrentMonth.getMonth() + 1)}-${pad(lastDayCurrentMonth.getDate())}`;
+
+  // Dedicated date auto-select: default to 'This Month' when entering view
+  if (!u.init) {
+    u.init = true;
+    u.f = thisMonthStart;
+    u.t = thisMonthEnd;
+  }
+
   const cs = cashAcc().map(a => a.code);
   const sl = u.c === 'all' ? cs : [u.c];
 
@@ -708,7 +743,7 @@ export function renderBook() {
       <div class="gl-counter-wrap"><span class="gl-counter-badge">${esc(oth)}</span></div>
     </div>`;
     rows += `<tr class="k" data-a="ent" data-i="${e.id}" style="${isReversed ? 'opacity:0.65;background:rgba(239,68,68,0.03);' : ''}">
-      <td>${e.date}</td>
+      <td>${fmtDate(e.date)}</td>
       <td><code>${esc(e.ref)}</code></td>
       <td class="gl-details-cell">${details}</td>
       <td class="num">${d ? fmt(d) : ''}</td>
@@ -724,11 +759,8 @@ export function renderBook() {
   const netFlow = dr - cr;
 
   // Active date preset detection
-  const now = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  const thisMonthStart = `${today().slice(0, 7)}-01`;
-  const thisMonthEnd = today();
-  const isThisMonth = u.f === thisMonthStart && u.t === thisMonthEnd;
+  const isToday = u.f === today() && u.t === today();
+  const isThisMonth = u.f === thisMonthStart && (u.t === thisMonthEnd || u.t === currentMonthEnd);
 
   const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -739,7 +771,7 @@ export function renderBook() {
   const fyYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
   const fyStart = `${fyYear}-04-01`;
   const fyEnd = `${fyYear + 1}-03-31`;
-  const isThisFy = u.f === fyStart && u.t === fyEnd;
+  const isThisFy = u.f === fyStart && (u.t === fyEnd || u.t === today());
   const isAll = !u.f && !u.t;
 
   const actions = `<div class="bar-actions cb-bar-actions" style="display:flex;gap:8px;flex-wrap:wrap">
@@ -763,7 +795,7 @@ export function renderBook() {
         </div>
         <div style="text-align:right;">
           <div style="font-size:15px;font-weight:700;color:#0f172a;">${u.c === 'all' ? 'All Cash & Bank Accounts' : an(u.c)}</div>
-          <div style="font-size:11.5px;color:#64748b;margin-top:4px;">Period: <b>${u.f || 'Beginning'}</b> to <b>${u.t || 'Present'}</b></div>
+          <div style="font-size:11.5px;color:#64748b;margin-top:4px;">Period: <b>${fmtDate(u.f) || 'Beginning'}</b> to <b>${fmtDate(u.t) || 'Present'}</b></div>
         </div>
       </div>
     </div>
@@ -780,21 +812,38 @@ export function renderBook() {
     </div>
     <div class="filters cb-filter-bar">
       <div class="mc-chips cb-presets">
-        <button class="${isAll ? 'p' : ''}" data-a="bkpreset" data-i="all">All Time</button>
+        <button class="${isToday ? 'p' : ''}" data-a="bkpreset" data-i="today">Today</button>
         <button class="${isThisMonth ? 'p' : ''}" data-a="bkpreset" data-i="month">This Month</button>
         <button class="${isLastMonth ? 'p' : ''}" data-a="bkpreset" data-i="lastmonth">Last Month</button>
         <button class="${isThisFy ? 'p' : ''}" data-a="bkpreset" data-i="fy">This FY</button>
+        <button class="${isAll ? 'p' : ''}" data-a="bkpreset" data-i="all">All Time</button>
       </div>
-      <div class="mc-row cb-dates">
-        <label>
-          From <input type="date" id="bookFrom" value="${u.f || ''}">
-        </label>
-        <label>
-          To <input type="date" id="bookTo" value="${u.t || ''}">
-        </label>
+      <div class="cb-date-range-card">
+        <div class="cb-date-box" id="cbFromBox" title="Click to choose From Date">
+          <div class="cb-date-header">
+            <svg class="cb-date-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span class="cb-date-tag">FROM</span>
+          </div>
+          <div class="cb-date-val" id="bookFromVal">${fmtDate(u.f) || 'DD/MM/YYYY'}</div>
+          <input type="date" id="bookFrom" class="cb-native-date-input" value="${u.f || ''}" aria-label="From Date">
+        </div>
+        <div class="cb-date-divider" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 19"></polyline></svg>
+        </div>
+        <div class="cb-date-box" id="cbToBox" title="Click to choose To Date">
+          <div class="cb-date-header">
+            <svg class="cb-date-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span class="cb-date-tag">TO</span>
+          </div>
+          <div class="cb-date-val" id="bookToVal">${fmtDate(u.t) || 'DD/MM/YYYY'}</div>
+          <input type="date" id="bookTo" class="cb-native-date-input" value="${u.t || ''}" aria-label="To Date">
+        </div>
       </div>
-      <div class="cb-search-wrap" style="width:100%">
-        <input data-k="bkq" placeholder="Search narration, ref, party, account..." value="${esc(u.q || '')}">
+      <div class="cb-search-wrap">
+        <div class="cb-search-inner">
+          <svg class="cb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input data-k="bkq" placeholder="Search narration, ref, party, account..." value="${esc(u.q || '')}" aria-label="Search transactions">
+        </div>
       </div>
     </div>
     <div class="wrap">
@@ -814,7 +863,7 @@ export function renderBook() {
             <td colspan="5">
               <div class="gl-op-label-wrap">
                 <span class="gl-op-title">Opening balance</span>
-                <span class="gl-op-sub">(as of ${u.f || 'period start'})</span>
+                <span class="gl-op-sub">(as of ${fmtDate(u.f) || 'period start'})</span>
               </div>
             </td>
             <td class="num gl-op-val" style="font-weight:700;">${fmt(op)}</td>

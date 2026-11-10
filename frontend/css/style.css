@@ -662,7 +662,7 @@ table.coa-table .coa-btn-del {
   border-radius: 8px;
 }
 
-/* Date pair – right-aligned on same row as chips */
+/* Date pair – fallback row */
 .mc-row {
   display: flex;
   flex-direction: row;
@@ -689,40 +689,255 @@ table.coa-table .coa-btn-del {
   border-radius: 7px;
 }
 
-/* Search row – always full width below */
-.gl-search-wrap,
-.cb-search-wrap {
-  flex: 0 0 100%;
-  width: 100%;
-}
-.gl-search-wrap input,
-.cb-search-wrap input {
-  width: 100%;
-  min-height: 36px;
-  font-size: 13px;
-  box-sizing: border-box;
-}
-
-
-/* CB account selector chips */
-.cb-acc-filters {
+/* ======================================================
+   Dedicated Modern Date Range Card & Mobile Filter Bar
+   Displays explicit DD/MM/YYYY with native calendar picker
+   ====================================================== */
+.cb-date-range-card {
   display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  gap: 6px;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 2px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 2px 0 6px 0;
 }
-.cb-acc-filters::-webkit-scrollbar { display: none; }
-.cb-acc-filters > button {
+
+.cb-date-box {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cb-date-box:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.cb-date-box:focus-within {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.cb-date-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+  user-select: none;
+}
+
+.cb-date-icon {
+  color: #2563eb;
   flex-shrink: 0;
+}
+
+.cb-date-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.3px;
   white-space: nowrap;
-  padding: 6px 14px;
-  font-size: 12.5px;
-  font-weight: 600;
-  min-height: 34px;
-  border-radius: 8px;
+  user-select: none;
+}
+
+.cb-date-divider {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+/* Overlaid invisible native date picker covering the entire card */
+.cb-native-date-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  font-size: 16px; /* Prevents auto-zoom in mobile Safari */
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+/* Modern search bar with embedded icon */
+.cb-search-wrap,
+.gl-search-wrap {
+  width: 100%;
+  flex: 0 0 100%;
+  margin-top: 2px;
+}
+
+.cb-search-inner {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.cb-search-icon {
+  position: absolute;
+  left: 12px;
+  pointer-events: none;
+  color: #64748b;
+  z-index: 1;
+}
+
+.cb-search-inner input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px 10px 38px;
+  font-size: 13.5px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.cb-search-inner input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: #ffffff;
+}
+
+/* Header bar action buttons scroll track with right buffer */
+.bar.cb-header-bar .bar-actions,
+.cb-bar-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+  gap: 8px !important;
+  padding-bottom: 4px !important;
+  padding-right: 24px !important;
+}
+
+.bar.cb-header-bar .bar-actions::-webkit-scrollbar,
+.cb-bar-actions::-webkit-scrollbar {
+  display: none !important;
+}
+
+.cb-bar-actions > button {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Account filters & Presets scroll track with right buffer */
+.cb-acc-filters,
+.cb-presets {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+  gap: 8px !important;
+  padding-bottom: 6px !important;
+  padding-right: 24px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.cb-acc-filters::-webkit-scrollbar,
+.cb-presets::-webkit-scrollbar {
+  display: none !important;
+}
+
+.cb-acc-filters > button,
+.cb-presets > button {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  padding: 7px 15px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: 9999px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.cb-acc-filters > button:hover,
+.cb-presets > button:hover {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.cb-acc-filters > button.p,
+.cb-presets > button.p {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28) !important;
+}
+
+@media (min-width: 641px) {
+  .cb-filter-bar, .gl-filter-bar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .cb-presets, .gl-presets {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    padding-right: 0 !important;
+  }
+  .cb-date-range-card {
+    flex: 0 0 340px;
+    width: 340px;
+    margin: 0;
+  }
+  .cb-search-wrap, .gl-search-wrap {
+    flex: 0 0 100%;
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 640px) {
+  .cb-filter-bar, .gl-filter-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .cb-presets, .gl-presets {
+    width: 100% !important;
+  }
+  .cb-date-range-card {
+    width: 100%;
+  }
+  .cb-date-box {
+    min-height: 52px;
+  }
 }
 
 .bs-filter-bar, .tb-filter-bar {
