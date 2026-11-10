@@ -66,6 +66,7 @@ import { getInventoryStock } from '../frontend/js/views/bills.js';
 import { taxSplit } from '../frontend/js/modules/actions.js';
 import { saveAttachments, getAttachments } from '../frontend/js/modules/attachments.js';
 import { detectHsnCode, renderSheet } from '../frontend/js/views/sales.js';
+import { renderCoa } from '../frontend/js/views/accounting.js';
 
 // Reset database helper
 function resetTestDb() {
@@ -546,6 +547,15 @@ test('TC-ACC-02: Profit & Loss statement revenue, COGS and net calculation', () 
   assert.equal(cogs, 6000000, 'COGS must be ₹60,000.00');
   assert.equal(opex, 1500000, 'OpEx must be ₹15,000.00');
   assert.equal(netProfit, 2500000, 'Net Profit must be ₹25,000.00');
+});
+
+test('TC-ACC-COA-01: Chart of Accounts table markup and top-right card Edit button alignment', () => {
+  resetTestDb();
+  const html = renderCoa();
+  assert.ok(html.includes('coa-table'), 'Must render coa-table class on accounts table');
+  assert.ok(html.includes('coa-title-td'), 'Must render coa-title-td on account title cell');
+  assert.ok(html.includes('coa-act-td'), 'Must render coa-act-td on account actions cell');
+  assert.ok(html.includes('coa-btn-edit'), 'Must render coa-btn-edit button');
 });
 
 // ========================================================

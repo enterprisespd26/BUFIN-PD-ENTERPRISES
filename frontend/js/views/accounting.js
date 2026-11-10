@@ -30,7 +30,7 @@ export function renderCoa() {
     negCashBanner +
     Object.keys(TN).map(t => {
       const L = db.accounts.filter(a => a.t === t).sort((a, b) => a.code.localeCompare(b.code));
-      return `<h3>${TN[t]}</h3><div class="wrap"><table><tr><th>Account Name</th><th>Cash/Bank</th><th class="num">Balance</th><th></th></tr>${L.map(a => {
+      return `<h3>${TN[t]}</h3><div class="wrap"><table class="coa-table"><thead><tr><th>Account Name</th><th>Cash/Bank</th><th class="num">Balance</th><th class="coa-act-th"></th></tr></thead><tbody>${L.map(a => {
         const used = db.entries.some(e => e.lines.some(l => l.a === a.code));
         const bal = sgn(a, net(a.code));
         const isNegCash = a.code === '1000' && bal < 0;
@@ -38,8 +38,8 @@ export function renderCoa() {
           ? `<span style="color:#dc2626;font-weight:700;">${fmt(bal)}</span> <span class="b rd" style="font-size:10px;margin-left:4px;">Negative Cash</span>`
           : (bal < 0 ? `<span style="color:#dc2626;">${fmt(bal)}</span>` : fmt(bal));
 
-        return `<tr class="k" data-a="gl" data-i="${a.code}"><td><b>${esc(a.name)}</b> <small style="color:var(--t2)">(${a.code})</small></td><td>${a.cash ? '<span class="b ok">Yes</span>' : ''}</td><td class="num">${balDisplay}</td><td class="num"><button data-a="editacc" data-i="${a.code}">Edit</button>${!used && !SYS.includes(a.code) ? `<button class="d" data-a="delacc" data-i="${a.code}">Delete</button>` : ''}</td></tr>`;
-      }).join('') || '<tr><td colspan="4" class="empty">None</td></tr>'}</table></div>`;
+        return `<tr class="k coa-row" data-a="gl" data-i="${a.code}"><td class="coa-title-td"><b>${esc(a.name)}</b> <small style="color:var(--t2)">(${a.code})</small></td><td>${a.cash ? '<span class="b ok">Yes</span>' : ''}</td><td class="num">${balDisplay}</td><td class="num coa-act-td"><button class="coa-btn-edit" data-a="editacc" data-i="${a.code}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>Edit</button>${!used && !SYS.includes(a.code) ? `<button class="d coa-btn-del" data-a="delacc" data-i="${a.code}">Delete</button>` : ''}</td></tr>`;
+      }).join('') || '<tr><td colspan="4" class="empty">None</td></tr>'}</tbody></table></div>`;
     }).join('');
 }
 

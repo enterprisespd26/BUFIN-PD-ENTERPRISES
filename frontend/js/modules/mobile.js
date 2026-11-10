@@ -492,6 +492,102 @@ const CSS = String.raw`
   table.mcard td.mc-actions:not(.loan-card-actions):not(:has(.loan-action-footer)) button:not(.btn):not(.p):not(.alt), table.mcard td.mc-actions .pd-line-del, table.mcard .pd-item-del, table.mcard .pd-del { min-height: 40px !important; height: 40px !important; min-width: 44px !important; padding: 0 16px !important; font-size: 14px !important; font-weight: 700 !important; border-radius: 8px !important; background: #fef2f2 !important; border: 1px solid #fecaca !important; color: #dc2626 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; box-sizing: border-box !important; }
   table.mcard td.mc-actions .pd-btn-row { justify-content: flex-end; width: 100%; }
 
+  /* Chart of Accounts Mobile Card Optimization: Edit button top-right aligned with card name */
+  table.mcard.coa-table tr,
+  table.coa-table.mcard tr,
+  table.coa-table tr.coa-row {
+    position: relative !important;
+    padding-top: 12px !important;
+    padding-bottom: 8px !important;
+  }
+
+  table.mcard.coa-table td.mc-title,
+  table.coa-table.mcard td.mc-title,
+  table.coa-table td.coa-title-td {
+    padding-right: 95px !important;
+    min-height: 44px !important;
+    justify-content: center !important;
+  }
+
+  table.mcard.coa-table td.mc-actions,
+  table.coa-table.mcard td.mc-actions,
+  table.coa-table td.coa-act-td {
+    position: absolute !important;
+    top: 12px !important;
+    right: 14px !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    background: transparent !important;
+    z-index: 5 !important;
+  }
+
+  table.mcard.coa-table td.mc-actions button.coa-btn-edit,
+  table.coa-table.mcard td.mc-actions button.coa-btn-edit,
+  table.coa-table .coa-btn-edit,
+  table.mcard.coa-table button[data-a="editacc"] {
+    min-height: 32px !important;
+    height: 32px !important;
+    min-width: 58px !important;
+    padding: 0 12px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    border-radius: 7px !important;
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    cursor: pointer !important;
+  }
+
+  table.mcard.coa-table td.mc-actions button.coa-btn-edit:hover,
+  table.coa-table.mcard td.mc-actions button.coa-btn-edit:hover,
+  table.coa-table .coa-btn-edit:hover,
+  table.mcard.coa-table td.mc-actions button.coa-btn-edit:active,
+  table.coa-table.mcard td.mc-actions button.coa-btn-edit:active,
+  table.coa-table .coa-btn-edit:active {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0284c7 !important;
+  }
+
+  table.mcard.coa-table td.mc-actions button.coa-btn-del,
+  table.coa-table.mcard td.mc-actions button.coa-btn-del,
+  table.coa-table .coa-btn-del,
+  table.coa-table td.coa-act-td button.d {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 7px !important;
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #dc2626 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+  }
+
+  table.mcard.coa-table td.mc-cell[data-label="Balance"],
+  table.coa-table.mcard td.mc-cell[data-label="Balance"] {
+    border-bottom: none !important;
+    padding-bottom: 6px !important;
+  }
+
   /* Full-Screen Mobile Modal Dialogs & Fixed Drawer */
   dialog {
     width: 100vw !important;
