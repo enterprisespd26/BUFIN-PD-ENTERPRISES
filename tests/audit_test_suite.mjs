@@ -1665,6 +1665,12 @@ test('TC-INV-MOBILE-01: Inventory Stock mobile UX and top-right Export CSV heade
 
   // 3. Verify empty state card structure
   assert.ok(html.includes('inv-empty-state'), 'Must contain polished .inv-empty-state card');
+
+  // 4. Verify compact mobile layout rules
+  assert.ok(html.includes('inv-kpi-grid'), 'Must wrap KPIs in .inv-kpi-grid container');
+  const css = nodeFs.readFileSync('frontend/css/style.css', 'utf8');
+  assert.ok(css.includes('grid-template-columns: repeat(3, minmax(0, 1fr)) !important;'), 'KPIs must adapt to 3x2 grid on mobile');
+  assert.ok(css.includes('grid-template-columns: 1fr 1fr !important;'), 'Dropdowns row must adapt to 2-column grid on mobile');
 });
 
 test('TC-SEARCH-MOBILE-01: Modern mobile search bars with embedded SVG icon, uncluttered placeholders, clear buttons, and touch padding across views', () => {

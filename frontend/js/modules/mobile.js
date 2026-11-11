@@ -80,10 +80,55 @@ const CSS = String.raw`
     height: 46px !important;
     min-height: 46px !important;
   }
-  .money-search-wrap,
-  .inv-search-wrap {
+  .money-search-wrap {
     width: 100% !important;
     margin-bottom: 10px !important;
+  }
+  .inv-search-wrap {
+    width: 100% !important;
+    margin: 0 !important;
+    flex: none !important;
+  }
+  .inv-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin-bottom: 10px !important;
+  }
+  .inv-kpi-grid .kpi {
+    padding: 6px 8px !important;
+    min-height: 48px !important;
+    border-radius: 9px !important;
+  }
+  .inv-kpi-grid .kpi span {
+    font-size: 10.5px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+    margin-bottom: 2px !important;
+  }
+  .inv-kpi-grid .kpi b {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+  }
+  .inv-filter-card {
+    padding: 10px 12px !important;
+    margin-bottom: 10px !important;
+    border-radius: 12px !important;
+  }
+  .inv-filter-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
   }
   .inv-status-track {
     display: flex !important;
@@ -91,7 +136,7 @@ const CSS = String.raw`
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
     gap: 6px !important;
-    margin-bottom: 12px !important;
+    margin-bottom: 8px !important;
     padding-bottom: 2px !important;
     scrollbar-width: none !important;
     -webkit-overflow-scrolling: touch !important;
@@ -100,10 +145,10 @@ const CSS = String.raw`
   .inv-status-pill {
     flex: 0 0 auto !important;
     white-space: nowrap !important;
-    padding: 8px 14px !important;
-    font-size: 13px !important;
+    padding: 6px 12px !important;
+    font-size: 12.5px !important;
     font-weight: 600 !important;
-    border-radius: 9px !important;
+    border-radius: 8px !important;
     border: 1px solid #e2e8f0 !important;
     background: #f8fafc !important;
     color: #475569 !important;
@@ -111,7 +156,7 @@ const CSS = String.raw`
     transition: all 0.15s ease !important;
     display: inline-flex !important;
     align-items: center !important;
-    min-height: 38px !important;
+    min-height: 34px !important;
   }
   .inv-status-pill.active {
     background: #2563eb !important;
@@ -120,14 +165,45 @@ const CSS = String.raw`
     box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25) !important;
   }
   .inv-dropdowns-row {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
     width: 100% !important;
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
   }
   .inv-dropdowns-row .inv-select-wrap {
     width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    height: auto !important;
+  }
+  .inv-select {
+    min-height: 42px !important;
+    height: 42px !important;
+    font-size: 12.5px !important;
+    padding: 0 28px 0 32px !important;
+    border-radius: 10px !important;
+  }
+  .inv-date-range-card {
+    width: 100% !important;
     flex: none !important;
+    margin: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .inv-date-range-card .cb-date-box {
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    border-radius: 10px !important;
+  }
+  .inv-date-range-card .cb-date-header {
+    font-size: 10px !important;
+    margin-bottom: 1px !important;
+  }
+  .inv-date-range-card .cb-date-val {
+    font-size: 13.5px !important;
   }
   .filters select[style*="min-width"], #glAccSelect { min-width: 0 !important; width: 100% !important; max-width: 100% !important; min-height: 48px !important; box-sizing: border-box !important; }
   #glAccSelect.gl-account-select { min-height: 48px !important; height: 48px !important; padding: 0 40px 0 40px !important; font-size: 14.5px !important; border: 2px solid #3b82f6 !important; border-radius: 11px !important; }

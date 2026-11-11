@@ -655,7 +655,7 @@ export function renderBills() {
     <!-- TAB 3: INVENTORY STOCK LEDGER (View-Only, Derived Strictly From Purchase Bills) -->
     <div id="pd-tab-inventory" style="display:${currentTab === 'inventory' ? 'block' : 'none'}">
       <!-- High Level KPI Metrics (Matches standard BUFIN grid & kpi layout) -->
-      <div class="grid-6">
+      <div class="grid-6 inv-kpi-grid">
         ${kpi('Materials Acquired', `${totalMaterials} Types`)}
         ${kpi('Total Purchased', formatStockQty(totalAcquiredKg, true))}
         ${kpi('Total Sold / Shipped', formatStockQty(totalSoldKg, true))}
