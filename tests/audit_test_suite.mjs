@@ -70,6 +70,7 @@ import { detectHsnCode, renderSheet } from '../frontend/js/views/sales.js';
 import { renderCoa, renderBook, accountingState } from '../frontend/js/views/accounting.js';
 import { renderParties, partiesState } from '../frontend/js/views/parties.js';
 import { renderTxns, renderMoneyIn, renderMoneyOut, renderTransfers, moneyState } from '../frontend/js/views/money.js';
+import { renderBs, renderTb, reportsState } from '../frontend/js/views/reports.js';
 
 // Reset database helper
 function resetTestDb() {
@@ -1705,6 +1706,62 @@ test('TC-SEARCH-MOBILE-01: Modern mobile search bars with embedded SVG icon, unc
   const mobileJs = nodeFs.readFileSync('frontend/js/modules/mobile.js', 'utf8');
   assert.match(mobileJs, /\.money-search-inner\s+input[\s\S]*?padding-left:\s*(?:40|44)px\s*!important/, 'mobile.js must guarantee 40px+ left padding on search input');
 });
+
+test('TC-BS-DATE-CARD-01: Balance Sheet and Trial Balance dedicated mobile date card and presets layout', () => {
+  resetTestDb();
+
+  // 1. Verify Balance Sheet date card component markup
+  reportsState.bs.t = '2026-11-11';
+  const bsHtml = renderBs();
+
+  assert.ok(bsHtml.includes('bs-date-range-card'), 'Balance Sheet must contain .bs-date-range-card container');
+  assert.ok(bsHtml.includes('id="bsDateBox"'), 'Must render dedicated #bsDateBox tactile card');
+  assert.ok(bsHtml.includes('id="bsDateVal"'), 'Must render #bsDateVal date display element');
+  assert.ok(bsHtml.includes('11/11/2026'), 'Card must display DD/MM/YYYY formatted As of date (11/11/2026)');
+  assert.ok(bsHtml.includes('class="cb-native-date-input"'), 'Must include invisible overlaid native date input for OS calendar trigger');
+  assert.ok(bsHtml.includes('id="bsDate"'), 'Must have #bsDate input for change events');
+
+  // Verify preset chips row in Balance Sheet
+  assert.ok(bsHtml.includes('bs-presets'), 'Must contain .bs-presets pill container');
+  assert.ok(bsHtml.includes('data-a="bspreset" data-i="today"'), 'Must contain Today preset button');
+  assert.ok(bsHtml.includes('data-a="bspreset" data-i="monthend"'), 'Must contain Month End preset button');
+  assert.ok(bsHtml.includes('data-a="bspreset" data-i="fyend"'), 'Must contain FY End preset button');
+
+  // Verify view toggle row in Balance Sheet
+  assert.ok(bsHtml.includes('bs-toggle-wrap'), 'Must contain .bs-toggle-wrap segmented control');
+  assert.ok(bsHtml.includes('data-a="bstoggle" data-i="standard"'), 'Must contain Standard mode toggle');
+  assert.ok(bsHtml.includes('data-a="bstoggle" data-i="net"'), 'Must contain Direct Ledger mode toggle');
+
+  // 2. Verify Trial Balance date card component markup
+  reportsState.tb.t = '2026-11-11';
+  const tbHtml = renderTb();
+
+  assert.ok(tbHtml.includes('tb-date-range-card'), 'Trial Balance must contain .tb-date-range-card container');
+  assert.ok(tbHtml.includes('id="tbDateBox"'), 'Must render dedicated #tbDateBox tactile card');
+  assert.ok(tbHtml.includes('id="tbDateVal"'), 'Must render #tbDateVal date display element');
+  assert.ok(tbHtml.includes('11/11/2026'), 'Card must display DD/MM/YYYY formatted As of date');
+  assert.ok(tbHtml.includes('class="cb-native-date-input"'), 'Must include overlaid native date input in TB');
+  assert.ok(tbHtml.includes('id="tbDate"'), 'Must have #tbDate input in TB');
+
+  // Verify preset chips row in Trial Balance
+  assert.ok(tbHtml.includes('tb-presets'), 'Must contain .tb-presets pill container');
+  assert.ok(tbHtml.includes('data-a="tbpreset" data-i="today"'), 'Must contain Today preset button');
+  assert.ok(tbHtml.includes('data-a="tbpreset" data-i="monthend"'), 'Must contain Month End preset button');
+  assert.ok(tbHtml.includes('data-a="tbpreset" data-i="fyend"'), 'Must contain FY End preset button');
+
+  // 3. Verify CSS styling rules in style.css and mobile.js
+  const css = nodeFs.readFileSync('frontend/css/style.css', 'utf8');
+  assert.ok(css.includes('.bs-date-range-card'), 'style.css must define .bs-date-range-card');
+  assert.ok(css.includes('.bs-date-box'), 'style.css must define .bs-date-box');
+  assert.ok(css.includes('.bs-date-box-inner'), 'style.css must define .bs-date-box-inner flex layout');
+  assert.ok(css.includes('.bs-date-badge'), 'style.css must define .bs-date-badge');
+
+  const mobileJs = nodeFs.readFileSync('frontend/js/modules/mobile.js', 'utf8');
+  assert.ok(mobileJs.includes('.bs-date-range-card'), 'mobile.js must style .bs-date-range-card');
+  assert.ok(mobileJs.includes('.bs-date-box'), 'mobile.js must style .bs-date-box');
+  assert.ok(mobileJs.includes('bs-date-range-card'), 'mobile.js enhanceFilters must exclude .bs-date-range-card');
+});
+
 
 
 

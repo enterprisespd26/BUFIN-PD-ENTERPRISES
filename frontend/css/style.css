@@ -964,14 +964,6 @@ table.coa-table .coa-btn-del:hover {
   gap: 8px;
   margin-bottom: 12px;
 }
-.bs-filter-bar .bs-filter-top, .tb-filter-bar .tb-filter-top {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-}
 /* TB & BS: presets scroll horizontally on left */
 .tb-filter-bar .tb-presets,
 .bs-filter-bar .bs-presets {
@@ -979,7 +971,7 @@ table.coa-table .coa-btn-del:hover {
   flex-wrap: nowrap;
   overflow-x: auto;
   gap: 6px;
-  flex: 1 1 auto;
+  width: 100%;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 2px;
@@ -996,35 +988,85 @@ table.coa-table .coa-btn-del:hover {
   min-height: 34px;
   border-radius: 8px;
 }
-/* TB & BS date label right-aligned */
-.tb-filter-bar .tb-date-wrap,
-.bs-filter-bar .bs-date-wrap {
+
+/* Balance Sheet & Trial Balance Dedicated Date Cards */
+.bs-date-range-card,
+.tb-date-range-card {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 8px;
-  flex: 0 0 auto;
-  margin-left: auto;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 2px 0 6px 0;
 }
-.tb-filter-bar .tb-date-wrap label,
-.bs-filter-bar .bs-date-wrap label {
+
+.bs-date-box,
+.tb-date-box {
+  width: 100%;
+  flex: 1 1 100%;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+.bs-date-box:hover,
+.tb-date-box:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.bs-date-box:focus-within,
+.tb-date-box:focus-within {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.bs-date-box-inner {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.bs-date-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.bs-date-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.bs-date-badge {
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--t2);
-  margin: 0;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
   white-space: nowrap;
 }
-.tb-filter-bar .tb-date-wrap input[type=date],
-.bs-filter-bar .bs-date-wrap input[type=date] {
-  width: auto;
-  min-height: 34px;
-  padding: 4px 8px;
-  font-size: 13px;
-  border-radius: 7px;
-}
+
 /* TB search full width */
 .tb-filter-bar .tb-search-wrap input {
   width: 100%;

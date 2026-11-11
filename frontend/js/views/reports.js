@@ -138,7 +138,7 @@ export function renderTb() {
         </div>
         <div style="text-align:right;">
           <h3 style="margin:0;font-size:16px;font-weight:700;color:#0f172a;">Trial Balance</h3>
-          <div style="font-size:12px;color:#475569;">As of: <b>${t}</b></div>
+          <div style="font-size:12px;color:#475569;">As of: <b>${fmtDate(t) || t}</b></div>
         </div>
       </div>
     </div>
@@ -156,25 +156,38 @@ export function renderTb() {
     </div>` +
     overdrawnBanner +
     `<div class="filters tb-filter-bar">
-      <div class="tb-filter-top">
-        <div class="mc-chips tb-presets">
-          <button class="${t === today() ? 'p' : ''}" data-a="tbpreset" data-i="today">Today</button>
-          <button class="${t === getMonthEnd() ? 'p' : ''}" data-a="tbpreset" data-i="monthend">Month End</button>
-          <button class="${t === getFyEnd() ? 'p' : ''}" data-a="tbpreset" data-i="fyend">FY End</button>
-        </div>
-        <div class="tb-date-wrap">
-          <label>
-            <span>As of</span>
-            <input type="date" id="tbDate" value="${t}">
-          </label>
+      <div class="mc-chips tb-presets cb-presets">
+        <button class="${t === today() ? 'p' : ''}" data-a="tbpreset" data-i="today">Today</button>
+        <button class="${t === getMonthEnd() ? 'p' : ''}" data-a="tbpreset" data-i="monthend">Month End</button>
+        <button class="${t === getFyEnd() ? 'p' : ''}" data-a="tbpreset" data-i="fyend">FY End</button>
+      </div>
+      <div class="cb-date-range-card tb-date-range-card">
+        <div class="cb-date-box tb-date-box" id="tbDateBox" title="Click to choose As of Date">
+          <div class="bs-date-box-inner">
+            <div class="bs-date-content">
+              <div class="cb-date-header">
+                <svg class="cb-date-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span class="cb-date-tag">AS OF DATE</span>
+              </div>
+              <div class="cb-date-val" id="tbDateVal">${fmtDate(t) || 'DD/MM/YYYY'}</div>
+            </div>
+            <div class="bs-date-action" aria-hidden="true">
+              <span class="bs-date-badge">Select Date</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+          </div>
+          <input type="date" id="tbDate" class="cb-native-date-input" value="${t}" aria-label="As of Date">
         </div>
       </div>
       <div class="tb-toggle-wrap">
         <button class="${!u.all ? 'p' : ''}" data-a="tbtoggle" data-i="active">With Balance</button>
         <button class="${u.all ? 'p' : ''}" data-a="tbtoggle" data-i="all">All Accounts</button>
       </div>
-      <div class="tb-search-wrap" style="width:100%">
-        <input data-k="tbq" placeholder="Search account..." value="${esc(u.q || '')}">
+      <div class="cb-search-wrap tb-search-wrap">
+        <div class="cb-search-inner">
+          <svg class="cb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input data-k="tbq" placeholder="Search account..." value="${esc(u.q || '')}" aria-label="Search accounts">
+        </div>
       </div>
     </div>
     <div class="wrap">
@@ -999,7 +1012,7 @@ export function renderBs() {
         </div>
         <div style="text-align:right;">
           <h3 style="margin:0;font-size:16px;font-weight:700;color:#0f172a;">Balance Sheet Statement</h3>
-          <div style="font-size:12px;color:#475569;">As of: <b>${t}</b></div>
+          <div style="font-size:12px;color:#475569;">As of: <b>${fmtDate(t) || t}</b></div>
         </div>
       </div>
     </div>
@@ -1017,17 +1030,27 @@ export function renderBs() {
     </div>` +
     overdrawnBanner +
     `<div class="filters bs-filter-bar">
-      <div class="bs-filter-top">
-        <div class="mc-chips bs-presets">
-          <button class="${t === today() ? 'p' : ''}" data-a="bspreset" data-i="today">Today</button>
-          <button class="${t === getMonthEnd() ? 'p' : ''}" data-a="bspreset" data-i="monthend">Month End</button>
-          <button class="${t === getFyEnd() ? 'p' : ''}" data-a="bspreset" data-i="fyend">FY End</button>
-        </div>
-        <div class="bs-date-wrap">
-          <label>
-            <span>As of</span>
-            <input type="date" id="bsDate" value="${t}">
-          </label>
+      <div class="mc-chips bs-presets cb-presets">
+        <button class="${t === today() ? 'p' : ''}" data-a="bspreset" data-i="today">Today</button>
+        <button class="${t === getMonthEnd() ? 'p' : ''}" data-a="bspreset" data-i="monthend">Month End</button>
+        <button class="${t === getFyEnd() ? 'p' : ''}" data-a="bspreset" data-i="fyend">FY End</button>
+      </div>
+      <div class="cb-date-range-card bs-date-range-card">
+        <div class="cb-date-box bs-date-box" id="bsDateBox" title="Click to choose As of Date">
+          <div class="bs-date-box-inner">
+            <div class="bs-date-content">
+              <div class="cb-date-header">
+                <svg class="cb-date-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span class="cb-date-tag">AS OF DATE</span>
+              </div>
+              <div class="cb-date-val" id="bsDateVal">${fmtDate(t) || 'DD/MM/YYYY'}</div>
+            </div>
+            <div class="bs-date-action" aria-hidden="true">
+              <span class="bs-date-badge">Select Date</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+          </div>
+          <input type="date" id="bsDate" class="cb-native-date-input" value="${t}" aria-label="As of Date">
         </div>
       </div>
       <div class="bs-toggle-wrap">

@@ -359,13 +359,6 @@ const CSS = String.raw`
     font-size: 13px !important;
   }
 
-  .bs-filter-bar .bs-filter-top, .tb-filter-bar .tb-filter-top {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 8px !important;
-    width: 100% !important;
-  }
   .bs-filter-bar .bs-presets, .tb-filter-bar .tb-presets {
     display: flex !important;
     flex-wrap: nowrap !important;
@@ -383,35 +376,19 @@ const CSS = String.raw`
     font-size: 13px !important;
     min-height: 38px !important;
   }
-  .bs-filter-bar .bs-date-wrap, .tb-filter-bar .tb-date-wrap {
+  .bs-date-range-card, .tb-date-range-card {
     width: 100% !important;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    margin-left: 0 !important;
+    margin: 2px 0 6px 0 !important;
   }
-  .bs-filter-bar .bs-date-wrap label, .tb-filter-bar .tb-date-wrap label {
+  .bs-date-box, .tb-date-box {
     width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    margin: 0 !important;
-    font-size: 12.5px !important;
-    font-weight: 600 !important;
-    color: var(--t2, #64748b) !important;
-  }
-  .bs-filter-bar .bs-date-wrap label span, .tb-filter-bar .tb-date-wrap label span {
-    flex: 0 0 auto !important;
-    white-space: nowrap !important;
-  }
-  .bs-filter-bar .bs-date-wrap input[type=date], .tb-filter-bar .tb-date-wrap input[type=date] {
-    flex: 1 1 auto !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: 40px !important;
-    padding: 6px 10px !important;
-    font-size: 13.5px !important;
+    min-height: 50px !important;
+    padding: 8px 14px !important;
     box-sizing: border-box !important;
+  }
+  .bs-date-box .cb-date-val, .tb-date-box .cb-date-val {
+    font-size: 15.5px !important;
+    font-weight: 700 !important;
   }
   /* TB search full width on mobile */
   .tb-filter-bar .tb-search-wrap {
@@ -2054,7 +2031,7 @@ function enhanceFilters(root) {
   });
   root.querySelectorAll('.filters > div:not([data-mcf])').forEach(div => {
     div.setAttribute('data-mcf', '1');
-    if (div.classList.contains('bs-toggle-wrap') || div.classList.contains('tb-toggle-wrap') || div.classList.contains('parties-segment-track') || div.classList.contains('parties-search-wrap') || div.classList.contains('loan-filter-pills') || div.classList.contains('loan-search-wrap')) return;
+    if (div.classList.contains('bs-toggle-wrap') || div.classList.contains('tb-toggle-wrap') || div.classList.contains('parties-segment-track') || div.classList.contains('parties-search-wrap') || div.classList.contains('loan-filter-pills') || div.classList.contains('loan-search-wrap') || div.classList.contains('bs-date-range-card') || div.classList.contains('tb-date-range-card') || div.classList.contains('cb-date-range-card')) return;
     const kids = [...div.children];
     if (!kids.length) return;
     if (kids.every(k => k.tagName === 'BUTTON')) div.classList.add('mc-chips');

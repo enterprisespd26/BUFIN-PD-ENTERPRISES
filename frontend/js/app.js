@@ -764,6 +764,12 @@ function bindViewEvents() {
       tbDate.addEventListener('change', updateTbDate);
       tbDate.addEventListener('input', updateTbDate);
     }
+    $('#tbDateBox')?.addEventListener('click', e => {
+      const el = $('#tbDate');
+      if (e.target !== el && el && typeof el.showPicker === 'function') {
+        try { el.showPicker(); } catch (err) {}
+      }
+    });
     const tbq = $('[data-k="tbq"]');
     if (tbq) {
       tbq.oninput = () => {
@@ -825,6 +831,12 @@ function bindViewEvents() {
       bsDate.addEventListener('change', updateBsDate);
       bsDate.addEventListener('input', updateBsDate);
     }
+    $('#bsDateBox')?.addEventListener('click', e => {
+      const el = $('#bsDate');
+      if (e.target !== el && el && typeof el.showPicker === 'function') {
+        try { el.showPicker(); } catch (err) {}
+      }
+    });
   }
 
   if (currentPage === 'set') {
