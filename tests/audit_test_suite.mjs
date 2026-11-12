@@ -2448,3 +2448,9 @@ test('TC-DATE-CARD-CLICK-01: Calendar picker trigger reliability on date card cl
   assert.match(billsJs, /openInvToPicker/, 'bills.js must provide openInvToPicker helper');
   assert.ok(!billsJs.includes("if (e.target !== inp && inp && typeof inp.showPicker === 'function')"), 'Old e.target !== inp blocker must be removed');
 });
+
+test('TC-LOAN-BUTTON-LABEL-01: Loan Record Payment / EMI button single icon verification', () => {
+  const loansJs = nodeFs.readFileSync('frontend/js/views/loans.js', 'utf8');
+  assert.ok(loansJs.includes('<span>Record Payment / EMI</span>'), 'Button text must be clean without extra + character');
+  assert.ok(!loansJs.includes('<span>+ Record Payment / EMI</span>'), 'Must not have duplicate + character in span');
+});
