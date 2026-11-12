@@ -1193,6 +1193,13 @@ dialog h3 {
   gap: 0 12px;
 }
 
+.amt-ref-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+
 .bars {
   display: flex;
   gap: 14px;
@@ -1611,6 +1618,10 @@ aside.open ~ #ov {
   .two {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+  .amt-ref-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 0 8px;
   }
   input, select, textarea {
     font-size: 16px !important;
@@ -4205,6 +4216,12 @@ aside.open ~ #ov {
   gap: 2px !important;
   pointer-events: auto !important; /* pointer-events-auto */
   box-sizing: border-box !important;
+}
+.loan-more-wrap.is-open {
+  z-index: 50 !important;
+}
+.loan-table tbody tr.loan-row:has(.loan-more-wrap.is-open) {
+  z-index: 50 !important;
 }
 .loan-more-wrap.is-open .loan-dropdown-menu {
   display: flex !important;

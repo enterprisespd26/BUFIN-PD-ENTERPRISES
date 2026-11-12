@@ -31,20 +31,20 @@ export function renderSettings() {
 
       <form id="bf">
         <div class="two">
-          ${fld('name', 'Business name', 'text', db.biz.name || 'PD ENTERPRISES')}
-          ${fld('owner', 'Proprietor name', 'text', db.biz.owner || 'Pritam Das')}
+          ${fld('name', 'Business name', 'text', db.biz.name || '')}
+          ${fld('owner', 'Proprietor name', 'text', db.biz.owner || '')}
         </div>
         <div class="two">
-          ${fld('gstin', 'GSTIN', 'text', db.biz.gstin || '21IFNPD3153M1ZC')}
-          ${fld('state', 'Home State (for CGST+SGST vs IGST)', 'text', db.biz.state || 'Odisha')}
+          ${fld('gstin', 'GSTIN', 'text', db.biz.gstin || '')}
+          ${fld('state', 'Home State (for CGST+SGST vs IGST)', 'text', db.biz.state || '')}
         </div>
         <div class="two">
-          ${fld('phone', 'Mobile / Phone', 'text', db.biz.phone || '+91 7684010176')}
-          ${fld('email', 'Email', 'text', db.biz.email || 'enterprisespd26@gmail.com')}
+          ${fld('phone', 'Mobile / Phone', 'text', db.biz.phone || '')}
+          ${fld('email', 'Email', 'text', db.biz.email || '')}
         </div>
         <div class="two">
-          ${fld('prefix', 'Invoice Prefix', 'text', db.biz.prefix || 'PD/2627/')}
-          ${fld('upi', 'UPI ID', 'text', db.biz.upi || '7684010176@upi')}
+          ${fld('prefix', 'Invoice Prefix', 'text', db.biz.prefix || '')}
+          ${fld('upi', 'UPI ID', 'text', db.biz.upi || '')}
         </div>
 
         <div style="font-size:13px;font-weight:700;color:#1e293b;margin:14px 0 10px;padding-top:12px;border-top:1px dashed #e2e8f0;display:flex;align-items:center;gap:6px;">
@@ -58,12 +58,12 @@ export function renderSettings() {
         </div>
 
         <div class="two">
-          <label>Address<textarea name="addr" rows="3" style="resize:vertical;">${esc(db.biz.addr || 'Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India')}</textarea></label>
-          <label>Bank details (shown on printed invoice)<textarea name="bank" rows="4" style="resize:vertical;">${esc(db.biz.bank || 'State Bank of India (SBI) - A/C: 00000045659125494\nIFSC: SBIN0009825 | MICR: 756002536\nCurrent Account: CA-REGULAR-PUB-OTH-ALL-INR\nPlot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059')}</textarea></label>
+          <label>Address<textarea name="addr" rows="3" style="resize:vertical;">${esc(db.biz.addr || '')}</textarea></label>
+          <label>Bank details (shown on printed invoice)<textarea name="bank" rows="4" style="resize:vertical;">${esc(db.biz.bank || '')}</textarea></label>
         </div>
 
         <div class="two">
-          <label>Terms &amp; conditions<textarea name="terms" rows="3" style="resize:vertical;">${esc(db.biz.terms || '1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.\n4. Subject to Balasore jurisdiction.')}</textarea></label>
+          <label>Terms &amp; conditions<textarea name="terms" rows="3" style="resize:vertical;">${esc(db.biz.terms || '')}</textarea></label>
           <div style="display:flex;flex-direction:column;">
             ${fld('lock', 'Lock periods up to (no posting on or before)', 'date', db.biz.lock || '')}
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:12px;color:#64748b;line-height:1.4;margin-top:2px;">

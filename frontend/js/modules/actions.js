@@ -1,5 +1,5 @@
 import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid, downloadCSV, downloadJSON, downloadZIP, readZipFile } from './utils.js';
-import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries } from './state.js';
+import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries, getOrCreateExpenseAccount } from './state.js';
 import { modal, closeM, form, fld, sel, opts, accOpts, partyOpts } from './components.js';
 
 import { getTxnRowData } from '../views/money.js';
@@ -468,7 +468,7 @@ export function showDoc(id) {
   const b = db.biz || {};
   modal(`<h3>${d.no} <span class="b ${st[1]}">${st[0]}</span></h3>
     <div style="font-size:12.5px;line-height:1.5;margin-bottom:12px;padding:10px 12px;background:#f8fafc;border:1px solid var(--bd);border-radius:6px">
-      <div style="font-weight:700;font-size:15px;color:var(--tx)">${esc(b.name || 'PD ENTERPRISES')}</div>
+      <div style="font-weight:700;font-size:15px;color:var(--tx)">${esc(b.name || '')}</div>
       ${b.addr ? `<div style="color:var(--t2)">${esc(b.addr).replace(/\n/g, ', ')}</div>` : ''}
       <div style="color:var(--t2)">${b.phone ? 'Mob: ' + esc(b.phone) : ''}${b.email ? (b.phone ? ' | ' : '') + 'Email: ' + esc(b.email) : ''}</div>
       <div><b>GSTIN:</b> <code>${esc(b.gstin || '')}</code> · <b>State:</b> ${esc(b.state || 'Odisha')} (Code: 21)</div>
@@ -948,7 +948,7 @@ export function partyForm(id, preType, onSaved) {
       ${fld('addr', 'Address', 'text', p.addr)}
     </div>
     ${fld('notes', 'Notes', 'text', p.notes)}
-    <small>Customers appear on invoices and Money In. Suppliers appear on bills, expenses and Money Out. Other includes lenders, employees and miscellaneous parties.</small>`,
+    <small>Customers appear on invoices and Money In. Suppliers appear on purchase bills and trade payables. Lenders / Others include loan providers, expense vendors, employees and miscellaneous parties.</small>`,
     v => {
       if (v.gstin && !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/i.test(v.gstin)) throw Error('GSTIN format looks invalid');
       if (db.parties.some(x => x.id !== id && x.name.trim().toLowerCase() === v.name.trim().toLowerCase())) throw Error('A party with this name already exists');
@@ -969,7 +969,12 @@ export function partyForm(id, preType, onSaved) {
 export function stmt2(i) {
   const p = db.parties.find(x => x.id === i);
   if (!p) return;
-  const codes = [isC(p) ? '1100' : '', isS(p) ? '2000' : ''].filter(Boolean);
+  const isLoan = p.type === 'lender' || (db.loans || []).some(l => l.party === i);
+  const codes = [
+    isC(p) ? '1100' : '',
+    isS(p) ? '2000' : '',
+    isLoan ? '2100' : ''
+  ].filter(Boolean);
   const ents = db.entries.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.at || '').localeCompare(b.at || ''));
   let rec = 0, pay = 0;
 
@@ -980,15 +985,33 @@ export function stmt2(i) {
       return `<tr><td>${e.date}</td><td>${esc(e.narr)}</td><td class="num">${l.d ? fmt(l.d) : ''}</td><td class="num">${l.c ? fmt(l.c) : ''}</td><td class="num">${fmt(run)}</td></tr>`;
     }));
     c === '1100' ? rec = run : pay = run;
-    return `<h4>${c === '1100' ? 'Receivable: they owe us ' + fmt(run) : 'Payable: we owe them ' + fmt(run)}</h4>
+    return `<h4>${c === '1100' ? 'Receivable: they owe us ' + fmt(run) : c === '2100' ? 'Loan Payable: we owe them ' + fmt(run) : 'Payable: we owe them ' + fmt(run)}</h4>
       <div class="wrap"><table><tr><th>Date</th><th>Details</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr>${rows.join('') || '<tr><td colspan="5" class="empty">No transactions yet.</td></tr>'}</table></div>`;
   }).join('');
+
+  let extraRows = '';
+  if (codes.length === 0) {
+    const pEnts = ents.filter(e => e.lines && e.lines.some(l => l.p === i));
+    if (pEnts.length > 0) {
+      let run = 0;
+      const rows = pEnts.map(e => {
+        const line = e.lines.find(l => l.p === i);
+        const d = line ? line.d : 0;
+        const c = line ? line.c : 0;
+        run += (d - c);
+        return `<tr><td>${e.date}</td><td>${esc(e.narr)}</td><td class="num">${d ? fmt(d) : ''}</td><td class="num">${c ? fmt(c) : ''}</td><td class="num">${fmt(run)}</td></tr>`;
+      });
+      extraRows = `<h4>Transaction History</h4>
+        <div class="wrap"><table><tr><th>Date</th><th>Details</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Net Activity</th></tr>${rows.join('')}</table></div>`;
+    }
+  }
 
   const ln = db.loans.filter(l => l.party === i).map(l => `<li>${l.ref}: ${fmt(l.principal - l.repaid)} outstanding</li>`).join('');
 
   modal(`<h3>${esc(p.name)}</h3>
-    <p><small>${PT[p.type] || p.type}${p.phone ? ' · ' + esc(p.phone) : ''}${p.gstin ? ' · GSTIN ' + esc(p.gstin) : ''}${p.state ? ' · ' + esc(p.state) : ''}${p.terms ? ' · ' + p.terms + ' day terms' : ''}</small></p>
+    <p><small>${(PT[p.type] || p.type).split(' (')[0]}${p.phone ? ' · ' + esc(p.phone) : ''}${p.gstin ? ' · GSTIN ' + esc(p.gstin) : ''}${p.state ? ' · ' + esc(p.state) : ''}${p.terms ? ' · ' + p.terms + ' day terms' : ''}</small></p>
     ${blocks}
+    ${extraRows}
     ${ln ? '<h4>Loans</h4><ul>' + ln + '</ul>' : ''}
     <div class="row" style="flex-wrap:wrap">
       <button onclick="window.print()">Print</button>
@@ -1027,13 +1050,12 @@ export function moneyInForm() {
   form('Money In (Record Received)',
     `<div class="two">
       ${fld('date', 'Date *', 'date', today(), 1)}
-      ${fld('amt', 'Amount (₹) *', 'number', '', 1, 'min="0.01" step="any" placeholder="0.00"')}
       <label>Deposit To Account *
         <select name="acct" id="txn_acct" required>
           ${accOpts(a => a.cash)}
         </select>
       </label>
-      <label>Income Category *
+      <label style="grid-column: 1 / -1;">Income Category *
         <select name="cat" id="txn_cat" required>
           ${catOptions}
         </select>
@@ -1052,14 +1074,17 @@ export function moneyInForm() {
           </label>
         </div>
       </div>
-      <div id="txn_method_wrap">
+      <div id="txn_method_wrap" style="grid-column: 1 / -1;">
         <label>Payment Method
           <select name="method" id="txn_method">
             ${bankMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
           </select>
         </label>
       </div>
-      ${fld('ref', 'Reference no. (optional)', 'text', '', 0, 'placeholder="e.g. UTR / Cheque / Txn ID"')}
+      <div class="amt-ref-row">
+        ${fld('amt', 'Total Amount Received (₹) *', 'number', '', 1, 'min="0.01" step="any" placeholder="0.00"')}
+        ${fld('ref', 'Reference No. (UTR / Cheque No. / Txn ID)', 'text', '', 0, 'placeholder="e.g. UTR / Cheque / Txn ID"')}
+      </div>
       <label style="grid-column: 1 / -1;">Description / Notes
         <textarea name="desc" id="txn_desc" rows="2" placeholder="Itemized details or specific receipt context..."></textarea>
       </label>
@@ -1190,7 +1215,8 @@ export function moneyInForm() {
 
 export function moneyOutForm() {
   let outAttachments = [];
-  const suppliers = db.parties.filter(p => isS(p) || p.type === 'both' || p.type === 'other');
+  const suppliers = db.parties.filter(isS);
+  const lenders = db.parties.filter(p => p.type === 'lender' || (db.loans || []).some(l => l.party === p.id));
   const borrowedLoans = (db.loans || []).filter(l => l.dir === 'taken');
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const curD = new Date();
@@ -1227,9 +1253,19 @@ export function moneyOutForm() {
           <option value="5300">Salaries</option>
           <option value="5500">Interest Expense</option>
           <option value="5600">Miscellaneous Expense</option>
+          <option value="5700">Licenses & Permits / Registration Expense</option>
+          <option value="5800">Legal, GST & Compliance Charges</option>
           <option value="3100">Drawings (Owner's Personal Withdrawal)</option>
+          <option value="other">Other</option>
         </select>
       </label>
+
+      <!-- Custom Category input: opens when "Other" is chosen -->
+      <div id="txn_custom_cat_wrap" style="grid-column: 1 / -1; display: none;">
+        <label>Expense / Payment Category *
+          <input type="text" name="custom_cat" id="txn_custom_cat" placeholder="Enter custom Expense / Payment Category...">
+        </label>
+      </div>
 
       <!-- Insufficient Cash Warning Banner -->
       <div id="cash_insufficient_warn" style="grid-column: 1 / -1; display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; font-size:12.5px; color:#991b1b;">
@@ -1249,8 +1285,8 @@ export function moneyOutForm() {
           </select>
         </label>
         <div id="txn_custom_supplier_wrap" style="display:none">
-          <label>Custom Supplier Name *
-            <input type="text" name="custom_supplier" id="txn_custom_supplier" placeholder="Type supplier name...">
+          <label>Payment to (Name of person or Business) *
+            <input type="text" name="custom_supplier" id="txn_custom_supplier" placeholder="Type person or business name...">
           </label>
         </div>
         <label>Pending Purchase Bill Reference
@@ -1341,7 +1377,7 @@ export function moneyOutForm() {
           <select name="loan_id" id="txn_loan_id">
             <option value="">-- Select Borrowed Loan / Lender --</option>
             ${borrowedLoans.map(l => `<option value="${l.id}">${esc(l.ref || l.name)} (${esc(l.name)}) · Lender: ${esc(l.partyName || pn(l.party))}</option>`).join('')}
-            ${suppliers.map(p => `<option value="party_${p.id}">Lender: ${esc(p.name)}</option>`).join('')}
+            ${lenders.map(p => `<option value="party_${p.id}">Lender: ${esc(p.name)}</option>`).join('')}
             <option value="__CUSTOM__">➕ Other Lender...</option>
           </select>
         </label>
@@ -1359,15 +1395,15 @@ export function moneyOutForm() {
         </label>
       </div>
 
-      <!-- Standard Amount field (used by categories 2000, 5000, 5300, 5500, 5600, 3100) -->
-      <div id="std_amt_wrap" style="grid-column: 1 / -1;">
-        <label id="std_amt_label">Total Amount Paid (₹) *
-          <input type="number" step="any" min="0.01" name="amt" id="txn_amt" placeholder="0.00">
+      <!-- Section 7: Other / Custom Category (cat === 'other') -->
+      <div id="sec_other" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
+        <label>Payee / Vendor Name (Optional)
+          <input type="text" name="other_payee" id="txn_other_payee" placeholder="e.g. Vendor, Service Provider, Contractor...">
         </label>
       </div>
 
       <!-- Payment Method Wrap -->
-      <div id="txn_method_wrap">
+      <div id="txn_method_wrap" style="grid-column: 1 / -1;">
         <label>Payment Method
           <select name="method" id="txn_method">
             ${bankMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
@@ -1375,11 +1411,19 @@ export function moneyOutForm() {
         </label>
       </div>
 
-      <!-- Reference No. -->
-      <div id="txn_ref_wrap">
-        <label id="txn_ref_label">Reference No. (UTR / Cheque No. / Txn ID)
-          <input type="text" name="ref" id="txn_ref" placeholder="e.g. UTR / Cheque / Txn ID">
-        </label>
+      <!-- Standard Amount and Reference No. in ONE LINE -->
+      <div class="amt-ref-row" id="amt_ref_row">
+        <div id="std_amt_wrap">
+          <label id="std_amt_label">Total Amount Paid (₹) *
+            <input type="number" step="any" min="0.01" name="amt" id="txn_amt" placeholder="0.00">
+          </label>
+        </div>
+
+        <div id="txn_ref_wrap">
+          <label id="txn_ref_label">Reference No. (UTR / Cheque No. / Txn ID)
+            <input type="text" name="ref" id="txn_ref" placeholder="e.g. UTR / Cheque / Txn ID">
+          </label>
+        </div>
       </div>
 
       <!-- Description / Notes -->
@@ -1428,7 +1472,7 @@ export function moneyOutForm() {
         let supplierName = '';
         if (v.supplier_id === '__CUSTOM__') {
           const customName = (v.custom_supplier || '').trim();
-          if (!customName) throw Error('Please enter the custom supplier name');
+          if (!customName) throw Error('Please enter Payment to (Name of person or Business)');
           const existing = db.parties.find(p => p.name.trim().toLowerCase() === customName.toLowerCase());
           if (existing) {
             supplierId = existing.id;
@@ -1547,8 +1591,8 @@ export function moneyOutForm() {
             { a: v.acct, d: 0, c: amtPaisa, p: partyId }
           ]
         });
-      } else if (['5100', '5200', '5400'].includes(cat)) {
-        // 3. Operational Expenses (Rent, Transport, Utilities)
+      } else if (['5100', '5200', '5400', '5700', '5800'].includes(cat)) {
+        // 3. Operational & Regulatory Expenses (Rent, Transport, Utilities, Licenses, Legal)
         const basePaisa = P(v.base_amt);
         if (!basePaisa || basePaisa <= 0) throw Error('Amount before GST must be above zero');
 
@@ -1558,17 +1602,37 @@ export function moneyOutForm() {
         const payeeName = (v.op_payee || '').trim();
         const catName = an(cat);
 
+        let partyId = '';
+        if (payeeName) {
+          let existingP = db.parties.find(p => p.name.trim().toLowerCase() === payeeName.toLowerCase());
+          if (!existingP) {
+            existingP = {
+              id: uid(),
+              name: payeeName,
+              type: 'other',
+              phone: '',
+              gstin: '',
+              state: db.biz.state || 'Odisha',
+              terms: '0'
+            };
+            db.parties.push(existingP);
+          } else if (existingP.type === 'supplier' && !db.docs.some(d => d.party === existingP.id && d.type === 'bill')) {
+            existingP.type = 'other';
+          }
+          partyId = existingP.id;
+        }
+
         const narr = userDesc
           ? (payeeName ? `${payeeName} - ${userDesc}` : userDesc)
           : (payeeName ? `${payeeName} - ${catName}` : catName);
 
         const lines = [
-          { a: cat, d: basePaisa, c: 0 }
+          { a: cat, d: basePaisa, c: 0, p: partyId }
         ];
         if (gstPaisa > 0) {
-          lines.push({ a: '1300', d: gstPaisa, c: 0 }); // Input GST Credit
+          lines.push({ a: '1300', d: gstPaisa, c: 0, p: partyId }); // Input GST Credit
         }
-        lines.push({ a: v.acct, d: 0, c: totalPaisa });
+        lines.push({ a: v.acct, d: 0, c: totalPaisa, p: partyId });
 
         postedEnt = post({
           date: v.date,
@@ -1583,6 +1647,7 @@ export function moneyOutForm() {
             gst: gstPaisa,
             gstRate: gstRate,
             payee: payeeName,
+            party: partyId,
             partyName: payeeName,
             desc: userDesc
           },
@@ -1669,6 +1734,27 @@ export function moneyOutForm() {
         const amtPaisa = P(v.amt);
         if (!amtPaisa || amtPaisa <= 0) throw Error('Amount must be above zero');
         const payee = (v.misc_payee || '').trim();
+
+        let partyId = '';
+        if (payee) {
+          let existingP = db.parties.find(p => p.name.trim().toLowerCase() === payee.toLowerCase());
+          if (!existingP) {
+            existingP = {
+              id: uid(),
+              name: payee,
+              type: 'other',
+              phone: '',
+              gstin: '',
+              state: db.biz.state || 'Odisha',
+              terms: '0'
+            };
+            db.parties.push(existingP);
+          } else if (existingP.type === 'supplier' && !db.docs.some(d => d.party === existingP.id && d.type === 'bill')) {
+            existingP.type = 'other';
+          }
+          partyId = existingP.id;
+        }
+
         const narr = userDesc
           ? (payee ? `${payee} - ${userDesc}` : userDesc)
           : (payee ? `${payee} - Miscellaneous Expense` : 'Miscellaneous Expense');
@@ -1683,12 +1769,13 @@ export function moneyOutForm() {
             acct: v.acct,
             cat: '5600',
             payee: payee,
+            party: partyId,
             partyName: payee,
             desc: userDesc
           },
           lines: [
-            { a: '5600', d: amtPaisa, c: 0 },
-            { a: v.acct, d: 0, c: amtPaisa }
+            { a: '5600', d: amtPaisa, c: 0, p: partyId },
+            { a: v.acct, d: 0, c: amtPaisa, p: partyId }
           ]
         });
       } else if (cat === '3100') {
@@ -1712,6 +1799,61 @@ export function moneyOutForm() {
           lines: [
             { a: '3100', d: amtPaisa, c: 0 },
             { a: v.acct, d: 0, c: amtPaisa }
+          ]
+        });
+      } else if (cat === 'other') {
+        // 8. Other / Custom Expense Category
+        const customCatName = (v.custom_cat || '').trim();
+        if (!customCatName) throw Error('Please enter the Expense / Payment Category name');
+
+        const amtPaisa = P(v.amt);
+        if (!amtPaisa || amtPaisa <= 0) throw Error('Amount paid must be above zero');
+
+        const payee = (v.other_payee || '').trim();
+        let partyId = '';
+        if (payee) {
+          let existingP = db.parties.find(p => p.name.trim().toLowerCase() === payee.toLowerCase());
+          if (!existingP) {
+            existingP = {
+              id: uid(),
+              name: payee,
+              type: 'other',
+              phone: '',
+              gstin: '',
+              state: db.biz.state || 'Odisha',
+              terms: '0'
+            };
+            db.parties.push(existingP);
+          } else if (existingP.type === 'supplier' && !db.docs.some(d => d.party === existingP.id && d.type === 'bill')) {
+            existingP.type = 'other';
+          }
+          partyId = existingP.id;
+        }
+
+        const accountCode = getOrCreateExpenseAccount(customCatName);
+
+        const narr = userDesc
+          ? (payee ? `${payee} - ${userDesc}` : userDesc)
+          : (payee ? `${payee} - ${customCatName}` : customCatName);
+
+        postedEnt = post({
+          date: v.date,
+          src: 'out',
+          narr: narr,
+          meta: {
+            method: finalMethod,
+            ref: userRef,
+            acct: v.acct,
+            cat: accountCode,
+            customCat: customCatName,
+            payee: payee,
+            party: partyId,
+            partyName: payee,
+            desc: userDesc
+          },
+          lines: [
+            { a: accountCode, d: amtPaisa, c: 0, p: partyId },
+            { a: v.acct, d: 0, c: amtPaisa, p: partyId }
           ]
         });
       }
@@ -1740,6 +1882,10 @@ export function moneyOutForm() {
       const secSalaries = $('#sec_salaries');
       const secInterest = $('#sec_interest');
       const secMisc = $('#sec_misc');
+      const secOther = $('#sec_other');
+      const customCatWrap = $('#txn_custom_cat_wrap');
+      const customCatInput = $('#txn_custom_cat');
+      const amtRefRow = $('#amt_ref_row');
       const stdAmtWrap = $('#std_amt_wrap');
       const stdAmtLabel = $('#std_amt_label');
       const amtInput = $('#txn_amt');
@@ -1790,7 +1936,7 @@ export function moneyOutForm() {
 
         let needed = 0;
         const curCat = catEl ? catEl.value : '';
-        if (['5100', '5200', '5400'].includes(curCat)) {
+        if (['5100', '5200', '5400', '5700', '5800'].includes(curCat)) {
           let b = 0;
           try { b = P(baseAmtInput?.value || '0'); } catch (e) {}
           const r = parseFloat(gstRateSel?.value || 0);
@@ -1885,7 +2031,10 @@ export function moneyOutForm() {
         if (secSalaries) secSalaries.style.display = 'none';
         if (secInterest) secInterest.style.display = 'none';
         if (secMisc) secMisc.style.display = 'none';
+        if (secOther) secOther.style.display = 'none';
+        if (customCatWrap) customCatWrap.style.display = 'none';
         if (stdAmtWrap) stdAmtWrap.style.display = '';
+        if (amtRefRow) amtRefRow.style.gridTemplateColumns = '1fr 1fr';
 
         if (cat === '2000') {
           // 1. Supplier Payment
@@ -1900,10 +2049,11 @@ export function moneyOutForm() {
           if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Total Amount (₹) * ';
           if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. (Bill / Invoice No.) ';
           if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
-        } else if (['5100', '5200', '5400'].includes(cat)) {
-          // 3. Operational Expenses
+        } else if (['5100', '5200', '5400', '5700', '5800'].includes(cat)) {
+          // 3. Operational & Regulatory Expenses
           if (secOperational) secOperational.style.display = 'flex';
           if (stdAmtWrap) stdAmtWrap.style.display = 'none';
+          if (amtRefRow) amtRefRow.style.gridTemplateColumns = '1fr';
           if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Bill / Service Reference No. ';
           if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
           calcOperationalGst();
@@ -1930,6 +2080,16 @@ export function moneyOutForm() {
           if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Amount Withdrawn (₹) * ';
           if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. / Voucher No. ';
           if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Reason ';
+        } else if (cat === 'other') {
+          // 8. Other / Custom Expense Category
+          if (customCatWrap) {
+            customCatWrap.style.display = '';
+            if (customCatInput) customCatInput.focus();
+          }
+          if (secOther) secOther.style.display = 'flex';
+          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Total Amount Paid (₹) * ';
+          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. (UTR / Cheque No. / Txn ID) ';
+          if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
         }
         checkLiquidityWarn();
       }
@@ -2471,16 +2631,24 @@ export function loanForm2() {
           existing = {
             id: uid(),
             name: cName,
-            type: v.dir === 'taken' ? 'supplier' : 'customer',
+            type: 'lender',
+            phone: '',
+            gstin: '',
+            state: db.biz.state || 'Odisha',
             terms: '0'
           };
           db.parties.push(existing);
+        } else if (existing.type === 'supplier' && !db.docs.some(d => d.party === existing.id && d.type === 'bill')) {
+          existing.type = 'lender';
         }
         partyId = existing.id;
         partyName = existing.name;
       } else {
         if (!partyId) throw Error('Please select or enter a lender/borrower');
         const p = db.parties.find(x => x.id === partyId);
+        if (p && p.type === 'supplier' && !db.docs.some(d => d.party === p.id && d.type === 'bill')) {
+          p.type = 'lender';
+        }
         partyName = p ? p.name : '';
       }
 
@@ -3251,9 +3419,9 @@ export function buildAllBackupFiles() {
   // 11. Readme summary file
   const readmeText = `=====================================================
 BUFIN COMPLETE LEDGER BACKUP ARCHIVE
-Business Name: ${db.biz.name || 'PD ENTERPRISES'}
-Proprietor:    ${db.biz.owner || 'Pritam Das'}
-GSTIN:         ${db.biz.gstin || '21IFNPD3153M1ZC'}
+Business Name: ${db.biz.name || ''}
+Proprietor:    ${db.biz.owner || ''}
+GSTIN:         ${db.biz.gstin || ''}
 Export Date:   ${now.toLocaleString('en-IN')}
 =====================================================
 

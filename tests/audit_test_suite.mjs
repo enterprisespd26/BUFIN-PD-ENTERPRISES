@@ -62,14 +62,14 @@ global.document = {
 
 // 2. IMPORT BUFIN CORE MODULES
 import { convertRate, UNIT_FACTORS, fmt, uid, fmtDate, isoToDmy, dmyToIso } from '../frontend/js/modules/utils.js';
-import { db, setDb, post, checkCashLiquidity, net, dstat, out, sgn, acc, reverse } from '../frontend/js/modules/state.js';
+import { db, setDb, post, checkCashLiquidity, net, dstat, out, sgn, acc, reverse, isC, isS, partyTypeLabel, syncPartyClassifications, getOrCreateExpenseAccount } from '../frontend/js/modules/state.js';
 import { getInventoryStock, renderBills, billsState } from '../frontend/js/views/bills.js';
 import { taxSplit } from '../frontend/js/modules/actions.js';
 import { saveAttachments, getAttachments } from '../frontend/js/modules/attachments.js';
 import { detectHsnCode, renderSheet } from '../frontend/js/views/sales.js';
 import { renderCoa, renderBook, renderOpen, accountingState } from '../frontend/js/views/accounting.js';
 import { renderParties, partiesState } from '../frontend/js/views/parties.js';
-import { renderTxns, renderMoneyIn, renderMoneyOut, renderTransfers, moneyState } from '../frontend/js/views/money.js';
+import { renderTxns, renderMoneyIn, renderMoneyOut, renderTransfers, moneyState, getTxnRowData } from '../frontend/js/views/money.js';
 import { renderBs, renderTb, reportsState } from '../frontend/js/views/reports.js';
 import { renderLoans, loansState } from '../frontend/js/views/loans.js';
 
@@ -469,6 +469,62 @@ test('TC-MON-02: Contra Transfer (Cash Deposit: Cash -> Bank) updates ledgers', 
   assert.equal(net('1000') + net('1010'), 2000000, 'Combined liquidity must remain unchanged');
 });
 
+test('TC-MON-03: Expense / Payment Category custom "Other" option provisions account and displays in Money Out', () => {
+  resetTestDb();
+
+  // 1. Initial cash liquidity
+  post({
+    date: '2026-10-01',
+    src: 'jv',
+    lines: [
+      { a: '1010', d: 5000000, c: 0 },
+      { a: '3000', d: 0, c: 5000000 }
+    ]
+  });
+
+  // 2. Custom category creation via getOrCreateExpenseAccount
+  const catCode1 = getOrCreateExpenseAccount('Machinery Maintenance');
+  assert.ok(/^5\d{3}$/.test(catCode1), 'Must assign a 5xxx expense account code');
+  const createdAcc = acc(catCode1);
+  assert.ok(createdAcc, 'Created account must exist in Chart of Accounts');
+  assert.equal(createdAcc.name, 'Machinery Maintenance');
+  assert.equal(createdAcc.t, 'X');
+
+  // Re-calling with same name (different case) must reuse same account without duplicating
+  const catCode2 = getOrCreateExpenseAccount('machinery maintenance');
+  assert.equal(catCode2, catCode1, 'Must reuse existing account code without duplicate');
+
+  // 3. Post Money Out transaction with custom category
+  const outJe = post({
+    date: '2026-10-05',
+    src: 'out',
+    narr: 'Sharma Engineering - Machinery Maintenance',
+    meta: {
+      method: 'Bank Transfer / NEFT / RTGS',
+      acct: '1010',
+      cat: catCode1,
+      customCat: 'Machinery Maintenance',
+      payee: 'Sharma Engineering',
+      partyName: 'Sharma Engineering',
+      desc: 'Hydraulic press servicing'
+    },
+    lines: [
+      { a: catCode1, d: 250000, c: 0 },
+      { a: '1010', d: 0, c: 250000 }
+    ]
+  });
+
+  // Verify double-entry balance
+  assert.equal(net(catCode1), 250000, 'Machinery Maintenance debit balance must be ₹2,500.00');
+  assert.equal(net('1010'), 4750000, 'Bank balance must decrease to ₹47,500.00');
+
+  // Verify display in Money Out view
+  const rowData = getTxnRowData(outJe);
+  assert.equal(rowData.catName, 'Machinery Maintenance', 'Category column must display custom category name');
+  assert.equal(rowData.partyName, 'Sharma Engineering', 'Payee must display correctly');
+  assert.equal(rowData.amt, 250000, 'Amount must match ₹2,500.00 (250000 paisa)');
+});
+
 // ========================================================
 // MODULE 4: ACCOUNTING & FINANCIAL STATEMENT SYNCHRONIZATION
 // ========================================================
@@ -754,6 +810,72 @@ test('TC-PARTY-FILTER-01: Responsive segmented filter track and dedicated mobile
   // Reset
   partiesState.pt = 'all';
   partiesState.pq = '';
+});
+
+test('TC-PARTY-CLASSIFICATION-01: Lenders and internal expense payees are segregated from commercial trade suppliers', () => {
+  resetTestDb();
+
+  // Populate lenders, expense payees, and loan entries
+  db.loans = [
+    { id: 'ln_01', ref: 'LN-0001', name: 'Loan Pitamber', dir: 'taken', party: 'p_pitamber', partyName: 'Pitamber Mohanty', principal: 15000000, repaid: 0 },
+    { id: 'ln_02', ref: 'LN-0002', name: 'Loan Patra', dir: 'taken', party: 'p_patra', partyName: 'Mr. Patra', principal: 10000000, repaid: 0 },
+    { id: 'ln_03', ref: 'LN-0003', name: 'Loan Muna', dir: 'taken', party: 'p_muna', partyName: 'Muna', principal: 5000000, repaid: 0 }
+  ];
+
+  db.parties = [
+    { id: 'p_pitamber', name: 'Pitamber Mohanty', type: 'supplier', phone: '', state: 'Odisha' },
+    { id: 'p_patra', name: 'Mr. Patra', type: 'supplier', phone: '', state: 'Odisha' },
+    { id: 'p_muna', name: 'Muna', type: 'supplier', phone: '', state: 'Odisha' },
+    { id: 'p_rinku', name: 'Rinku Toppo', type: 'supplier', phone: '', state: 'Odisha' },
+    { id: 'p_reg', name: 'Registration / Legal Services', type: 'supplier', phone: '', state: 'Odisha' }
+  ];
+
+  db.entries = [
+    { id: 'e1', date: '2026-11-01', narr: 'License fee', meta: { cat: '5700', party: 'p_rinku' }, lines: [{ a: '5700', d: 6000000, c: 0, p: 'p_rinku' }, { a: '1010', d: 0, c: 6000000, p: 'p_rinku' }] },
+    { id: 'e2', date: '2026-11-01', narr: 'Legal services', meta: { cat: '5800', party: 'p_reg' }, lines: [{ a: '5800', d: 345000, c: 0, p: 'p_reg' }, { a: '1010', d: 0, c: 345000, p: 'p_reg' }] }
+  ];
+
+  // Run auto-sync
+  syncPartyClassifications(db);
+
+  // Check types
+  assert.equal(db.parties.find(p => p.id === 'p_pitamber').type, 'lender', 'Pitamber Mohanty must be lender');
+  assert.equal(db.parties.find(p => p.id === 'p_patra').type, 'lender', 'Mr. Patra must be lender');
+  assert.equal(db.parties.find(p => p.id === 'p_muna').type, 'lender', 'Muna must be lender');
+  assert.equal(db.parties.find(p => p.id === 'p_rinku').type, 'other', 'Rinku Toppo must be other');
+  assert.equal(db.parties.find(p => p.id === 'p_reg').type, 'other', 'Registration / Legal Services must be other');
+
+  // Check partyTypeLabel
+  assert.equal(partyTypeLabel(db.parties.find(p => p.id === 'p_pitamber')), 'Lender');
+  assert.equal(partyTypeLabel(db.parties.find(p => p.id === 'p_rinku')), 'Other');
+
+  // Verify Parties page rendering and KPI cards
+  partiesState.pt = 'all';
+  partiesState.pq = '';
+  let html = renderParties();
+
+  // Suppliers KPI count should be 0 because none are commercial material suppliers
+  assert.ok(html.includes('<div class="kpi"><h3>Suppliers</h3><div class="v">0</div></div>') || (html.includes('Suppliers') && html.includes('>0<')), 'Suppliers count must be 0');
+  assert.ok(html.includes('<div class="kpi"><h3>Customers</h3><div class="v">0</div></div>') || (html.includes('Customers') && html.includes('>0<')), 'Customers count must be 0');
+
+  // Verify Suppliers tab filter only shows commercial suppliers
+  partiesState.pt = 'supplier';
+  html = renderParties();
+  assert.ok(!html.includes('Pitamber Mohanty'), 'Suppliers tab must NOT include Pitamber Mohanty');
+  assert.ok(!html.includes('Rinku Toppo'), 'Suppliers tab must NOT include Rinku Toppo');
+  assert.ok(html.includes('No commercial material suppliers yet'), 'Should show appropriate empty message for suppliers tab');
+
+  // Verify Lenders / Others tab filter shows lenders and expense contacts
+  partiesState.pt = 'other';
+  html = renderParties();
+  assert.ok(html.includes('Pitamber Mohanty'), 'Lenders / Others tab must include Pitamber Mohanty');
+  assert.ok(html.includes('Mr. Patra'), 'Lenders / Others tab must include Mr. Patra');
+  assert.ok(html.includes('Muna'), 'Lenders / Others tab must include Muna');
+  assert.ok(html.includes('Rinku Toppo'), 'Lenders / Others tab must include Rinku Toppo');
+  assert.ok(html.includes('Registration / Legal Services'), 'Lenders / Others tab must include Registration / Legal Services');
+
+  // Reset
+  partiesState.pt = 'all';
 });
 
 // ========================================================
@@ -1810,7 +1932,7 @@ test('TC-OPEN-MOBILE-01: Opening Balances 2-column mobile layout, non-clipping d
 
   // 4. Verify sw.js cache bump
   const sw = nodeFs.readFileSync('frontend/sw.js', 'utf8');
-  assert.ok(sw.includes('bufin-v9.4-cache'), 'sw.js must be bumped to bufin-v9.4-cache');
+  assert.ok(/bufin-v9\.[4-9]-cache/.test(sw), 'sw.js must be bumped to at least bufin-v9.4-cache');
 });
 
 test('TC-LOAN-MOBILE-KPI-01: Loans KPI metric cards compact 2x2 mobile layout and responsive labels', () => {

@@ -1,5 +1,5 @@
 {
-  "version": 45,
+  "version": 46,
   "data": {
     "biz": {
       "upi": "N/A",
@@ -426,7 +426,7 @@
       {
         "id": "p_pitamber_mohanty",
         "name": "Pitamber Mohanty",
-        "type": "supplier",
+        "type": "lender",
         "phone": "",
         "gstin": "",
         "state": "Odisha",
@@ -435,7 +435,7 @@
       {
         "id": "p_mr_patra",
         "name": "Mr. Patra",
-        "type": "supplier",
+        "type": "lender",
         "phone": "",
         "gstin": "",
         "state": "Odisha",
@@ -444,7 +444,7 @@
       {
         "id": "p_muna",
         "name": "Muna",
-        "type": "supplier",
+        "type": "lender",
         "phone": "",
         "gstin": "",
         "state": "Odisha",
@@ -453,7 +453,7 @@
       {
         "id": "p_rinku_toppo",
         "name": "Rinku Toppo",
-        "type": "supplier",
+        "type": "other",
         "phone": "",
         "gstin": "",
         "state": "Odisha",
@@ -462,7 +462,7 @@
       {
         "id": "p_registration_legal",
         "name": "Registration / Legal Services",
-        "type": "supplier",
+        "type": "other",
         "phone": "",
         "gstin": "",
         "state": "Odisha",

@@ -1,5 +1,5 @@
 import { esc, fmt, head, kpi } from '../modules/utils.js';
-import { db, PT, isC, isS, out } from '../modules/state.js';
+import { db, PT, isC, isS, out, partyTypeLabel } from '../modules/state.js';
 
 export const partiesState = {
   pt: 'all',
@@ -11,10 +11,26 @@ export function renderParties() {
   const q = (partiesState.pq || '').toLowerCase();
   const R = p => db.docs.filter(d => d.party === p.id && d.type === 'sale' && !d.cancelled).reduce((s, d) => s + out(d), 0);
   const Y = p => db.docs.filter(d => d.party === p.id && d.type === 'bill' && !d.cancelled).reduce((s, d) => s + out(d), 0);
+
+  const matchesFilter = p => {
+    if (f === 'customer') return isC(p);
+    if (f === 'supplier') return isS(p);
+    if (f === 'other' || f === 'lender') return !isC(p) && !isS(p);
+    return true;
+  };
+
   const L = db.parties.filter(p =>
-    (f === 'all' || (f === 'customer' ? isC(p) : f === 'supplier' ? isS(p) : !isC(p) && !isS(p))) &&
+    matchesFilter(p) &&
     (!q || (p.name + (p.phone || '') + (p.gstin || '')).toLowerCase().includes(q))
   );
+
+  const emptyMsg = f === 'customer'
+    ? 'No commercial trade customers yet. Customers will appear when sales invoices are created.'
+    : f === 'supplier'
+    ? 'No commercial material suppliers yet. Suppliers will appear when purchase bills are entered.'
+    : f === 'other'
+    ? 'No lenders or expense payees yet.'
+    : 'Nothing here yet. Add customers you sell to and suppliers you buy from.';
 
   return head('Parties', `<button class="p" data-a="newparty">Add party</button>`) +
     `<div class="grid">
@@ -25,7 +41,7 @@ export function renderParties() {
     </div>
     <div class="filters parties-filter-bar">
       <div class="parties-segment-track" role="tablist" aria-label="Filter parties by type">
-        ${[['all', 'All'], ['customer', 'Customers'], ['supplier', 'Suppliers'], ['other', 'Others']].map(x => `
+        ${[['all', 'All'], ['customer', 'Customers'], ['supplier', 'Suppliers'], ['other', 'Lenders / Others']].map(x => `
           <button type="button" role="tab" aria-selected="${f === x[0]}" class="parties-seg-btn ${f === x[0] ? 'p active' : ''}" data-a="ptab" data-i="${x[0]}">
             ${x[1]}
           </button>
@@ -48,6 +64,6 @@ export function renderParties() {
       </div>
     </div>` +
     (L.length
-      ? `<div class="wrap"><table><tr><th>Name</th><th>Type</th><th>Phone</th><th>State</th><th class="num">Owes you</th><th class="num">You owe</th></tr>${L.map(p => `<tr class="k" data-a="stmt" data-i="${p.id}"><td>${esc(p.name)}</td><td>${(PT[p.type] || p.type).split(' (')[0]}</td><td>${esc(p.phone || '')}</td><td>${esc(p.state || '')}</td><td class="num">${fmt(R(p))}</td><td class="num">${fmt(Y(p))}</td></tr>`).join('')}</table></div>`
-      : '<div class="wrap"><div class="empty">Nothing here yet. Add customers you sell to and suppliers you buy from.</div></div>');
+      ? `<div class="wrap"><table><tr><th>Name</th><th>Type</th><th>Phone</th><th>State</th><th class="num">Owes you</th><th class="num">You owe</th></tr>${L.map(p => `<tr class="k" data-a="stmt" data-i="${p.id}"><td>${esc(p.name)}</td><td>${esc(partyTypeLabel(p))}</td><td>${esc(p.phone || '')}</td><td>${esc(p.state || '')}</td><td class="num">${fmt(R(p))}</td><td class="num">${fmt(Y(p))}</td></tr>`).join('')}</table></div>`
+      : `<div class="wrap"><div class="empty">${emptyMsg}</div></div>`);
 }

@@ -33,7 +33,8 @@ export function getTxnRowData(e) {
     acctName = crCash ? an(crCash.a) : (e.meta?.acct ? an(e.meta.acct) : (e.lines[1] ? an(e.lines[1].a) : ''));
     const debCat = e.lines.find(l => l.d && !acc(l.a)?.cash && l.a !== '1300');
     const catCode = debCat ? debCat.a : (e.meta?.cat || (e.lines[0] ? e.lines[0].a : ''));
-    if (catCode === '2000') catName = 'Supplier Payment (Accounts Payable)';
+    if (e.meta?.customCat) catName = e.meta.customCat;
+    else if (catCode === '2000') catName = 'Supplier Payment (Accounts Payable)';
     else if (catCode === '5000') catName = 'Purchases / COGS';
     else if (catCode === '5100') catName = 'Rent Expense';
     else if (catCode === '5200') catName = 'Transport Expense';

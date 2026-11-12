@@ -278,7 +278,7 @@ export function renderSheet(o) {
       <div class="sh">
         ${logoImgHtml()}
         <div>
-          <h1>${esc(s.name || 'PD ENTERPRISES')}</h1>
+          <h1>${esc(s.name || '')}</h1>
           ${esc(s.addr || '').replace(/\n/g, '<br>')}<br>
           Mob: ${esc(s.phone || '')} | ${esc(s.email || '')}<br>
           <b>GSTIN: ${esc(s.gstin || '')}</b>
@@ -339,7 +339,7 @@ export function renderSheet(o) {
       <div class="sign">
         <div>Customer signature</div>
         <div style="text-align:right">
-          For <b>${esc(s.name || 'PD ENTERPRISES')}</b>
+          For <b>${esc(s.name || '')}</b>
           ${hasStamp()
       ? `<img src="${STAMP}" alt="Stamp" onerror="this.style.display='none'" style="height:76px;width:auto;display:block;margin:2px -6px -6px auto;mix-blend-mode:multiply">`
       : '<br><br><br>'}
@@ -403,7 +403,7 @@ export function mkPdf(o) {
     const x = M + (hasLogo() ? LS * LOGO_RATIO : LS) + 5;
     const aw = PW - M - x - 2;
     p.setTextColor(6, 108, 128).setFont('helvetica', 'bold').setFontSize(18);
-    T(s.name || 'PD ENTERPRISES', x, M + 6);
+    T(s.name || '', x, M + 6);
     p.setTextColor(17).setFont('helvetica', 'normal').setFontSize(8.5);
     const ad = [
       ...p.splitTextToSize((s.addr || '').replace(/\n/g, ' '), aw),
@@ -572,9 +572,9 @@ export function mkPdf(o) {
   if (stampOn) {
     const sw = SH * STAMP_RATIO;
     try { p.addImage(STAMP, 'PNG', PW - M - sw + 3, y - 2 - SH, sw, SH); } catch (e) { /* ignore broken stamp */ }
-    T('For ' + (s.name || 'PD ENTERPRISES'), PW - M, y - SH - 5, { align: 'right' });
+    T('For ' + (s.name || ''), PW - M, y - SH - 5, { align: 'right' });
   } else {
-    T('For ' + (s.name || 'PD ENTERPRISES'), PW - M, y - 8, { align: 'right' });
+    T('For ' + (s.name || ''), PW - M, y - 8, { align: 'right' });
   }
   T('Authorised signatory', PW - M, y, { align: 'right' });
 
@@ -818,7 +818,7 @@ export function showInvoicePreviewModal(doc) {
     };
 
     try {
-      const bizName = db.biz.name || 'PD ENTERPRISES';
+      const bizName = db.biz.name || '';
       const cName = doc.c?.n || 'Customer';
       const gt = inr(f.gt);
       const bal = inr(f.bal);

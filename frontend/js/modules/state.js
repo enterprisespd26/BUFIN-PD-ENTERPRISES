@@ -42,22 +42,93 @@ export const PT = {
   customer: 'Customer (we sell to)',
   supplier: 'Supplier (we buy from)',
   both: 'Customer and supplier',
-  lender: 'Lender / borrower (loans)',
+  lender: 'Lender (loan provider)',
+  expense: 'Expense Vendor (services / overheads)',
   other: 'Other'
 };
+
+export const partyTypeLabel = p => {
+  if (!p) return '';
+  if (p.type === 'lender') return 'Lender';
+  if (p.type === 'expense') return 'Expense Vendor';
+  if (p.type === 'supplier') return 'Supplier';
+  if (p.type === 'customer') return 'Customer';
+  if (p.type === 'both') return 'Customer & Supplier';
+  if (p.type === 'other') return 'Other';
+  return (PT[p.type] || p.type || 'Other').split(' (')[0];
+};
+
+export function syncPartyClassifications(targetDb) {
+  if (!targetDb || !Array.isArray(targetDb.parties)) return false;
+  let modified = false;
+
+  const tradeSupplierIds = new Set(
+    (targetDb.docs || [])
+      .filter(d => d.type === 'bill' && !d.cancelled)
+      .map(d => d.party)
+      .filter(Boolean)
+  );
+
+  const tradeCustomerIds = new Set(
+    (targetDb.docs || [])
+      .filter(d => d.type === 'sale' && !d.cancelled)
+      .map(d => d.party)
+      .filter(Boolean)
+  );
+
+  const loanPartyIds = new Set(
+    (targetDb.loans || []).map(l => l.party).filter(Boolean)
+  );
+
+  const loanPartyNames = new Set(
+    (targetDb.loans || []).map(l => (l.partyName || '').trim().toLowerCase()).filter(Boolean)
+  );
+
+  for (const p of targetDb.parties) {
+    if (!p) continue;
+    const nameLower = (p.name || '').trim().toLowerCase();
+    const isLoanParty = loanPartyIds.has(p.id) || loanPartyNames.has(nameLower);
+    const hasTradeBills = tradeSupplierIds.has(p.id);
+    const hasTradeSales = tradeCustomerIds.has(p.id);
+
+    // 1. Loans / lenders
+    if (isLoanParty && !hasTradeBills) {
+      if (p.type !== 'lender') {
+        p.type = 'lender';
+        modified = true;
+      }
+    }
+    // 2. Service / license / expense entities without commercial purchase bills
+    else if (!hasTradeBills && !hasTradeSales) {
+      const isExpensePayee = (
+        nameLower.includes('rinku toppo') ||
+        nameLower.includes('registration') ||
+        nameLower.includes('legal services') ||
+        p.id === 'p_rinku_toppo' ||
+        p.id === 'p_registration_legal' ||
+        (targetDb.entries || []).some(e =>
+          (e.meta?.cat && parseInt(e.meta.cat, 10) >= 5100) &&
+          (e.meta?.party === p.id || (e.lines || []).some(l => l.p === p.id))
+        )
+      );
+
+      if (isExpensePayee && p.type === 'supplier') {
+        p.type = 'other';
+        modified = true;
+      }
+    }
+  }
+
+  return modified;
+}
 
 export const SYS = ['1000','1010','1100','1300','1400','2000','2100','2200','3200','4200','4300','5000','5500','5600'];
 
 let initialDb;
 try {
   initialDb = JSON.parse(localStorage.getItem(K));
-  if (initialDb && initialDb.biz && (initialDb.biz.name === 'M/S Apex Scrap Traders' || initialDb.biz.name === 'BUFIN Business Ledger' || initialDb.biz.name === 'BUFIN')) {
-    initialDb.biz.name = 'PD ENTERPRISES';
-    initialDb.biz.gstin = initialDb.biz.gstin || '21IFNPD3153M1ZC';
-    initialDb.biz.state = initialDb.biz.state || 'Odisha';
-    initialDb.biz.phone = initialDb.biz.phone || '+91 7684010176';
-    initialDb.biz.email = initialDb.biz.email || 'enterprisespd26@gmail.com';
-    initialDb.biz.addr = initialDb.biz.addr || 'Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India';
+  if (initialDb) {
+    syncPartyClassifications(initialDb);
   }
 } catch (e) {}
 
@@ -65,25 +136,25 @@ export const DEF_SCRAP_ITEMS = [];
 
 export let db = initialDb || {
   biz: {
-    name: 'PD ENTERPRISES',
-    owner: 'Pritam Das',
-    gstin: '21IFNPD3153M1ZC',
-    addr: 'Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India',
-    phone: '+91 7684010176',
-    email: 'enterprisespd26@gmail.com',
-    state: 'Odisha',
-    prefix: 'PD/2627/',
-    bank_name: 'State Bank of India (SBI)',
-    account_holder: 'PD ENTERPRISES',
-    account_no: '00000045659125494',
-    account_type: 'Current Account',
-    account_desc: 'CA-REGULAR-PUB-OTH-ALL-INR',
-    ifsc: 'SBIN0009825',
-    micr: '756002536',
-    bank_addr: 'Plot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059',
-    bank: 'State Bank of India (SBI) - A/C: 00000045659125494\nIFSC: SBIN0009825 | MICR: 756002536\nCurrent Account: CA-REGULAR-PUB-OTH-ALL-INR\nPlot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059',
-    upi: '7684010176@upi',
-    terms: '1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.\n4. Subject to Balasore jurisdiction.',
+    name: '',
+    owner: '',
+    gstin: '',
+    addr: '',
+    phone: '',
+    email: '',
+    state: '',
+    prefix: '',
+    bank_name: '',
+    account_holder: '',
+    account_no: '',
+    account_type: '',
+    account_desc: '',
+    ifsc: '',
+    micr: '',
+    bank_addr: '',
+    bank: '',
+    upi: '',
+    terms: '',
     lock: ''
   },
   accounts: AC.map(a => ({ code: a[0], name: a[1], t: a[2], cash: !!a[3] })),
@@ -103,6 +174,9 @@ export function setDb(newDb) {
       if (!e.at) e.at = new Date().toISOString();
       if (!e.status) e.status = 'posted';
     });
+  }
+  if (db) {
+    syncPartyClassifications(db);
   }
   try {
     localStorage.setItem(K, JSON.stringify(db));
@@ -148,6 +222,43 @@ export async function push() {
 export const acc = c => db.accounts.find(a => a.code === c);
 export const an = c => acc(c) ? acc(c).name : c;
 export const pn = id => (db.parties.find(p => p.id === id) || {}).name || '';
+
+export function getOrCreateExpenseAccount(catName) {
+  if (!catName || !catName.trim()) return '5600';
+  const cleanName = catName.trim();
+  const lowerName = cleanName.toLowerCase();
+
+  if (!db.accounts) db.accounts = [];
+
+  // 1. Check existing account by name (case-insensitive)
+  const existing = db.accounts.find(a => a.name && a.name.trim().toLowerCase() === lowerName && a.t === 'X');
+  if (existing) return existing.code;
+
+  // 2. Determine next available 5xxx code
+  const existingCodes = new Set(db.accounts.map(a => a.code));
+  let nextCode = 5900;
+  while (existingCodes.has(String(nextCode)) && nextCode < 5990) {
+    nextCode += 10;
+  }
+  if (nextCode >= 5990) {
+    for (let c = 5601; c < 5999; c++) {
+      if (!existingCodes.has(String(c))) {
+        nextCode = c;
+        break;
+      }
+    }
+  }
+
+  const finalCode = String(nextCode);
+  const newAccount = {
+    code: finalCode,
+    name: cleanName,
+    t: 'X',
+    cash: false
+  };
+  db.accounts.push(newAccount);
+  return finalCode;
+}
 export const next = (k, pre) => {
   let maxNum = db.seq[k] || 0;
   if (k === 'jv') {
@@ -285,8 +396,8 @@ export const out = d => (d.total || 0) - paid(d);
 export const dstat = d => d.cancelled ? ['Cancelled', 'rd'] : out(d) <= 0 ? ['Paid', 'ok'] : d.due && d.due < today() ? ['Overdue', 'rd'] : paid(d) > 0 ? ['Partial', 'wn'] : ['Open', ''];
 
 export const cashAcc = () => db.accounts.filter(a => a.cash);
-export const isC = p => p.type === 'customer' || p.type === 'both';
-export const isS = p => p.type === 'supplier' || p.type === 'both';
+export const isC = p => !!(p && (p.type === 'customer' || p.type === 'both'));
+export const isS = p => !!(p && (p.type === 'supplier' || p.type === 'both'));
 
 export const lstat = l => l.principal - l.repaid <= 0 ? ['Closed', ''] : l.due && l.due < today() ? ['Overdue', 'rd'] : ['Active', 'ok'];
 export const lacr = l => Math.round((l.principal - l.repaid) * l.rate / 100 * Math.max(0, Math.round((new Date(today()) - new Date(l.last)) / 864e5)) / 365);

@@ -133,7 +133,7 @@ export function renderTb() {
     <div class="print-only" style="margin-bottom:14px;border-bottom:2px solid #0f172a;padding-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
-          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc((db.biz && db.biz.name && db.biz.name !== 'M/S Apex Scrap Traders') ? db.biz.name : 'PD ENTERPRISES')}</h2>
+          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc(db.biz?.name || '')}</h2>
           ${db.biz.gstin ? `<div style="font-size:12px;color:#475569;">GSTIN: <b>${esc(db.biz.gstin)}</b></div>` : ''}
         </div>
         <div style="text-align:right;">
@@ -575,7 +575,7 @@ export function renderPl() {
     <div class="print-only" style="margin-bottom:14px;border-bottom:2px solid #0f172a;padding-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
-          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc((db.biz && db.biz.name && db.biz.name !== 'M/S Apex Scrap Traders') ? db.biz.name : 'PD ENTERPRISES')}</h2>
+          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc(db.biz?.name || '')}</h2>
           ${db.biz.gstin ? `<div style="font-size:12px;color:#475569;">GSTIN: <b>${esc(db.biz.gstin)}</b></div>` : ''}
         </div>
         <div style="text-align:right;">
@@ -585,7 +585,7 @@ export function renderPl() {
       </div>
     </div>`;
 
-  const sub = `<div class="plx-sub"><span><b>${esc((db.biz && db.biz.name && db.biz.name !== 'M/S Apex Scrap Traders') ? db.biz.name : 'PD ENTERPRISES')}</b></span><span>Period: <b>${plPeriod(u)}</b></span></div>`;
+  const sub = `<div class="plx-sub"><span><b>${esc(db.biz?.name || '')}</b></span><span>Period: <b>${plPeriod(u)}</b></span></div>`;
 
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
@@ -1007,7 +1007,7 @@ export function renderBs() {
     <div class="print-only" style="margin-bottom:14px;border-bottom:2px solid #0f172a;padding-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
-          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc((db.biz && db.biz.name && db.biz.name !== 'M/S Apex Scrap Traders') ? db.biz.name : 'PD ENTERPRISES')}</h2>
+          <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${esc(db.biz?.name || '')}</h2>
           ${db.biz.gstin ? `<div style="font-size:12px;color:#475569;">GSTIN: <b>${esc(db.biz.gstin)}</b></div>` : ''}
         </div>
         <div style="text-align:right;">
