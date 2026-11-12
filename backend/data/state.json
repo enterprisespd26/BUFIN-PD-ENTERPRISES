@@ -1,5 +1,5 @@
 {
-  "version": 46,
+  "version": 48,
   "data": {
     "biz": {
       "upi": "N/A",
@@ -27,10 +27,10 @@
     },
     "seq": {
       "jv": 7,
-      "loan": 4,
       "exp": 2,
       "trf": 0,
       "bill": 0,
+      "loan": 4,
       "sale": 0
     },
     "docs": [],
@@ -66,360 +66,360 @@
         "at": "2026-11-10T12:48:50.039Z"
       },
       {
-        "at": "2026-11-01T10:00:00.000Z",
         "a": "register loan",
-        "d": "LN-0001"
+        "d": "LN-0001",
+        "at": "2026-11-01T10:00:00.000Z"
       },
       {
-        "at": "2026-11-01T10:05:00.000Z",
         "a": "register loan",
-        "d": "LN-0002"
+        "d": "LN-0002",
+        "at": "2026-11-01T10:05:00.000Z"
       },
       {
-        "at": "2026-11-01T10:10:00.000Z",
         "a": "register loan",
-        "d": "LN-0003"
+        "d": "LN-0003",
+        "at": "2026-11-01T10:10:00.000Z"
       },
       {
-        "at": "2026-11-01T10:15:00.000Z",
         "a": "register loan",
-        "d": "LN-0004"
+        "d": "LN-0004",
+        "at": "2026-11-01T10:15:00.000Z"
       },
       {
-        "at": "2026-11-01T10:20:00.000Z",
         "a": "post JV-0005",
-        "d": "in"
+        "d": "in",
+        "at": "2026-11-01T10:20:00.000Z"
       },
       {
-        "at": "2026-11-01T10:25:00.000Z",
         "a": "post JV-0006",
-        "d": "out"
+        "d": "out",
+        "at": "2026-11-01T10:25:00.000Z"
       },
       {
-        "at": "2026-11-01T10:30:00.000Z",
         "a": "post JV-0007",
-        "d": "out"
+        "d": "out",
+        "at": "2026-11-01T10:30:00.000Z"
       }
     ],
     "items": [],
     "loans": [
       {
         "id": "ln_pitamber_01",
-        "ref": "LN-0001",
-        "name": "Unsecured Loan - Pitamber Mohanty",
         "dir": "taken",
-        "party": "p_pitamber_mohanty",
-        "partyName": "Pitamber Mohanty",
-        "principal": 15000000,
-        "repaid": 0,
-        "rate": 0,
-        "date": "2026-11-01",
         "due": "",
         "emi": 0,
+        "ref": "LN-0001",
         "acct": "1010",
-        "notes": "Unsecured business loan from Pitamber Mohanty",
+        "date": "2026-11-01",
+        "hist": [],
         "last": "2026-11-01",
-        "hist": []
+        "name": "Unsecured Loan - Pitamber Mohanty",
+        "rate": 0,
+        "notes": "Unsecured business loan from Pitamber Mohanty",
+        "party": "p_pitamber_mohanty",
+        "repaid": 0,
+        "partyName": "Pitamber Mohanty",
+        "principal": 15000000
       },
       {
         "id": "ln_mr_patra_01",
-        "ref": "LN-0002",
-        "name": "Unsecured Loan - Mr. Patra",
         "dir": "taken",
-        "party": "p_mr_patra",
-        "partyName": "Mr. Patra",
-        "principal": 20000000,
-        "repaid": 0,
-        "rate": 0,
-        "date": "2026-11-01",
         "due": "",
         "emi": 0,
+        "ref": "LN-0002",
         "acct": "1010",
-        "notes": "Unsecured business loan from Mr. Patra",
+        "date": "2026-11-01",
+        "hist": [],
         "last": "2026-11-01",
-        "hist": []
+        "name": "Unsecured Loan - Mr. Patra",
+        "rate": 0,
+        "notes": "Unsecured business loan from Mr. Patra",
+        "party": "p_mr_patra",
+        "repaid": 0,
+        "partyName": "Mr. Patra",
+        "principal": 20000000
       },
       {
         "id": "ln_muna_01",
-        "ref": "LN-0003",
-        "name": "Unsecured Loan - Muna (1)",
         "dir": "taken",
-        "party": "p_muna",
-        "partyName": "Muna",
-        "principal": 6000000,
-        "repaid": 0,
-        "rate": 0,
-        "date": "2026-11-01",
         "due": "",
         "emi": 0,
+        "ref": "LN-0003",
         "acct": "1010",
-        "notes": "Unsecured business loan from Muna (Tranche 1)",
+        "date": "2026-11-01",
+        "hist": [],
         "last": "2026-11-01",
-        "hist": []
+        "name": "Unsecured Loan - Muna (1)",
+        "rate": 0,
+        "notes": "Unsecured business loan from Muna (Tranche 1)",
+        "party": "p_muna",
+        "repaid": 0,
+        "partyName": "Muna",
+        "principal": 6000000
       },
       {
         "id": "ln_muna_02",
-        "ref": "LN-0004",
-        "name": "Unsecured Loan - Muna (2)",
         "dir": "taken",
-        "party": "p_muna",
-        "partyName": "Muna",
-        "principal": 5000000,
-        "repaid": 0,
-        "rate": 0,
-        "date": "2026-11-01",
         "due": "",
         "emi": 0,
+        "ref": "LN-0004",
         "acct": "1010",
-        "notes": "Unsecured business loan from Muna (Tranche 2)",
+        "date": "2026-11-01",
+        "hist": [],
         "last": "2026-11-01",
-        "hist": []
+        "name": "Unsecured Loan - Muna (2)",
+        "rate": 0,
+        "notes": "Unsecured business loan from Muna (Tranche 2)",
+        "party": "p_muna",
+        "repaid": 0,
+        "partyName": "Muna",
+        "principal": 5000000
       }
     ],
     "entries": [
       {
+        "at": "2026-11-01T10:00:00.000Z",
         "id": "ent_loan_pitamber_01",
         "ref": "JV-0001",
-        "date": "2026-11-01",
-        "narr": "Unsecured Loan - Pitamber Mohanty - Principal borrowed from Pitamber Mohanty",
         "src": "loan",
+        "date": "2026-11-01",
         "meta": {
-          "loan": "ln_pitamber_01",
-          "kind": "disb",
           "pr": 15000000,
           "int": 0,
-          "acct": "1010",
-          "party": "p_pitamber_mohanty",
-          "partyName": "Pitamber Mohanty",
           "ref": "LN-0001",
+          "acct": "1010",
+          "desc": "Unsecured Loan - Pitamber Mohanty - Initial principal disbursement (₹1,50,000.00)",
+          "kind": "disb",
+          "loan": "ln_pitamber_01",
           "docNo": "LN-0001",
-          "loanName": "Unsecured Loan - Pitamber Mohanty",
+          "party": "p_pitamber_mohanty",
           "method": "Bank Transfer",
-          "desc": "Unsecured Loan - Pitamber Mohanty - Initial principal disbursement (₹1,50,000.00)"
+          "loanName": "Unsecured Loan - Pitamber Mohanty",
+          "partyName": "Pitamber Mohanty"
         },
+        "narr": "Unsecured Loan - Pitamber Mohanty - Principal borrowed from Pitamber Mohanty",
         "lines": [
           {
             "a": "1010",
-            "d": 15000000,
             "c": 0,
+            "d": 15000000,
             "p": "p_pitamber_mohanty"
           },
           {
             "a": "2100",
-            "d": 0,
             "c": 15000000,
+            "d": 0,
             "p": "p_pitamber_mohanty"
           }
         ],
-        "status": "posted",
-        "at": "2026-11-01T10:00:00.000Z"
+        "status": "posted"
       },
       {
+        "at": "2026-11-01T10:05:00.000Z",
         "id": "ent_loan_patra_01",
         "ref": "JV-0002",
-        "date": "2026-11-01",
-        "narr": "Unsecured Loan - Mr. Patra - Principal borrowed from Mr. Patra",
         "src": "loan",
+        "date": "2026-11-01",
         "meta": {
-          "loan": "ln_mr_patra_01",
-          "kind": "disb",
           "pr": 20000000,
           "int": 0,
-          "acct": "1010",
-          "party": "p_mr_patra",
-          "partyName": "Mr. Patra",
           "ref": "LN-0002",
+          "acct": "1010",
+          "desc": "Unsecured Loan - Mr. Patra - Initial principal disbursement (₹2,00,000.00)",
+          "kind": "disb",
+          "loan": "ln_mr_patra_01",
           "docNo": "LN-0002",
-          "loanName": "Unsecured Loan - Mr. Patra",
+          "party": "p_mr_patra",
           "method": "Bank Transfer",
-          "desc": "Unsecured Loan - Mr. Patra - Initial principal disbursement (₹2,00,000.00)"
+          "loanName": "Unsecured Loan - Mr. Patra",
+          "partyName": "Mr. Patra"
         },
+        "narr": "Unsecured Loan - Mr. Patra - Principal borrowed from Mr. Patra",
         "lines": [
           {
             "a": "1010",
-            "d": 20000000,
             "c": 0,
+            "d": 20000000,
             "p": "p_mr_patra"
           },
           {
             "a": "2100",
-            "d": 0,
             "c": 20000000,
+            "d": 0,
             "p": "p_mr_patra"
           }
         ],
-        "status": "posted",
-        "at": "2026-11-01T10:05:00.000Z"
+        "status": "posted"
       },
       {
+        "at": "2026-11-01T10:10:00.000Z",
         "id": "ent_loan_muna_01",
         "ref": "JV-0003",
-        "date": "2026-11-01",
-        "narr": "Unsecured Loan - Muna (1) - Principal borrowed from Muna",
         "src": "loan",
+        "date": "2026-11-01",
         "meta": {
-          "loan": "ln_muna_01",
-          "kind": "disb",
           "pr": 6000000,
           "int": 0,
-          "acct": "1010",
-          "party": "p_muna",
-          "partyName": "Muna",
           "ref": "LN-0003",
+          "acct": "1010",
+          "desc": "Unsecured Loan - Muna (1) - Initial principal disbursement (₹60,000.00)",
+          "kind": "disb",
+          "loan": "ln_muna_01",
           "docNo": "LN-0003",
-          "loanName": "Unsecured Loan - Muna (1)",
+          "party": "p_muna",
           "method": "Bank Transfer",
-          "desc": "Unsecured Loan - Muna (1) - Initial principal disbursement (₹60,000.00)"
+          "loanName": "Unsecured Loan - Muna (1)",
+          "partyName": "Muna"
         },
+        "narr": "Unsecured Loan - Muna (1) - Principal borrowed from Muna",
         "lines": [
           {
             "a": "1010",
-            "d": 6000000,
             "c": 0,
+            "d": 6000000,
             "p": "p_muna"
           },
           {
             "a": "2100",
-            "d": 0,
             "c": 6000000,
+            "d": 0,
             "p": "p_muna"
           }
         ],
-        "status": "posted",
-        "at": "2026-11-01T10:10:00.000Z"
+        "status": "posted"
       },
       {
+        "at": "2026-11-01T10:15:00.000Z",
         "id": "ent_loan_muna_02",
         "ref": "JV-0004",
-        "date": "2026-11-01",
-        "narr": "Unsecured Loan - Muna (2) - Principal borrowed from Muna",
         "src": "loan",
+        "date": "2026-11-01",
         "meta": {
-          "loan": "ln_muna_02",
-          "kind": "disb",
           "pr": 5000000,
           "int": 0,
-          "acct": "1010",
-          "party": "p_muna",
-          "partyName": "Muna",
           "ref": "LN-0004",
+          "acct": "1010",
+          "desc": "Unsecured Loan - Muna (2) - Initial principal disbursement (₹50,000.00)",
+          "kind": "disb",
+          "loan": "ln_muna_02",
           "docNo": "LN-0004",
-          "loanName": "Unsecured Loan - Muna (2)",
+          "party": "p_muna",
           "method": "Bank Transfer",
-          "desc": "Unsecured Loan - Muna (2) - Initial principal disbursement (₹50,000.00)"
+          "loanName": "Unsecured Loan - Muna (2)",
+          "partyName": "Muna"
         },
+        "narr": "Unsecured Loan - Muna (2) - Principal borrowed from Muna",
         "lines": [
           {
             "a": "1010",
-            "d": 5000000,
             "c": 0,
+            "d": 5000000,
             "p": "p_muna"
           },
           {
             "a": "2100",
-            "d": 0,
             "c": 5000000,
+            "d": 0,
             "p": "p_muna"
           }
         ],
-        "status": "posted",
-        "at": "2026-11-01T10:15:00.000Z"
+        "status": "posted"
       },
       {
+        "at": "2026-11-01T10:20:00.000Z",
         "id": "ent_cap_intro_01",
         "ref": "JV-0005",
-        "date": "2026-11-01",
-        "narr": "Initial self capital introduced by proprietor into bank account",
         "src": "in",
+        "date": "2026-11-01",
         "meta": {
-          "method": "Bank Transfer",
+          "cat": "3000",
           "ref": "CAP-001",
           "acct": "1010",
-          "cat": "3000",
+          "desc": "Initial self capital introduced by proprietor into bank account",
           "party": "",
-          "partyName": "Pritam Das",
-          "desc": "Initial self capital introduced by proprietor into bank account"
+          "method": "Bank Transfer",
+          "partyName": "Pritam Das"
         },
+        "narr": "Initial self capital introduced by proprietor into bank account",
         "lines": [
           {
             "a": "1010",
-            "d": 1000000,
-            "c": 0
+            "c": 0,
+            "d": 1000000
           },
           {
             "a": "3000",
-            "d": 0,
-            "c": 1000000
+            "c": 1000000,
+            "d": 0
           }
         ],
-        "status": "posted",
-        "at": "2026-11-01T10:20:00.000Z"
+        "status": "posted"
       },
       {
+        "at": "2026-11-01T10:25:00.000Z",
         "id": "ent_exp_license_01",
         "ref": "JV-0006",
-        "date": "2026-11-01",
-        "narr": "Rinku Toppo - Company license registration and processing fee paid to Rinku Toppo",
         "src": "out",
+        "date": "2026-11-01",
         "meta": {
-          "method": "Bank Transfer",
+          "cat": "5700",
           "ref": "LIC-001",
           "acct": "1010",
-          "cat": "5700",
+          "desc": "Company license registration and processing fee paid to Rinku Toppo",
           "party": "p_rinku_toppo",
-          "partyName": "Rinku Toppo",
           "payee": "Rinku Toppo",
-          "desc": "Company license registration and processing fee paid to Rinku Toppo"
+          "method": "Bank Transfer",
+          "partyName": "Rinku Toppo"
         },
+        "narr": "Rinku Toppo - Company license registration and processing fee paid to Rinku Toppo",
         "lines": [
           {
             "a": "5700",
-            "d": 6000000,
             "c": 0,
+            "d": 6000000,
             "p": "p_rinku_toppo"
           },
           {
             "a": "1010",
-            "d": 0,
             "c": 6000000,
+            "d": 0,
             "p": "p_rinku_toppo"
           }
         ],
-        "status": "posted",
-        "at": "2026-11-01T10:25:00.000Z"
+        "status": "posted"
       },
       {
+        "at": "2026-11-01T10:30:00.000Z",
         "id": "ent_exp_gst_legal_01",
         "ref": "JV-0007",
-        "date": "2026-11-01",
-        "narr": "Registration / Legal Services - GST registration, bank account opening, and miscellaneous compliance charges",
         "src": "out",
+        "date": "2026-11-01",
         "meta": {
-          "method": "Bank Transfer",
+          "cat": "5800",
           "ref": "REG-001",
           "acct": "1010",
-          "cat": "5800",
+          "desc": "GST registration, bank account opening, and miscellaneous compliance charges",
           "party": "p_registration_legal",
-          "partyName": "Registration / Legal Services",
           "payee": "Registration / Legal Services",
-          "desc": "GST registration, bank account opening, and miscellaneous compliance charges"
+          "method": "Bank Transfer",
+          "partyName": "Registration / Legal Services"
         },
+        "narr": "Registration / Legal Services - GST registration, bank account opening, and miscellaneous compliance charges",
         "lines": [
           {
             "a": "5800",
-            "d": 345000,
             "c": 0,
+            "d": 345000,
             "p": "p_registration_legal"
           },
           {
             "a": "1010",
-            "d": 0,
             "c": 345000,
+            "d": 0,
             "p": "p_registration_legal"
           }
         ],
-        "status": "posted",
-        "at": "2026-11-01T10:30:00.000Z"
+        "status": "posted"
       }
     ],
     "parties": [
@@ -427,8 +427,8 @@
         "id": "p_pitamber_mohanty",
         "name": "Pitamber Mohanty",
         "type": "lender",
-        "phone": "",
         "gstin": "",
+        "phone": "",
         "state": "Odisha",
         "terms": "0"
       },
@@ -436,8 +436,8 @@
         "id": "p_mr_patra",
         "name": "Mr. Patra",
         "type": "lender",
-        "phone": "",
         "gstin": "",
+        "phone": "",
         "state": "Odisha",
         "terms": "0"
       },
@@ -445,8 +445,8 @@
         "id": "p_muna",
         "name": "Muna",
         "type": "lender",
-        "phone": "",
         "gstin": "",
+        "phone": "",
         "state": "Odisha",
         "terms": "0"
       },
@@ -454,8 +454,8 @@
         "id": "p_rinku_toppo",
         "name": "Rinku Toppo",
         "type": "other",
-        "phone": "",
         "gstin": "",
+        "phone": "",
         "state": "Odisha",
         "terms": "0"
       },
@@ -463,8 +463,8 @@
         "id": "p_registration_legal",
         "name": "Registration / Legal Services",
         "type": "other",
-        "phone": "",
         "gstin": "",
+        "phone": "",
         "state": "Odisha",
         "terms": "0"
       }
@@ -615,16 +615,16 @@
         "name": "Miscellaneous Expenses"
       },
       {
-        "code": "5700",
-        "name": "Licenses & Permits / Registration Expense",
         "t": "X",
-        "cash": false
+        "cash": false,
+        "code": "5700",
+        "name": "Licenses & Permits / Registration Expense"
       },
       {
-        "code": "5800",
-        "name": "Legal, GST & Bank Charges",
         "t": "X",
-        "cash": false
+        "cash": false,
+        "code": "5800",
+        "name": "Legal, GST & Bank Charges"
       }
     ]
   }
