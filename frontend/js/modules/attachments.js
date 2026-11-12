@@ -52,33 +52,32 @@ export function injectAttachmentStyles() {
   .bf-btn.ghost-dark svg{color:#e2e8f0}
 
   /* ---------- Attachment panel ---------- */
-  .bf-att{margin-top:16px;border:1px solid var(--bf-line);border-radius:12px;background:#fff;overflow:hidden}
-  .bf-att-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-    padding:12px 16px;background:var(--bf-soft);border-bottom:1px solid var(--bf-line)}
-  .bf-att-title{display:flex;align-items:center;gap:10px}
-  .bf-att-ico{width:34px;height:34px;border-radius:9px;background:#eff6ff;color:var(--bf-pri);display:grid;place-items:center}
-  .bf-att-title b{display:block;font-size:13.5px;color:var(--bf-ink);font-weight:650}
-  .bf-att-title small{display:block;font-size:12px;color:var(--bf-mut);margin-top:1px}
-  .bf-att-actions{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
-  .bf-att-actions .bf-btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:10px;font-size:13.5px;font-weight:600}
-  .bf-att-body{padding:14px 16px}
-  .bf-att-empty{display:flex;align-items:center;gap:12px;padding:14px;border:1.5px dashed #cbd5e1;border-radius:10px;
-    color:var(--bf-mut);font-size:12.5px;background:#fcfdff}
-  .bf-att-empty svg{color:#94a3b8;flex:none}
-  .bf-files{display:flex;flex-wrap:wrap;gap:10px}
-  .bf-file{display:flex;align-items:center;gap:10px;padding:8px 10px 8px 8px;border:1px solid var(--bf-line);border-radius:10px;
-    background:#fff;max-width:300px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .bf-att{margin-top:10px;border:1px solid var(--bf-line);border-radius:10px;background:#fff;overflow:hidden}
+  .bf-att-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:var(--bf-soft)}
+  .bf-att-title{display:flex;align-items:center;gap:8px;min-width:0}
+  .bf-att-ico{width:26px;height:26px;border-radius:6px;background:#eff6ff;color:var(--bf-pri);display:grid;place-items:center;flex:none}
+  .bf-att-title b{display:inline-block;font-size:12.5px;color:var(--bf-ink);font-weight:600;line-height:1.2}
+  .bf-att-title small{display:block;font-size:11px;color:var(--bf-mut);margin-top:1px}
+  .bf-att-actions{display:flex;gap:6px;align-items:center;flex:none}
+  .bf-att-actions .bf-btn{min-height:32px !important;height:32px !important;display:inline-flex;align-items:center;justify-content:center;padding:0 10px;border-radius:6px;font-size:12px;font-weight:550;gap:6px}
+  .bf-att-actions .bf-btn svg{width:14px;height:14px}
+  .bf-att-body{padding:0}
+  .bf-att-body:not(:empty){padding:8px 12px;background:#fafafa;border-top:1px solid var(--bf-line)}
+  .bf-att-empty{display:none !important}
+  .bf-files{display:flex;flex-wrap:wrap;gap:8px}
+  .bf-file{display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--bf-line);border-radius:8px;
+    background:#fff;max-width:260px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
   .bf-file:hover{border-color:#bfdbfe;background:#f8fbff}
-  .bf-thumb{width:38px;height:38px;border-radius:8px;overflow:hidden;flex:none;display:grid;place-items:center;
+  .bf-thumb{width:28px;height:28px;border-radius:6px;overflow:hidden;flex:none;display:grid;place-items:center;
     background:#eff6ff;color:var(--bf-pri)}
   .bf-thumb.pdf{background:#fef2f2;color:#dc2626}
   .bf-thumb img{width:100%;height:100%;object-fit:cover}
   .bf-file-meta{min-width:0;display:flex;flex-direction:column}
-  .bf-file-meta a{font-size:12.5px;font-weight:600;color:var(--bf-ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}
+  .bf-file-meta a{font-size:11.5px;font-weight:600;color:var(--bf-ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
   .bf-file-meta a:hover{color:var(--bf-pri)}
-  .bf-file-meta span{font-size:11px;color:var(--bf-mut);display:flex;align-items:center;gap:6px;margin-top:2px}
+  .bf-file-meta span{font-size:10.5px;color:var(--bf-mut);display:flex;align-items:center;gap:4px;margin-top:1px}
   .bf-cloud{display:inline-flex;align-items:center;gap:3px;color:#0284c7;font-weight:600}
-  .bf-file-x{margin-left:4px;width:24px;height:24px;border-radius:6px;border:none;background:transparent;color:#94a3b8;cursor:pointer;display:grid;place-items:center;flex:none}
+  .bf-file-x{margin-left:2px;width:20px;height:20px;border-radius:4px;border:none;background:transparent;color:#94a3b8;cursor:pointer;display:grid;place-items:center;flex:none}
   .bf-file-x:hover{background:#fee2e2;color:#dc2626}
 
   /* ---------- Camera modal ---------- */
@@ -128,9 +127,11 @@ export function injectAttachmentStyles() {
   .bf-cam-foot.review{grid-template-columns:1fr 1fr}
 
   @media(max-width:640px){
-    .bf-att-head{display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:12px 14px}
-    .bf-att-actions{display:grid !important;grid-template-columns:1fr 1fr !important;gap:10px !important;width:100% !important;margin-top:2px}
-    .bf-att-actions .bf-btn{width:100% !important;min-height:44px !important;height:44px !important;justify-content:center !important;display:inline-flex !important;align-items:center !important;padding:0 10px !important;font-size:13px !important;border-radius:10px !important;box-sizing:border-box !important}
+    .bf-att{margin-top:8px}
+    .bf-att-head{display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:8px 10px}
+    .bf-att-actions{display:grid !important;grid-template-columns:1fr 1fr !important;gap:6px !important;width:100% !important;margin-top:0 !important}
+    .bf-att-actions .bf-btn{width:100% !important;min-height:32px !important;height:32px !important;justify-content:center !important;display:inline-flex !important;align-items:center !important;padding:0 8px !important;font-size:11.5px !important;font-weight:550 !important;border-radius:6px !important;box-sizing:border-box !important;gap:5px !important}
+    .bf-att-actions .bf-btn svg{width:13px !important;height:13px !important}
     .bf-cam-ov{padding:0}
     .bf-cam{max-width:100vw;width:100vw;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;border-radius:0;border:none}
     .bf-cam-head{padding:10px 14px}
@@ -161,12 +162,12 @@ export function attachmentPanelHTML({ uploadId, cameraId, inputId, listId, listH
     <div class="bf-att">
       <div class="bf-att-head">
         <div class="bf-att-title">
-          <div class="bf-att-ico">${ICONS.paperclip(18)}</div>
+          <div class="bf-att-ico">${ICONS.paperclip(15)}</div>
           <div><b>${esc(label)}</b><small>${esc(sub)}</small></div>
         </div>
         <div class="bf-att-actions">
-          <button type="button" class="bf-btn" id="${uploadId}">${ICONS.upload(16)}<span>Attach file</span></button>
-          <button type="button" class="bf-btn pri" id="${cameraId}">${ICONS.camera(16)}<span>Scan with camera</span></button>
+          <button type="button" class="bf-btn" id="${uploadId}">${ICONS.upload(14)}<span>Attach file</span></button>
+          <button type="button" class="bf-btn pri" id="${cameraId}">${ICONS.camera(14)}<span>Scan with camera</span></button>
         </div>
       </div>
       <input type="file" id="${inputId}" accept="image/*,.jpg,.jpeg,.png,.webp" multiple style="display:none">
@@ -174,7 +175,7 @@ export function attachmentPanelHTML({ uploadId, cameraId, inputId, listId, listH
     </div>`;
 }
 
-const emptyHTML = `<div class="bf-att-empty">${ICONS.scan(22)}<div>No documents attached yet. Attach the supplier invoice or capture the weighbridge slip with your camera.</div></div>`;
+const emptyHTML = '';
 
 function fileCard(f, i, cls) {
   const isImg = f.type?.startsWith('image/');
@@ -198,7 +199,7 @@ function fileCard(f, i, cls) {
 
 // Used by bills.js (keeps its existing .u-prev-file / .u-del-file / data-x hooks)
 export function billFilePillsHTML(files) {
-  if (!files || !files.length) return emptyHTML;
+  if (!files || !files.length) return '';
   const cls = { prev: 'u-prev-file', del: 'u-del-file', attr: 'data-x' };
   return `<div class="bf-files">${files.map((f, i) => fileCard(f, i, cls)).join('')}</div>`;
 }
@@ -485,18 +486,18 @@ export function openCameraScanner(onCaptured) {
 // ==========================================
 // 4. ATTACHMENT CONTROL COMPONENT (UPLOAD + SCAN)
 // ==========================================
-export function renderAttachmentControl({ idPrefix, files = [], label = 'Receipts & Document Attachments' }) {
+export function renderAttachmentControl({ idPrefix, files = [], label = 'Payment Receipt / Voucher Attachment' }) {
   injectAttachmentStyles();
   return `
     <div class="bf-att">
       <div class="bf-att-head">
         <div class="bf-att-title">
-          <div class="bf-att-ico">${ICONS.paperclip(18)}</div>
+          <div class="bf-att-ico">${ICONS.paperclip(15)}</div>
           <div><b>${esc(label)}</b><small>JPG, PNG, WebP · scan with camera or upload</small></div>
         </div>
         <div class="bf-att-actions">
-          <button type="button" class="bf-btn" id="${idPrefix}_btn_upload">${ICONS.upload(16)}<span>Attach file</span></button>
-          <button type="button" class="bf-btn pri" id="${idPrefix}_btn_camera">${ICONS.camera(16)}<span>Scan with camera</span></button>
+          <button type="button" class="bf-btn" id="${idPrefix}_btn_upload">${ICONS.upload(14)}<span>Attach file</span></button>
+          <button type="button" class="bf-btn pri" id="${idPrefix}_btn_camera">${ICONS.camera(14)}<span>Scan with camera</span></button>
         </div>
       </div>
       <input type="file" id="${idPrefix}_file_input" multiple accept="image/*,.csv" style="display:none">
@@ -506,7 +507,7 @@ export function renderAttachmentControl({ idPrefix, files = [], label = 'Receipt
 }
 
 export function renderAttachmentPills(idPrefix, files) {
-  if (!files || !files.length) return emptyHTML;
+  if (!files || !files.length) return '';
   const cls = { prev: `${idPrefix}_btn_preview`, del: `${idPrefix}_btn_remove`, attr: 'data-idx' };
   return `<div class="bf-files">${files.map((f, i) => fileCard(f, i, cls)).join('')}</div>`;
 }
