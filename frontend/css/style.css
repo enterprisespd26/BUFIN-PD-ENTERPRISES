@@ -1019,9 +1019,10 @@ table.coa-table .coa-btn-del:hover {
   box-sizing: border-box;
 }
 
-/* Desktop / Web View (min-width: 761px) - Streamlined single-row layout */
-@media (min-width: 761px) {
+/* Desktop / Web View (min-width: 641px) - Streamlined single-row layout */
+@media (min-width: 641px) {
   .bs-filter-bar, .tb-filter-bar {
+    display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
@@ -1041,27 +1042,27 @@ table.coa-table .coa-btn-del:hover {
     flex: 0 0 auto;
     order: 2;
   }
-  .tb-filter-bar .tb-search-wrap {
-    flex: 0 1 240px;
-    width: 240px;
-    margin: 0;
-    order: 3;
-  }
-  .tb-filter-bar .tb-search-wrap input {
-    width: 100%;
-    min-height: 38px;
-    height: 38px;
-    font-size: 13px;
-    border-radius: 8px;
-    box-sizing: border-box;
-  }
   .bs-date-range-card,
   .tb-date-range-card {
     flex: 0 0 250px;
     width: 250px;
     margin: 0;
     margin-left: auto;
+    order: 3;
+  }
+  .tb-filter-bar .tb-search-wrap {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    margin: 4px 0 0 0 !important;
     order: 4;
+  }
+  .tb-filter-bar .tb-search-wrap input {
+    width: 100% !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    font-size: 13.5px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
   }
   .bs-date-box,
   .tb-date-box {
@@ -1131,10 +1132,14 @@ table.coa-table .coa-btn-del:hover {
 }
 
 /* TB search full width */
+.tb-filter-bar .tb-search-wrap {
+  width: 100%;
+  flex: 0 0 100%;
+}
 .tb-filter-bar .tb-search-wrap input {
   width: 100%;
-  min-height: 36px;
-  font-size: 13px;
+  min-height: 40px;
+  font-size: 13.5px;
   box-sizing: border-box;
 }
 

@@ -161,6 +161,10 @@ export function renderTb() {
         <button class="${t === getMonthEnd() ? 'p' : ''}" data-a="tbpreset" data-i="monthend">Month End</button>
         <button class="${t === getFyEnd() ? 'p' : ''}" data-a="tbpreset" data-i="fyend">FY End</button>
       </div>
+      <div class="tb-toggle-wrap">
+        <button class="${!u.all ? 'p' : ''}" data-a="tbtoggle" data-i="active">With Balance</button>
+        <button class="${u.all ? 'p' : ''}" data-a="tbtoggle" data-i="all">All Accounts</button>
+      </div>
       <div class="cb-date-range-card tb-date-range-card">
         <div class="cb-date-box tb-date-box" id="tbDateBox" title="Click to choose As of Date">
           <div class="bs-date-box-inner">
@@ -178,10 +182,6 @@ export function renderTb() {
           </div>
           <input type="date" id="tbDate" class="cb-native-date-input" value="${t}" aria-label="As of Date">
         </div>
-      </div>
-      <div class="tb-toggle-wrap">
-        <button class="${!u.all ? 'p' : ''}" data-a="tbtoggle" data-i="active">With Balance</button>
-        <button class="${u.all ? 'p' : ''}" data-a="tbtoggle" data-i="all">All Accounts</button>
       </div>
       <div class="cb-search-wrap tb-search-wrap">
         <div class="cb-search-inner">
