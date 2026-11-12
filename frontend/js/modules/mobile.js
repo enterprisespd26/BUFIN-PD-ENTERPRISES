@@ -814,9 +814,10 @@ const CSS = String.raw`
     font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .35px; }
   table.mcard td.mc-empty { display: none !important; }
 
-  table.mcard td.mc-title { order: -1; display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; text-align: left !important; font-size: 15.5px; font-weight: 700; color: var(--tx, #0f172a);
-    padding: 4px 0 10px !important; border-bottom: 1.5px solid var(--bd, #e2e8f0) !important; margin-bottom: 4px !important; }
+  table.mcard td.mc-title { order: -1; display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; font-size: 15.5px; font-weight: 700; color: var(--tx, #0f172a);
+    padding: 4px 0 10px !important; border-bottom: 1.5px solid var(--bd, #e2e8f0) !important; margin-bottom: 4px !important; gap: 8px !important; }
   table.mcard td.mc-title::before, table.mcard td.mc-span::before, table.mcard td.mc-actions::before { display: none !important; }
+  table.mcard td.mc-title > * { text-align: left !important; max-width: 100% !important; }
   table.mcard td.mc-title select, table.mcard td.mc-title input { width: 100% !important; min-height: 44px !important; font-size: 15px !important; font-weight: 600 !important; padding: 8px 12px !important; border-radius: 8px !important; border: 1px solid var(--bd, #cbd5e1) !important; box-sizing: border-box !important; background: #fff !important; }
 
   table.mcard td.mc-cell[data-label*="Description"],
@@ -886,7 +887,20 @@ const CSS = String.raw`
   table.coa-table td.coa-title-td {
     padding-right: 95px !important;
     min-height: 44px !important;
-    justify-content: center !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    text-align: left !important;
+    gap: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  table.mcard.coa-table td.mc-title > *,
+  table.coa-table.mcard td.mc-title > *,
+  table.coa-table td.coa-title-td > * {
+    text-align: left !important;
+    max-width: 100% !important;
   }
 
   table.mcard.coa-table td.mc-actions,

@@ -2454,3 +2454,61 @@ test('TC-LOAN-BUTTON-LABEL-01: Loan Record Payment / EMI button single icon veri
   assert.ok(loansJs.includes('<span>Record Payment / EMI</span>'), 'Button text must be clean without extra + character');
   assert.ok(!loansJs.includes('<span>+ Record Payment / EMI</span>'), 'Must not have duplicate + character in span');
 });
+
+test('TC-MOBILE-CARD-TITLE-ALIGNMENT-01: Card title and names must be left-aligned on mobile cards', () => {
+  const css = nodeFs.readFileSync('frontend/css/style.css', 'utf8');
+  const mobileJs = nodeFs.readFileSync('frontend/js/modules/mobile.js', 'utf8');
+
+  // 1. Chart of Accounts card title in style.css
+  assert.match(
+    css,
+    /table\.coa-table\s+td\.coa-title-td[\s\S]*?justify-content:\s*flex-start\s*!important/,
+    'Chart of Accounts card title in style.css must be left-aligned with justify-content: flex-start'
+  );
+  assert.match(
+    css,
+    /table\.coa-table\s+td\.coa-title-td[\s\S]*?text-align:\s*left\s*!important/,
+    'Chart of Accounts card title in style.css must have text-align: left'
+  );
+
+  // 2. Chart of Accounts card title in mobile.js
+  assert.match(
+    mobileJs,
+    /table\.coa-table\s+td\.coa-title-td[\s\S]*?justify-content:\s*flex-start\s*!important/,
+    'Chart of Accounts card title in mobile.js must be left-aligned with justify-content: flex-start'
+  );
+  assert.match(
+    mobileJs,
+    /table\.coa-table\s+td\.coa-title-td[\s\S]*?text-align:\s*left\s*!important/,
+    'Chart of Accounts card title in mobile.js must have text-align: left'
+  );
+
+  // 3. Transactions cards title in style.css (Money In, Money Out, Transfers, Txns)
+  assert.match(
+    css,
+    /table\.txns-table\s+td\.mc-title[\s\S]*?justify-content:\s*flex-start\s*!important/,
+    'Transaction card titles must be left-aligned with justify-content: flex-start'
+  );
+  assert.match(
+    css,
+    /table\.txns-table\s+td\.mc-title[\s\S]*?text-align:\s*left\s*!important/,
+    'Transaction card titles must have text-align: left'
+  );
+  assert.match(
+    css,
+    /table\.txns-table\s+td\.mc-cell:not\(\.mc-title\)[\s\S]*?text-align:\s*right/,
+    'Transaction cells right-alignment must exclude td.mc-title'
+  );
+
+  // 4. Base mobile card titles in mobile.js
+  assert.match(
+    mobileJs,
+    /table\.mcard\s+td\.mc-title[\s\S]*?justify-content:\s*flex-start\s*!important/,
+    'General mobile card title in mobile.js must have justify-content: flex-start'
+  );
+  assert.match(
+    mobileJs,
+    /table\.mcard\s+td\.mc-title[\s\S]*?text-align:\s*left\s*!important/,
+    'General mobile card title in mobile.js must have text-align: left'
+  );
+});

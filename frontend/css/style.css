@@ -2101,10 +2101,25 @@ aside.open ~ #ov {
 
   table.mcard.coa-table td.mc-title,
   table.coa-table.mcard td.mc-title,
-  table.coa-table td.coa-title-td {
+  table.coa-table td.coa-title-td,
+  .wrap:not(.no-cards) table.coa-table tbody tr td:first-child {
     padding-right: 95px !important;
     min-height: 44px !important;
-    justify-content: center !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    text-align: left !important;
+    gap: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  table.mcard.coa-table td.mc-title > *,
+  table.coa-table.mcard td.mc-title > *,
+  table.coa-table td.coa-title-td > *,
+  .wrap:not(.no-cards) table.coa-table tbody tr td:first-child > * {
+    text-align: left !important;
+    max-width: 100% !important;
   }
 
   table.mcard.coa-table td.mc-actions,
@@ -7052,9 +7067,9 @@ code {
     text-align: left !important;
   }
 
-  table.txns-table td.mc-cell > *:not(.desc-text),
-  table.txns-table.mcard td.mc-cell > *:not(.desc-text),
-  table.mcard.txns-table td.mc-cell > *:not(.desc-text) {
+  table.txns-table td.mc-cell:not(.mc-title) > *:not(.desc-text),
+  table.txns-table.mcard td.mc-cell:not(.mc-title) > *:not(.desc-text),
+  table.mcard.txns-table td.mc-cell:not(.mc-title) > *:not(.desc-text) {
     max-width: 56% !important;
     text-align: right !important;
     font-size: 13.5px !important;
@@ -7067,7 +7082,9 @@ code {
     order: -1 !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    gap: 8px !important;
     width: 100% !important;
     font-size: 16px !important;
     font-weight: 700 !important;
@@ -7075,6 +7092,16 @@ code {
     padding: 4px 0 10px !important;
     border-bottom: 1.5px solid #E2E8F0 !important;
     margin-bottom: 4px !important;
+  }
+
+  table.txns-table td.mc-title > *,
+  table.txns-table.mcard td.mc-title > *,
+  table.mcard.txns-table td.mc-title > * {
+    max-width: 100% !important;
+    text-align: left !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #0F172A !important;
   }
 
   table.txns-table td.col-desc,
