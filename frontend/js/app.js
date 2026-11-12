@@ -1171,6 +1171,12 @@ const ACTIONS = {
     const el = $('[data-k="pq"]');
     if (el) el.focus();
   },
+  clearloanssearch: () => {
+    loansState.q = '';
+    render();
+    const el = $('[data-k="lq"]');
+    if (el) el.focus();
+  },
   clearmoneysearch: () => {
     moneyState.q = '';
     render();

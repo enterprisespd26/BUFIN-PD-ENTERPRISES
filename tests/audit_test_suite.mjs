@@ -71,6 +71,7 @@ import { renderCoa, renderBook, accountingState } from '../frontend/js/views/acc
 import { renderParties, partiesState } from '../frontend/js/views/parties.js';
 import { renderTxns, renderMoneyIn, renderMoneyOut, renderTransfers, moneyState } from '../frontend/js/views/money.js';
 import { renderBs, renderTb, reportsState } from '../frontend/js/views/reports.js';
+import { renderLoans, loansState } from '../frontend/js/views/loans.js';
 
 // Reset database helper
 function resetTestDb() {
@@ -1704,13 +1705,28 @@ test('TC-SEARCH-MOBILE-01: Modern mobile search bars with embedded SVG icon, unc
   assert.ok(xferHtml.includes('placeholder="Search transfers, accounts, ref..."'), 'Transfers search placeholder must be concise');
   assert.ok(xferHtml.includes('money-search-wrap'), 'Transfers must use .money-search-wrap');
 
-  // 3. CSS touch padding verification (no icon-text collision)
+  // 3. Loans view: clean placeholder, search icon, and clear button
+  loansState.q = '';
+  let loansHtml = renderLoans();
+  assert.ok(loansHtml.includes('loan-search-wrap'), 'Must wrap search in .loan-search-wrap');
+  assert.ok(loansHtml.includes('loan-search-ico'), 'Must include embedded SVG magnifying glass icon');
+  assert.ok(loansHtml.includes('placeholder="Search loans, party, ref..."'), 'Loans placeholder must be concise and uncluttered on mobile');
+  assert.ok(!loansHtml.includes('placeholder="Search loan name, party, reference..."'), 'Old 36-character overflowing placeholder must be eliminated');
+
+  // Verify clear button appears when query is active
+  loansState.q = 'Pitamber';
+  loansHtml = renderLoans();
+  assert.ok(loansHtml.includes('data-a="clearloanssearch"'), 'Must render clear button when query is active');
+
+  // 4. CSS touch padding verification (no icon-text collision)
   const css = nodeFs.readFileSync('frontend/css/style.css', 'utf8');
   assert.match(css, /\.money-search-input[\s\S]*?padding:\s*0\s+40px\s+0\s+42px\s*!important/, 'Input must have left and right padding to clear icon and clear button');
   assert.match(css, /\.money-search-input[\s\S]*?border-radius:\s*12px\s*!important/, 'Input must have modern 12px border radius');
+  assert.match(css, /\.loan-search-input[\s\S]*?padding:\s*0\s+40px\s+0\s+44px\s*!important/, 'Loan input must have 44px left padding to prevent icon and text overlap');
 
   const mobileJs = nodeFs.readFileSync('frontend/js/modules/mobile.js', 'utf8');
   assert.match(mobileJs, /\.money-search-inner\s+input[\s\S]*?padding-left:\s*(?:40|44)px\s*!important/, 'mobile.js must guarantee 40px+ left padding on search input');
+  assert.match(mobileJs, /\.loan-search-input[\s\S]*?padding:\s*0\s+40px\s+0\s+44px\s*!important/, 'mobile.js must guarantee 44px left padding on loan search input');
 });
 
 test('TC-BS-DATE-CARD-01: Balance Sheet and Trial Balance dedicated mobile date card and presets layout', () => {

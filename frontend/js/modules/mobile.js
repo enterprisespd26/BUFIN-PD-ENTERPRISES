@@ -52,11 +52,11 @@ const CSS = String.raw`
 
   /* Uniform search controls */
   input[placeholder^="Search"]:not(#inv_search_q):not(.inv-search-inner input):not(.money-search-input):not(.parties-search-input):not(.loan-search-input),
-  input[data-k$="q"]:not(.money-search-input),
+  input[data-k$="q"]:not(.money-search-input):not(.parties-search-input):not(.loan-search-input),
   #pd_search_q,
   #u_s,
-  .filters input[type=text],
-  .filters input:not([type]) {
+  .filters input[type=text]:not(.loan-search-input):not(.parties-search-input),
+  .filters input:not([type]):not(.loan-search-input):not(.parties-search-input) {
     min-height: 44px !important;
     height: 44px !important;
     padding-left: 16px !important;
@@ -76,9 +76,9 @@ const CSS = String.raw`
   .loan-search-input {
     padding-left: 44px !important;
     padding-right: 40px !important;
-    border-radius: 12px !important;
-    height: 46px !important;
-    min-height: 46px !important;
+    border-radius: 10px !important;
+    height: 44px !important;
+    min-height: 44px !important;
   }
   .money-search-wrap {
     width: 100% !important;
@@ -1046,6 +1046,36 @@ const CSS = String.raw`
     height: 0 !important;
   }
 
+  /* 0. KPI Metrics 2x2 Grid */
+  .loan-summary-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+  .loan-summary-grid .kpi {
+    padding: 10px 12px !important;
+    min-height: 52px !important;
+    border-radius: 10px !important;
+  }
+  .loan-summary-grid .kpi span {
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+    margin-bottom: 2px !important;
+  }
+  .loan-summary-grid .kpi b {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+  }
+
   /* 1. Header Action Bar Alignment */
   .bar.loan-header-bar {
     display: flex !important;
@@ -1123,16 +1153,59 @@ const CSS = String.raw`
     border-radius: 9px !important;
     box-sizing: border-box !important;
   }
+  .loan-search-wrap {
+    position: relative !important;
+    width: 100% !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+  }
+  .loan-search-ico {
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: var(--t2, #94a3b8) !important;
+    pointer-events: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 2 !important;
+  }
   .loan-search-input {
     width: 100% !important;
     max-width: 100% !important;
     min-height: 44px !important;
     height: 44px !important;
-    padding: 0 14px !important;
+    padding: 0 40px 0 44px !important;
     font-size: 14px !important;
-    border-radius: 9px !important;
+    border-radius: 10px !important;
     border: 1px solid var(--bd, #cbd5e1) !important;
     box-sizing: border-box !important;
+  }
+  .loan-search-clear {
+    position: absolute !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 50% !important;
+    border: none !important;
+    background: var(--bd, #e2e8f0) !important;
+    color: var(--t2, #64748b) !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 2 !important;
+    transition: all 0.15s ease !important;
+  }
+  .loan-search-clear:hover {
+    background: #cbd5e1 !important;
+    color: var(--tx, #0f172a) !important;
   }
 
   /* 3. Card Footer Action Bar (No text overlap, stacked / 2-row layout) */
