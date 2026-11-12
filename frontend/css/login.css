@@ -336,7 +336,8 @@
   border-radius: 50%;
   border: 2px solid #CBD5E1;
   background: #FFFFFF;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.12s cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform, background-color, border-color;
 }
 
 .pin-dot.filled {
@@ -358,23 +359,26 @@
   cursor: pointer !important;
   margin: 0 auto !important;
   padding: 0 !important;
-  transition: all 0.15s ease !important;
+  transition: transform 0.08s ease, background-color 0.08s ease, border-color 0.08s ease !important;
   user-select: none !important;
   -webkit-user-select: none !important;
   -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
 }
 
 .pin-btn:hover {
   background: #F1F5F9 !important;
   border-color: #CBD5E1 !important;
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
-.pin-btn:active {
-  transform: scale(0.94) !important;
+.pin-btn:active,
+.pin-btn.active-flash {
+  transform: scale(0.92) !important;
   background: #EFF6FF !important;
   border-color: #2563EB !important;
   color: #2563EB !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
 }
 
 .pin-btn.fn {

@@ -3,6 +3,7 @@ import { $, toast } from '../modules/utils.js';
 let pin = '';
 const maxDigits = 4;
 let activeCallback = null;
+let keypadInitialized = false;
 
 // Default PIN SHA-256 for '1379'
 const DEFAULT_PIN_HASH = '8cfecd937a9328ecb71d3c08e5dd312058ca7d75171e7ba6e3af7573e210cd6c';
@@ -47,17 +48,22 @@ async function submitPin() {
   const enteredPin = pin;
   const errEl = $('#pinError');
 
-  // Fast-path: Check local PIN hash for instantaneous 0ms unlock (no server wait)
-  let pinHash = '';
-  try {
-    pinHash = await hashPin(enteredPin);
-  } catch (e) {}
-
+  // Fast-path: Instant 0ms verification for default '1379' or cached hash (no async lag)
+  const isDefaultPin = enteredPin === '1379';
   const storedHash = (typeof localStorage !== 'undefined' ? localStorage.getItem('bufin_pin_hash') : null) || DEFAULT_PIN_HASH;
 
-  if (pinHash && (pinHash === storedHash || pinHash === DEFAULT_PIN_HASH)) {
+  let pinHash = '';
+  if (isDefaultPin) {
+    pinHash = DEFAULT_PIN_HASH;
+  } else {
     try {
-      localStorage.setItem('bufin_pin_hash', pinHash);
+      pinHash = await hashPin(enteredPin);
+    } catch (e) {}
+  }
+
+  if (isDefaultPin || (pinHash && (pinHash === storedHash || pinHash === DEFAULT_PIN_HASH))) {
+    try {
+      localStorage.setItem('bufin_pin_hash', pinHash || DEFAULT_PIN_HASH);
     } catch (e) {}
 
     // INSTANT UNLOCK
@@ -147,7 +153,7 @@ function addDigit(d) {
     if (errEl) errEl.textContent = '';
     updateDots();
     if (pin.length === maxDigits) {
-      setTimeout(submitPin, 80);
+      setTimeout(submitPin, 50);
     }
   }
 }
@@ -198,30 +204,71 @@ export function showPinLogin(onSuccess) {
   if (tab) tab.style.display = 'none';
 }
 
-// Bind dial pad button clicks immediately
+// Bind dial pad button clicks and keyboard listener once (0ms tap lag + no duplicate keypresses)
 export function initPinKeypad() {
-  document.querySelectorAll('#pinScreen [data-n]').forEach(btn => {
-    btn.onclick = (e) => {
-      e.preventDefault();
-      addDigit(btn.dataset.n);
+  if (keypadInitialized) return;
+  keypadInitialized = true;
+
+  function bindFastButton(btn, action) {
+    if (!btn) return;
+    let handled = false;
+
+    const trigger = (e) => {
+      if (handled) return;
+      handled = true;
+      setTimeout(() => { handled = false; }, 80);
+      if (e.cancelable) e.preventDefault();
+      action();
     };
+
+    btn.addEventListener('pointerdown', trigger, { passive: false });
+    btn.addEventListener('click', (e) => {
+      if (handled) return;
+      trigger(e);
+    });
+  }
+
+  document.querySelectorAll('#pinScreen [data-n]').forEach(btn => {
+    bindFastButton(btn, () => addDigit(btn.dataset.n));
   });
 
   const clearBtn = $('#pinClear');
-  if (clearBtn) clearBtn.onclick = (e) => { e.preventDefault(); clearAll(); };
+  if (clearBtn) bindFastButton(clearBtn, () => clearAll());
 
   const backBtn = $('#pinBack');
-  if (backBtn) backBtn.onclick = (e) => { e.preventDefault(); backspace(); };
+  if (backBtn) bindFastButton(backBtn, () => backspace());
 
   window.addEventListener('keydown', (e) => {
     const screen = $('#pinScreen');
     if (!screen || screen.style.display === 'none') return;
 
+    // Ignore repeating events from held keys and modifier keys (Ctrl/Cmd/Alt)
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+
     if (/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+      // Visual flash on on-screen button matching key
+      const btn = document.querySelector(`#pinScreen [data-n="${e.key}"]`);
+      if (btn) {
+        btn.classList.add('active-flash');
+        setTimeout(() => btn.classList.remove('active-flash'), 100);
+      }
       addDigit(e.key);
     } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      const backBtn = $('#pinBack');
+      if (backBtn) {
+        backBtn.classList.add('active-flash');
+        setTimeout(() => backBtn.classList.remove('active-flash'), 100);
+      }
       backspace();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
+      e.preventDefault();
+      const clearBtn = $('#pinClear');
+      if (clearBtn) {
+        clearBtn.classList.add('active-flash');
+        setTimeout(() => clearBtn.classList.remove('active-flash'), 100);
+      }
       clearAll();
     }
   });
