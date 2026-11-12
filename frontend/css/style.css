@@ -6469,16 +6469,6 @@ dialog:has(.xfer-form) form #sb:disabled {
 }
 
 /* ================= ALL TRANSACTIONS DATA CARD WEB & MOBILE UI ================= */
-.wrap.txns-data-card {
-  background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 14px !important;
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.03) !important;
-  overflow: hidden !important;
-  margin-top: 14px;
-  margin-bottom: 24px;
-}
-
 .txns-card-header {
   display: flex;
   align-items: center;
@@ -6522,63 +6512,75 @@ dialog:has(.xfer-form) form #sb:disabled {
   font-weight: 500;
 }
 
-.txns-table-scroll {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+/* Desktop Web View (min-width: 641px) */
+@media (min-width: 641px) {
+  .wrap.txns-data-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.03) !important;
+    overflow: hidden !important;
+    margin-top: 14px;
+    margin-bottom: 24px;
+  }
+
+  .txns-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table.txns-table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  table.txns-table thead tr {
+    background: #F8FAFC !important;
+  }
+
+  table.txns-table thead th {
+    padding: 11px 14px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    white-space: nowrap !important;
+    background: #F8FAFC !important;
+  }
+
+  table.txns-table tbody tr {
+    border-bottom: 1px solid #F1F5F9 !important;
+    transition: background-color 0.12s ease;
+  }
+
+  table.txns-table tbody tr:last-child {
+    border-bottom: none !important;
+  }
+
+  table.txns-table tbody tr:hover {
+    background-color: #F8FAFC !important;
+  }
+
+  table.txns-table tbody td {
+    padding: 12px 14px !important;
+    vertical-align: middle !important;
+    color: #1E293B;
+    border-bottom: 1px solid #F1F5F9 !important;
+  }
 }
 
-table.txns-table {
-  width: 100%;
-  min-width: 980px;
-  border-collapse: collapse;
-  font-size: 13px;
-  text-align: left;
-}
-
-table.txns-table thead tr {
-  background: #F8FAFC !important;
-}
-
-table.txns-table thead th {
-  padding: 11px 14px !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  color: #475569 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  border-bottom: 1px solid #E2E8F0 !important;
-  white-space: nowrap !important;
-  background: #F8FAFC !important;
-}
-
-table.txns-table tbody tr {
-  border-bottom: 1px solid #F1F5F9 !important;
-  transition: background-color 0.12s ease;
-}
-
-table.txns-table tbody tr:last-child {
-  border-bottom: none !important;
-}
-
-table.txns-table tbody tr:hover {
-  background-color: #F8FAFC !important;
-}
-
-table.txns-table tbody td {
-  padding: 12px 14px !important;
-  vertical-align: middle !important;
-  color: #1E293B;
-  border-bottom: 1px solid #F1F5F9 !important;
-}
-
-/* Column Specific Formats & Non-Breaking Codes */
+/* Shared Column Formats & Non-Breaking Codes */
 .col-date {
   white-space: nowrap !important;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   color: #475569 !important;
-  min-width: 95px;
 }
 
 .voucher-badge {
@@ -6641,7 +6643,6 @@ table.txns-table tbody td {
 .col-party {
   font-weight: 600 !important;
   color: #0F172A !important;
-  min-width: 140px;
 }
 
 .account-tag {
@@ -6654,7 +6655,6 @@ table.txns-table tbody td {
 .col-category {
   color: #334155;
   font-size: 12.5px;
-  min-width: 120px;
 }
 
 .method-tag {
@@ -6664,11 +6664,10 @@ table.txns-table tbody td {
 }
 
 .col-desc {
-  max-width: 250px !important;
-  min-width: 150px !important;
-  font-size: 12px !important;
-  color: #64748B !important;
-  line-height: 1.45 !important;
+  max-width: 250px;
+  font-size: 12px;
+  color: #64748B;
+  line-height: 1.45;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -6682,7 +6681,6 @@ table.txns-table tbody td {
   font-weight: 700 !important;
   font-variant-numeric: tabular-nums !important;
   text-align: right !important;
-  min-width: 105px;
 }
 
 .col-status {
@@ -6695,16 +6693,155 @@ code {
   white-space: nowrap !important;
 }
 
+/* Mobile Screen Layout for Transactions Cards (max-width: 640px) */
 @media (max-width: 640px) {
-  .txns-card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    padding: 12px 14px;
+  .wrap.txns-data-card {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    margin: 8px 0 14px !important;
+    padding: 0 !important;
   }
+
+  .txns-card-header {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 12px !important;
+    padding: 10px 14px !important;
+    margin-bottom: 10px !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
   .txns-hint-text {
-    display: none;
+    display: none !important;
+  }
+
+  .txns-table-scroll {
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  table.txns-table,
+  table.txns-table.mcard {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  table.txns-table tbody,
+  table.txns-table.mcard tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  table.txns-table tr,
+  table.txns-table.mcard tr,
+  table.mcard.txns-table tr {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    margin: 0 0 10px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+    gap: 4px !important;
+  }
+
+  table.txns-table td.mc-cell,
+  table.txns-table.mcard td.mc-cell,
+  table.mcard.txns-table td.mc-cell {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    padding: 7px 0 !important;
+    border-bottom: 1px dashed #E2E8F0 !important;
+    font-size: 13px !important;
+  }
+
+  table.txns-table td.mc-cell:last-child,
+  table.txns-table.mcard td.mc-cell:last-child,
+  table.mcard.txns-table td.mc-cell:last-child {
+    border-bottom: none !important;
+    padding-bottom: 2px !important;
+  }
+
+  table.txns-table td.mc-cell::before,
+  table.txns-table.mcard td.mc-cell::before,
+  table.mcard.txns-table td.mc-cell::before {
+    content: attr(data-label) !important;
+    flex: 0 0 auto !important;
+    max-width: 48% !important;
+    color: #64748B !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    text-align: left !important;
+  }
+
+  table.txns-table td.mc-cell > *,
+  table.txns-table.mcard td.mc-cell > *,
+  table.mcard.txns-table td.mc-cell > * {
+    max-width: 52% !important;
+    text-align: right !important;
+  }
+
+  table.txns-table td.mc-title,
+  table.txns-table.mcard td.mc-title,
+  table.mcard.txns-table td.mc-title {
+    order: -1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #0F172A !important;
+    padding: 2px 0 8px !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    margin-bottom: 4px !important;
+  }
+
+  table.txns-table td.col-desc,
+  table.txns-table.mcard td.col-desc,
+  table.mcard.txns-table td.col-desc {
+    max-width: 52% !important;
+    text-align: right !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    color: #64748B !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  table.txns-table td.col-amt,
+  table.txns-table.mcard td.col-amt,
+  table.mcard.txns-table td.col-amt {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    text-align: right !important;
   }
 }
+
 
 
