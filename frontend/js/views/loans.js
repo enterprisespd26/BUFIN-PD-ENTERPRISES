@@ -92,7 +92,7 @@ function renderLoansDashboard() {
                 <col class="col-loan-actions" style="width: 18%; min-width: 200px;">
               </colgroup>
               <thead>
-                <tr class="grid grid-cols-[2fr_0.8fr_1fr_1.2fr_1fr_0.8fr_auto] gap-3 px-4 w-full">
+                <tr class="grid grid-cols-[minmax(170px,1.8fr)_minmax(80px,0.7fr)_minmax(125px,1.1fr)_minmax(125px,1.1fr)_minmax(90px,0.8fr)_minmax(75px,0.6fr)_auto] gap-4 px-4 w-full">
                   <th class="loan-th text-left">Loan Name & Party</th>
                   <th class="loan-th text-center">Type</th>
                   <th class="loan-th num text-right">Principal Amount</th>
@@ -108,7 +108,7 @@ function renderLoansDashboard() {
                   const o = Math.max(0, l.principal - l.repaid);
                   const partyName = l.partyName || pn(l.party) || 'Unknown Party';
                   const isOverdue = s[0] === 'Overdue';
-                  return `<tr class="k loan-row grid grid-cols-[2fr_0.8fr_1fr_1.2fr_1fr_0.8fr_auto] gap-3 px-4 w-full" data-a="viewloan" data-i="${l.id}">
+                  return `<tr class="k loan-row grid grid-cols-[minmax(170px,1.8fr)_minmax(80px,0.7fr)_minmax(125px,1.1fr)_minmax(125px,1.1fr)_minmax(90px,0.8fr)_minmax(75px,0.6fr)_auto] gap-4 px-4 w-full" data-a="viewloan" data-i="${l.id}">
                     <td class="loan-td-name">
                       <a href="#/loans/${l.id}" class="loan-name-title" title="${esc(l.name || l.ref)}">
                         ${esc(l.name || l.ref)}
