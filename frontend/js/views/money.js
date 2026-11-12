@@ -227,113 +227,153 @@ function renderTxnTable(list, kind, emptyMsg) {
   }
 
   if (kind === 'in') {
-    return `<div class="wrap"><table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Customer / Payer</th>
-          <th>Deposit To Account</th>
-          <th>Income Category</th>
-          <th>Method</th>
-          <th>Reference No.</th>
-          <th>Description / Notes</th>
-          <th class="num">Amount</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${list.map(e => {
-          const d = getTxnRowData(e);
-          return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view payment receipt">
-            <td>${fmtDate(e.date)}</td>
-            <td><b>${esc(d.partyName)}</b></td>
-            <td>${esc(d.acctName)}</td>
-            <td>${esc(d.catName)}</td>
-            <td><span class="pd-pill">${esc(d.method)}</span></td>
-            <td><code>${esc(d.refNo)}</code></td>
-            <td>${esc(d.desc)}</td>
-            <td class="num" style="color:#0f5132;font-weight:600">+${fmt(d.amt)}</td>
-            <td><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table></div>`;
+    return `<div class="wrap txns-data-card">
+      <div class="txns-card-header">
+        <div class="txns-card-header-left">
+          <span class="txns-card-title">Income Receipts</span>
+          <span class="txns-count-badge">${list.length} ${list.length === 1 ? 'receipt' : 'receipts'}</span>
+        </div>
+        <div class="txns-card-header-right">
+          <span class="txns-hint-text">Click any row to view payment receipt</span>
+        </div>
+      </div>
+      <div class="txns-table-scroll">
+        <table class="txns-table">
+          <thead>
+            <tr>
+              <th class="th-date">Date</th>
+              <th class="th-party">Customer / Payer</th>
+              <th class="th-account">Deposit To Account</th>
+              <th class="th-category">Income Category</th>
+              <th class="th-method">Method</th>
+              <th class="th-ref">Reference No.</th>
+              <th class="th-desc">Description / Notes</th>
+              <th class="num th-amt">Amount</th>
+              <th class="th-status">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(e => {
+              const d = getTxnRowData(e);
+              return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view payment receipt">
+                <td class="col-date">${fmtDate(e.date)}</td>
+                <td class="col-party"><b>${esc(d.partyName)}</b></td>
+                <td class="col-account"><span class="account-tag">${esc(d.acctName)}</span></td>
+                <td class="col-category">${esc(d.catName)}</td>
+                <td class="col-method"><span class="method-tag">${esc(d.method)}</span></td>
+                <td class="col-ref"><span class="ref-badge">${esc(d.refNo)}</span></td>
+                <td class="col-desc" title="${esc(d.desc)}">${esc(d.desc)}</td>
+                <td class="num col-amt" style="color:#15803D;font-weight:700">+${fmt(d.amt)}</td>
+                <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
   }
 
   if (kind === 'out') {
-    return `<div class="wrap"><table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Supplier / Payee</th>
-          <th>Paid From Account</th>
-          <th>Expense / Payment Category</th>
-          <th>Method</th>
-          <th>Reference No.</th>
-          <th>Description / Notes</th>
-          <th class="num">Amount</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${list.map(e => {
-          const d = getTxnRowData(e);
-          return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view payment voucher">
-            <td>${fmtDate(e.date)}</td>
-            <td><b>${esc(d.partyName)}</b></td>
-            <td>${esc(d.acctName)}</td>
-            <td>${esc(d.catName)}</td>
-            <td><span class="pd-pill">${esc(d.method)}</span></td>
-            <td><code>${esc(d.refNo)}</code></td>
-            <td>${esc(d.desc)}</td>
-            <td class="num" style="color:#842029;font-weight:600">-${fmt(d.amt)}</td>
-            <td><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table></div>`;
+    return `<div class="wrap txns-data-card">
+      <div class="txns-card-header">
+        <div class="txns-card-header-left">
+          <span class="txns-card-title">Expense &amp; Payment Vouchers</span>
+          <span class="txns-count-badge">${list.length} ${list.length === 1 ? 'payment' : 'payments'}</span>
+        </div>
+        <div class="txns-card-header-right">
+          <span class="txns-hint-text">Click any row to view payment voucher</span>
+        </div>
+      </div>
+      <div class="txns-table-scroll">
+        <table class="txns-table">
+          <thead>
+            <tr>
+              <th class="th-date">Date</th>
+              <th class="th-party">Supplier / Payee</th>
+              <th class="th-account">Paid From Account</th>
+              <th class="th-category">Expense / Payment Category</th>
+              <th class="th-method">Method</th>
+              <th class="th-ref">Reference No.</th>
+              <th class="th-desc">Description / Notes</th>
+              <th class="num th-amt">Amount</th>
+              <th class="th-status">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(e => {
+              const d = getTxnRowData(e);
+              return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view payment voucher">
+                <td class="col-date">${fmtDate(e.date)}</td>
+                <td class="col-party"><b>${esc(d.partyName)}</b></td>
+                <td class="col-account"><span class="account-tag">${esc(d.acctName)}</span></td>
+                <td class="col-category">${esc(d.catName)}</td>
+                <td class="col-method"><span class="method-tag">${esc(d.method)}</span></td>
+                <td class="col-ref"><span class="ref-badge">${esc(d.refNo)}</span></td>
+                <td class="col-desc" title="${esc(d.desc)}">${esc(d.desc)}</td>
+                <td class="num col-amt" style="color:#B91C1C;font-weight:700">-${fmt(d.amt)}</td>
+                <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
   }
 
   // kind === 'all'
-  return `<div class="wrap"><table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Voucher</th>
-        <th>Type</th>
-        <th>Customer / Supplier / Payee</th>
-        <th>Account</th>
-        <th>Category / Details</th>
-        <th>Method</th>
-        <th>Reference No.</th>
-        <th>Description / Notes</th>
-        <th class="num">Amount</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${list.map(e => {
-        const d = getTxnRowData(e);
-        const isIn = e.src === 'in' || e.src === 'sale' || (e.src === 'loan' && e.lines.some(l => l.d && acc(l.a)?.cash));
-        const isOut = e.src === 'out' || e.src === 'bill' || e.src === 'exp' || (e.src === 'loan' && e.lines.some(l => l.c && acc(l.a)?.cash));
-        const amtColor = isIn ? '#0f5132' : isOut ? '#842029' : '';
-        const amtSign = isIn ? '+' : isOut ? '-' : '';
-        return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view payment receipt / voucher details">
-          <td>${fmtDate(e.date)}</td>
-          <td><code>${esc(e.ref)}</code></td>
-          <td><span class="pd-pill ${isIn ? '' : isOut ? 'u' : 'p'}">${esc(d.typeLabel)}</span></td>
-          <td><b>${esc(d.partyName)}</b></td>
-          <td>${esc(d.acctName)}</td>
-          <td>${esc(d.catName)}</td>
-          <td>${esc(d.method)}</td>
-          <td><code>${esc(d.refNo)}</code></td>
-          <td>${esc(d.desc)}</td>
-          <td class="num" style="font-weight:600;color:${amtColor}">${amtSign}${fmt(d.amt)}</td>
-          <td><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
-        </tr>`;
-      }).join('')}
-    </tbody>
-  </table></div>`;
+  return `<div class="wrap txns-data-card">
+    <div class="txns-card-header">
+      <div class="txns-card-header-left">
+        <span class="txns-card-title">Activity Audit Trail</span>
+        <span class="txns-count-badge">${list.length} ${list.length === 1 ? 'voucher' : 'vouchers'}</span>
+      </div>
+      <div class="txns-card-header-right">
+        <span class="txns-hint-text">Click any row to view voucher details</span>
+      </div>
+    </div>
+    <div class="txns-table-scroll">
+      <table class="txns-table">
+        <thead>
+          <tr>
+            <th class="th-date">Date</th>
+            <th class="th-voucher">Voucher</th>
+            <th class="th-type">Type</th>
+            <th class="th-party">Customer / Supplier / Payee</th>
+            <th class="th-account">Account</th>
+            <th class="th-category">Category / Details</th>
+            <th class="th-method">Method</th>
+            <th class="th-ref">Reference No.</th>
+            <th class="th-desc">Description / Notes</th>
+            <th class="num th-amt">Amount</th>
+            <th class="th-status">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(e => {
+            const d = getTxnRowData(e);
+            const isIn = e.src === 'in' || e.src === 'sale' || (e.src === 'loan' && e.lines.some(l => l.d && acc(l.a)?.cash));
+            const isOut = e.src === 'out' || e.src === 'bill' || e.src === 'exp' || (e.src === 'loan' && e.lines.some(l => l.c && acc(l.a)?.cash));
+            const amtColor = isIn ? '#15803D' : isOut ? '#B91C1C' : '#334155';
+            const amtSign = isIn ? '+' : isOut ? '-' : '';
+            const typeClass = isIn ? 'type-in' : isOut ? 'type-out' : 'type-xfer';
+            return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view voucher ${esc(e.ref)} details">
+              <td class="col-date">${fmtDate(e.date)}</td>
+              <td class="col-voucher"><span class="voucher-badge">${esc(e.ref)}</span></td>
+              <td class="col-type"><span class="txn-type-pill ${typeClass}">${esc(d.typeLabel)}</span></td>
+              <td class="col-party"><b>${esc(d.partyName)}</b></td>
+              <td class="col-account"><span class="account-tag">${esc(d.acctName)}</span></td>
+              <td class="col-category">${esc(d.catName)}</td>
+              <td class="col-method"><span class="method-tag">${esc(d.method)}</span></td>
+              <td class="col-ref"><span class="ref-badge">${esc(d.refNo)}</span></td>
+              <td class="col-desc" title="${esc(d.desc)}">${esc(d.desc)}</td>
+              <td class="num col-amt" style="font-weight:700;color:${amtColor}">${amtSign}${fmt(d.amt)}</td>
+              <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
 }
 
 export function renderTxns() {
@@ -345,7 +385,29 @@ export function renderTxns() {
     return (e.date + ' ' + e.ref + ' ' + d.typeLabel + ' ' + d.partyName + ' ' + d.acctName + ' ' + d.catName + ' ' + d.refNo + ' ' + d.desc + ' ' + d.method).toLowerCase().includes(q);
   });
 
+  // Calculate live summary metrics for top KPI cards
+  let totalIn = 0;
+  let totalOut = 0;
+  let postedCount = 0;
+
+  all.forEach(e => {
+    if (e.status !== 'posted') return;
+    postedCount++;
+    const d = getTxnRowData(e);
+    const isIn = e.src === 'in' || e.src === 'sale' || (e.src === 'loan' && e.lines.some(l => l.d && acc(l.a)?.cash));
+    const isOut = e.src === 'out' || e.src === 'bill' || e.src === 'exp' || (e.src === 'loan' && e.lines.some(l => l.c && acc(l.a)?.cash));
+    if (isIn) totalIn += (d.amt || 0);
+    else if (isOut) totalOut += (d.amt || 0);
+  });
+  const netMovement = totalIn - totalOut;
+
   return head('All Transactions', `<button data-a="csv">Export CSV</button>`) +
+    `<div class="grid">
+      ${kpi('Total Transactions', postedCount.toString())}
+      ${kpi('Total Inflow', fmt(totalIn))}
+      ${kpi('Total Outflow', fmt(totalOut))}
+      ${kpi('Net Ledger Balance', fmt(netMovement))}
+    </div>` +
     renderMoneySearchBar('Search transactions...', 'q') +
     renderTxnTable(L, 'all', 'No transactions match.');
 }
