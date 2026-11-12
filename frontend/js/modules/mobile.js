@@ -1716,14 +1716,14 @@ const CSS = String.raw`
 
   /* ================= Opening Balances Status Banner Card ================= */
   .ob-status-card {
-    border-radius: 14px !important;
-    padding: 14px 14px 12px !important;
-    margin-bottom: 16px !important;
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+    border-radius: 12px !important;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 12px !important;
   }
   .ob-locked-card {
     background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%) !important;
@@ -1736,17 +1736,17 @@ const CSS = String.raw`
     border-left: 4px solid #3b82f6 !important;
   }
   .ob-card-main {
+    gap: 8px !important;
     display: flex !important;
     align-items: flex-start !important;
-    gap: 10px !important;
     width: 100% !important;
   }
   .ob-card-icon {
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
-    min-height: 38px !important;
-    border-radius: 10px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 8px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1775,7 +1775,7 @@ const CSS = String.raw`
   }
   .ob-card-title {
     color: #0f172a !important;
-    font-size: 14.5px !important;
+    font-size: 13.5px !important;
     font-weight: 700 !important;
     letter-spacing: -0.2px !important;
     line-height: 1.25 !important;
@@ -1815,11 +1815,11 @@ const CSS = String.raw`
     background: #2563eb !important;
   }
   .ob-meta-row {
-    margin-top: 8px !important;
+    margin-top: 6px !important;
     background: rgba(255, 255, 255, 0.75) !important;
     border: 1px solid rgba(187, 247, 208, 0.8) !important;
     border-radius: 8px !important;
-    padding: 8px 10px !important;
+    padding: 6px 8px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
@@ -1862,8 +1862,8 @@ const CSS = String.raw`
   }
   .ob-btn-edit, .ob-btn-rev, .ob-btn-cancel {
     width: 100% !important;
-    min-height: 42px !important;
-    height: 42px !important;
+    min-height: 40px !important;
+    height: 40px !important;
     padding: 0 8px !important;
     font-size: 12.5px !important;
     font-weight: 600 !important;
@@ -1902,6 +1902,285 @@ const CSS = String.raw`
     color: #475569 !important;
     border: 1px solid #cbd5e1 !important;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+  }
+
+  /* Opening Balances Header Bar & Top-Right Date Card on Mobile */
+  .bar.ob-header-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .bar.ob-header-bar h2 {
+    font-size: clamp(16px, 4.5vw, 19px) !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 0 1 auto !important;
+    margin: 0 !important;
+  }
+  .op-hdr-date-card {
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 3px 8px !important;
+    gap: 6px !important;
+    border-radius: 9px !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+    max-width: none !important;
+    width: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+  }
+  .op-lbl-full {
+    display: none !important;
+  }
+  .op-lbl-short {
+    display: inline !important;
+    font-size: 11.5px !important;
+  }
+  .op-hdr-date-val {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    letter-spacing: 0.2px !important;
+    padding: 0 2px !important;
+    display: inline-block !important;
+  }
+  .op-hdr-date-card input[type="date"] {
+    font-size: 13px !important;
+    height: 32px !important;
+  }
+  .op-hdr-date-card.is-editing input[type="date"] {
+    width: 132px !important;
+    min-width: 132px !important;
+    max-width: 140px !important;
+    padding: 2px 4px !important;
+  }
+  .op-hdr-change-btn {
+    height: 28px !important;
+    width: 28px !important;
+    min-width: 28px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .op-hdr-change-text {
+    display: none !important;
+  }
+
+  /* Opening Balances 2-Column Ledger Cards on Mobile */
+  table.mcard.op-table tbody tr {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 10px !important;
+    padding: 10px 12px 12px !important;
+    border-radius: 12px !important;
+    margin: 0 0 8px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    box-sizing: border-box !important;
+  }
+  table.mcard.op-table tbody tr td.mc-title {
+    grid-column: 1 / -1 !important;
+    order: 1 !important;
+    padding: 0 0 6px 0 !important;
+    margin-bottom: 0 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    display: block !important;
+    width: 100% !important;
+  }
+  table.mcard.op-table tbody tr td.mc-title .op-acc-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+  table.mcard.op-table tbody tr td.mc-title .op-acc-header b {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+  }
+  table.mcard.op-table tbody tr td.mc-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  table.mcard.op-table tbody tr td.mc-cell:nth-child(2) {
+    order: 2 !important;
+    grid-column: 1 !important;
+  }
+  table.mcard.op-table tbody tr td.mc-cell:nth-child(3) {
+    order: 3 !important;
+    grid-column: 2 !important;
+  }
+  table.mcard.op-table tbody tr td.mc-cell::before {
+    flex: none !important;
+    max-width: 100% !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.35px !important;
+    margin-bottom: 3px !important;
+    text-transform: uppercase !important;
+  }
+  table.mcard.op-table tbody tr td.mc-cell:nth-child(2)::before {
+    content: "DEBIT (DR)" !important;
+    color: #047857 !important;
+  }
+  table.mcard.op-table tbody tr td.mc-cell:nth-child(3)::before {
+    content: "CREDIT (CR)" !important;
+    color: #1d4ed8 !important;
+  }
+  table.mcard.op-table tbody tr td.mc-cell input {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 6px 10px !important;
+    font-size: 14.5px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    text-align: right !important;
+    box-sizing: border-box !important;
+    border: 1.5px solid #cbd5e1 !important;
+  }
+  table.mcard.op-table tbody tr td.mc-cell input:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+    outline: none !important;
+  }
+
+  /* Totals & Auto-Balancing Card on Mobile */
+  table.mcard.op-table tfoot tr.tot {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 10px !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+    border: 1px solid #cbd5e1 !important;
+    border-left: 4px solid #2563eb !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    margin: 10px 0 6px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+    box-sizing: border-box !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:first-child {
+    grid-column: 1 / -1 !important;
+    order: 1 !important;
+    border: none !important;
+    padding: 0 0 8px 0 !important;
+    margin-bottom: 2px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    display: block !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:first-child::before,
+  table.mcard.op-table tfoot tr.tot td:nth-child(2)::before,
+  table.mcard.op-table tfoot tr.tot td:nth-child(3)::before {
+    display: none !important;
+    content: none !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:nth-child(2),
+  table.mcard.op-table tfoot tr.tot td:nth-child(3) {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    border: none !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    text-align: right !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:nth-child(2) {
+    order: 2 !important;
+    grid-column: 1 !important;
+    background: #ecfdf5 !important;
+    border: 1px solid #a7f3d0 !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:nth-child(3) {
+    order: 3 !important;
+    grid-column: 2 !important;
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:nth-child(2) span:first-child,
+  table.mcard.op-table tfoot tr.tot td:nth-child(3) span:first-child {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.35px !important;
+    margin-bottom: 2px !important;
+    display: block !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:nth-child(2) span:first-child {
+    color: #047857 !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:nth-child(3) span:first-child {
+    color: #1d4ed8 !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:nth-child(2) #op_tot_dr,
+  table.mcard.op-table tfoot tr.tot td:nth-child(3) #op_tot_cr {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    display: block !important;
+    line-height: 1.2 !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:nth-child(2) #op_tot_dr {
+    color: #047857 !important;
+  }
+  table.mcard.op-table tfoot tr.tot td:nth-child(3) #op_tot_cr {
+    color: #1d4ed8 !important;
+  }
+
+  /* Opening Balances Bottom Action Bar on Mobile */
+  .op-bottom-bar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    margin-top: 14px !important;
+    padding: 12px 14px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+    box-sizing: border-box !important;
+  }
+  .op-bottom-bar > span {
+    font-size: 12.5px !important;
+    color: #64748b !important;
+    text-align: center !important;
+    line-height: 1.4 !important;
+    display: block !important;
+  }
+  .op-bottom-bar > button {
+    width: 100% !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
   }
 
   /* General Ledger & Cash Book Opening Balance Summary Row */

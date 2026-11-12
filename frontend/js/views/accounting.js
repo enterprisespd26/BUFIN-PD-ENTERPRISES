@@ -267,8 +267,8 @@ export function renderOpen() {
 
   return head('Opening Balances', dateCard, 'ob-header-bar') +
     statusBanner +
-    `<div class="wrap">
-      <table>
+    `<div class="wrap op-wrap">
+      <table class="op-table">
         <thead>
           <tr>
             <th style="min-width:220px;">Account Name & Normal Balance</th>
@@ -297,7 +297,7 @@ export function renderOpen() {
         </tfoot>
       </table>
     </div>
-    <div class="bar" style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div class="bar op-bottom-bar" style="margin-top:16px;">
       ${isLocked ? `
         <span style="color:#64748b;font-size:13px;display:flex;align-items:center;gap:7px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

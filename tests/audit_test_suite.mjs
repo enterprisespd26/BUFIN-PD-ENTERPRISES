@@ -67,7 +67,7 @@ import { getInventoryStock, renderBills, billsState } from '../frontend/js/views
 import { taxSplit } from '../frontend/js/modules/actions.js';
 import { saveAttachments, getAttachments } from '../frontend/js/modules/attachments.js';
 import { detectHsnCode, renderSheet } from '../frontend/js/views/sales.js';
-import { renderCoa, renderBook, accountingState } from '../frontend/js/views/accounting.js';
+import { renderCoa, renderBook, renderOpen, accountingState } from '../frontend/js/views/accounting.js';
 import { renderParties, partiesState } from '../frontend/js/views/parties.js';
 import { renderTxns, renderMoneyIn, renderMoneyOut, renderTransfers, moneyState } from '../frontend/js/views/money.js';
 import { renderBs, renderTb, reportsState } from '../frontend/js/views/reports.js';
@@ -1782,6 +1782,35 @@ test('TC-BS-DATE-CARD-01: Balance Sheet and Trial Balance dedicated mobile date 
   assert.ok(mobileJs.includes('.bs-date-range-card'), 'mobile.js must style .bs-date-range-card');
   assert.ok(mobileJs.includes('.bs-date-box'), 'mobile.js must style .bs-date-box');
   assert.ok(mobileJs.includes('bs-date-range-card'), 'mobile.js enhanceFilters must exclude .bs-date-range-card');
+});
+
+test('TC-OPEN-MOBILE-01: Opening Balances 2-column mobile layout, non-clipping date card, and bottom action bar', () => {
+  resetTestDb();
+
+  // 1. Verify renderOpen markup
+  const html = renderOpen();
+  assert.ok(html.includes('class="wrap op-wrap"'), 'Opening balances view must render .op-wrap container');
+  assert.ok(html.includes('class="op-table"'), 'Opening balances view must render .op-table');
+  assert.ok(html.includes('class="bar op-bottom-bar"'), 'Opening balances view must render dedicated .op-bottom-bar');
+  assert.ok(html.includes('class="op-hdr-date-card'), 'Opening balances view must render .op-hdr-date-card header element');
+
+  // 2. Verify style.css rules
+  const css = nodeFs.readFileSync('frontend/css/style.css', 'utf8');
+  assert.ok(css.includes('table.mcard.op-table tbody tr'), 'style.css must define mobile card styling for op-table');
+  assert.ok(css.includes('grid-template-columns: 1fr 1fr !important;'), 'style.css must define 2-column grid for Debit & Credit inputs');
+  assert.ok(css.includes('table.mcard.op-table tfoot tr.tot'), 'style.css must style opening balance summary footer as a 2-column card');
+  assert.ok(css.includes('.op-bottom-bar'), 'style.css must define mobile full-width action bar');
+  assert.ok(css.includes('.op-hdr-date-card.is-editing input[type="date"]'), 'style.css must style editing date picker');
+
+  // 3. Verify mobile.js runtime CSS injection
+  const mobileJs = nodeFs.readFileSync('frontend/js/modules/mobile.js', 'utf8');
+  assert.ok(mobileJs.includes('table.mcard.op-table tbody tr'), 'mobile.js must contain 2-column op-table mobile card rules');
+  assert.ok(mobileJs.includes('table.mcard.op-table tfoot tr.tot'), 'mobile.js must contain op-table footer summary rules');
+  assert.ok(mobileJs.includes('.op-bottom-bar'), 'mobile.js must contain .op-bottom-bar rules');
+
+  // 4. Verify sw.js cache bump
+  const sw = nodeFs.readFileSync('frontend/sw.js', 'utf8');
+  assert.ok(sw.includes('bufin-v9.3-cache'), 'sw.js must be bumped to bufin-v9.3-cache');
 });
 
 

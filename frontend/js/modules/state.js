@@ -105,6 +105,7 @@ export function setDb(newDb) {
     });
   }
   try {
+    localStorage.setItem(K, JSON.stringify(db));
     cacheCoreRef(db);
     saveFullSnapshot(db, ver);
   } catch (e) {}
