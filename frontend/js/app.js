@@ -528,6 +528,17 @@ function postOpening(date, rows) {
   return newEntry;
 }
 
+function openDateCardPicker(el) {
+  if (!el) return;
+  if (typeof el.showPicker === 'function') {
+    try {
+      el.showPicker();
+      return;
+    } catch (err) {}
+  }
+  el.focus();
+}
+
 function bindViewEvents() {
   if (currentPage === 'sales') {
     bindSalesEvents();
@@ -681,18 +692,12 @@ function bindViewEvents() {
       toEl.addEventListener('input', handleTo);
     }
 
-    $('#glFromBox')?.addEventListener('click', e => {
-      const el = $('#glFrom');
-      if (e.target !== el && el && typeof el.showPicker === 'function') {
-        try { el.showPicker(); } catch (err) {}
-      }
-    });
-    $('#glToBox')?.addEventListener('click', e => {
-      const el = $('#glTo');
-      if (e.target !== el && el && typeof el.showPicker === 'function') {
-        try { el.showPicker(); } catch (err) {}
-      }
-    });
+    const handleGlFromPicker = () => openDateCardPicker($('#glFrom'));
+    $('#glFromBox')?.addEventListener('click', handleGlFromPicker);
+    $('#glFrom')?.addEventListener('click', handleGlFromPicker);
+    const handleGlToPicker = () => openDateCardPicker($('#glTo'));
+    $('#glToBox')?.addEventListener('click', handleGlToPicker);
+    $('#glTo')?.addEventListener('click', handleGlToPicker);
 
     const glq = $('[data-k="glq"]');
     if (glq) {
@@ -724,18 +729,12 @@ function bindViewEvents() {
     bt?.addEventListener('change', onDateChange);
     bt?.addEventListener('input', onDateChange);
 
-    $('#cbFromBox')?.addEventListener('click', e => {
-      const el = $('#bookFrom');
-      if (e.target !== el && el && typeof el.showPicker === 'function') {
-        try { el.showPicker(); } catch (err) {}
-      }
-    });
-    $('#cbToBox')?.addEventListener('click', e => {
-      const el = $('#bookTo');
-      if (e.target !== el && el && typeof el.showPicker === 'function') {
-        try { el.showPicker(); } catch (err) {}
-      }
-    });
+    const handleCbFromPicker = () => openDateCardPicker($('#bookFrom'));
+    $('#cbFromBox')?.addEventListener('click', handleCbFromPicker);
+    $('#bookFrom')?.addEventListener('click', handleCbFromPicker);
+    const handleCbToPicker = () => openDateCardPicker($('#bookTo'));
+    $('#cbToBox')?.addEventListener('click', handleCbToPicker);
+    $('#bookTo')?.addEventListener('click', handleCbToPicker);
 
     const bkq = $('[data-k="bkq"]');
     if (bkq) {
@@ -764,12 +763,9 @@ function bindViewEvents() {
       tbDate.addEventListener('change', updateTbDate);
       tbDate.addEventListener('input', updateTbDate);
     }
-    $('#tbDateBox')?.addEventListener('click', e => {
-      const el = $('#tbDate');
-      if (e.target !== el && el && typeof el.showPicker === 'function') {
-        try { el.showPicker(); } catch (err) {}
-      }
-    });
+    const handleTbPicker = () => openDateCardPicker($('#tbDate'));
+    $('#tbDateBox')?.addEventListener('click', handleTbPicker);
+    $('#tbDate')?.addEventListener('click', handleTbPicker);
     const tbq = $('[data-k="tbq"]');
     if (tbq) {
       tbq.oninput = () => {
@@ -806,18 +802,12 @@ function bindViewEvents() {
       plTo.addEventListener('change', updatePlTo);
       plTo.addEventListener('input', updatePlTo);
     }
-    $('#plFromBox')?.addEventListener('click', e => {
-      const el = $('#plFrom');
-      if (e.target !== el && el && typeof el.showPicker === 'function') {
-        try { el.showPicker(); } catch (err) {}
-      }
-    });
-    $('#plToBox')?.addEventListener('click', e => {
-      const el = $('#plTo');
-      if (e.target !== el && el && typeof el.showPicker === 'function') {
-        try { el.showPicker(); } catch (err) {}
-      }
-    });
+    const handlePlFromPicker = () => openDateCardPicker($('#plFrom'));
+    $('#plFromBox')?.addEventListener('click', handlePlFromPicker);
+    $('#plFrom')?.addEventListener('click', handlePlFromPicker);
+    const handlePlToPicker = () => openDateCardPicker($('#plTo'));
+    $('#plToBox')?.addEventListener('click', handlePlToPicker);
+    $('#plTo')?.addEventListener('click', handlePlToPicker);
     attachPlChartTooltips();
   }
 
@@ -831,12 +821,9 @@ function bindViewEvents() {
       bsDate.addEventListener('change', updateBsDate);
       bsDate.addEventListener('input', updateBsDate);
     }
-    $('#bsDateBox')?.addEventListener('click', e => {
-      const el = $('#bsDate');
-      if (e.target !== el && el && typeof el.showPicker === 'function') {
-        try { el.showPicker(); } catch (err) {}
-      }
-    });
+    const handleBsPicker = () => openDateCardPicker($('#bsDate'));
+    $('#bsDateBox')?.addEventListener('click', handleBsPicker);
+    $('#bsDate')?.addEventListener('click', handleBsPicker);
   }
 
   if (currentPage === 'set') {

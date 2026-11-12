@@ -2421,6 +2421,28 @@ test('TC-SEARCH-ICON-FIX-01: Mobile search icon and placeholder text separation 
   reportsState.tb.q = '';
 });
 
+test('TC-DATE-CARD-CLICK-01: Calendar picker trigger reliability on date card click across views', () => {
+  const css = nodeFs.readFileSync('frontend/css/style.css', 'utf8');
+  const appJs = nodeFs.readFileSync('frontend/js/app.js', 'utf8');
+  const billsJs = nodeFs.readFileSync('frontend/js/views/bills.js', 'utf8');
+
+  // 1. Verify CSS picker indicator overlay
+  assert.match(css, /\.cb-native-date-input::-webkit-calendar-picker-indicator[\s\S]*?width:\s*100%/, 'Native picker indicator must stretch 100% to catch all clicks');
+  assert.match(css, /\.cb-native-date-input::-webkit-calendar-picker-indicator[\s\S]*?height:\s*100%/, 'Native picker indicator must stretch 100% height');
+  assert.match(css, /\.cb-native-date-input::-webkit-calendar-picker-indicator[\s\S]*?opacity:\s*0/, 'Native picker indicator must be transparent');
+
+  // 2. Verify openDateCardPicker in app.js
+  assert.match(appJs, /function\s+openDateCardPicker/, 'app.js must provide dedicated openDateCardPicker helper');
+  assert.match(appJs, /#tbDateBox.*handleTbPicker/, 'tbDateBox must trigger handleTbPicker on click');
+  assert.match(appJs, /#bsDateBox.*handleBsPicker/, 'bsDateBox must trigger handleBsPicker on click');
+  assert.ok(!appJs.includes("if (e.target !== el && el && typeof el.showPicker === 'function')"), 'Old e.target !== el blocker must be removed');
+
+  // 3. Verify bills.js inventory picker delegation
+  assert.match(billsJs, /openInvFromPicker/, 'bills.js must provide openInvFromPicker helper');
+  assert.match(billsJs, /openInvToPicker/, 'bills.js must provide openInvToPicker helper');
+  assert.ok(!billsJs.includes("if (e.target !== inp && inp && typeof inp.showPicker === 'function')"), 'Old e.target !== inp blocker must be removed');
+});
+
 
 
 

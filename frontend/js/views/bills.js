@@ -1790,24 +1790,28 @@ export function bindBillsEvents() {
 
   // Inventory: Date picker click delegation
   const invFromBox = $('#invFromBox');
-  if (invFromBox) {
-    invFromBox.onclick = e => {
-      const inp = $('#inv_from_date');
-      if (e.target !== inp && inp && typeof inp.showPicker === 'function') {
-        try { inp.showPicker(); } catch (err) {}
-      }
-    };
-  }
+  const invFromInp = $('#inv_from_date');
+  const openInvFromPicker = () => {
+    const inp = $('#inv_from_date');
+    if (inp && typeof inp.showPicker === 'function') {
+      try { inp.showPicker(); return; } catch (err) {}
+    }
+    inp?.focus();
+  };
+  if (invFromBox) invFromBox.onclick = openInvFromPicker;
+  if (invFromInp) invFromInp.onclick = openInvFromPicker;
 
   const invToBox = $('#invToBox');
-  if (invToBox) {
-    invToBox.onclick = e => {
-      const inp = $('#inv_to_date');
-      if (e.target !== inp && inp && typeof inp.showPicker === 'function') {
-        try { inp.showPicker(); } catch (err) {}
-      }
-    };
-  }
+  const invToInp = $('#inv_to_date');
+  const openInvToPicker = () => {
+    const inp = $('#inv_to_date');
+    if (inp && typeof inp.showPicker === 'function') {
+      try { inp.showPicker(); return; } catch (err) {}
+    }
+    inp?.focus();
+  };
+  if (invToBox) invToBox.onclick = openInvToPicker;
+  if (invToInp) invToInp.onclick = openInvToPicker;
 
   // Inventory: Export CSV
   const invCsv = $('#inv_btn_csv');

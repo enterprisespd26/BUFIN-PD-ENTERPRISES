@@ -799,6 +799,17 @@ table.coa-table .coa-btn-del:hover {
   margin: 0;
 }
 
+.cb-native-date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 /* Modern search bar with embedded icon */
 .cb-search-wrap,
 .gl-search-wrap {
