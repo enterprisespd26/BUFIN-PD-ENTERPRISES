@@ -187,6 +187,11 @@ export function renderTb() {
         <div class="cb-search-inner">
           <svg class="cb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           <input data-k="tbq" placeholder="Search account..." value="${esc(u.q || '')}" aria-label="Search accounts">
+          ${u.q ? `
+            <button type="button" class="cb-search-clear" data-a="cleartbsearch" aria-label="Clear search" title="Clear search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          ` : ''}
         </div>
       </div>
     </div>

@@ -2394,6 +2394,33 @@ test('TC-TXN-EDIT-02: In-place edit updates Money In, Money Out, and Transfers w
   );
 });
 
+test('TC-SEARCH-ICON-FIX-01: Mobile search icon and placeholder text separation across all views', () => {
+  const css = nodeFs.readFileSync('frontend/css/style.css', 'utf8');
+  const mobileJs = nodeFs.readFileSync('frontend/js/modules/mobile.js', 'utf8');
+
+  // 1. Verify Trial Balance, General Ledger, Cash & Bank Book input left-padding
+  assert.match(css, /\.cb-search-inner\s+input[\s\S]*?padding:\s*0\s+40px\s+0\s+44px\s*!important/, 'Desktop/base CSS must have 44px left padding on .cb-search-inner input');
+  assert.match(css, /\.cb-search-icon[\s\S]*?left:\s*14px\s*!important/, 'Search icon must be positioned at 14px');
+  assert.match(css, /\.cb-search-icon[\s\S]*?top:\s*50%\s*!important/, 'Search icon must be vertically centered at top 50%');
+
+  // 2. Verify mobile CSS prevents overlap
+  assert.match(css, /\.cb-search-inner\s+input[\s\S]*?padding-left:\s*44px\s*!important/, 'Mobile style.css must enforce 44px left padding on .cb-search-inner input');
+  assert.match(mobileJs, /\.cb-search-inner\s+input[\s\S]*?padding-left:\s*44px\s*!important/, 'Mobile.js must enforce 44px left padding on .cb-search-inner input');
+  assert.match(mobileJs, /input\[data-k="tbq"\]/, 'Mobile.js must explicitly include tbq input in 44px padding rule');
+  assert.match(mobileJs, /input\[data-k="glq"\]/, 'Mobile.js must explicitly include glq input in 44px padding rule');
+  assert.match(mobileJs, /input\[data-k="bkq"\]/, 'Mobile.js must explicitly include bkq input in 44px padding rule');
+
+  // 3. Verify plain inputs rule does not match .cb-search-inner or [data-k="tbq"]
+  assert.ok(!mobileJs.includes('input[placeholder^="Search"]:not(#inv_search_q):not(.inv-search-inner input):not(.money-search-input):not(.parties-search-input):not(.loan-search-input),\n  input[data-k$="q"]'), 'Broad input[data-k$="q"] must not inadvertently set 16px padding on icon-based search inputs');
+
+  // 4. Verify clear button existence in renderTb()
+  reportsState.tb.q = 'Bank';
+  const tbHtml = renderTb();
+  assert.ok(tbHtml.includes('cb-search-clear'), 'Trial Balance must render .cb-search-clear button when query is active');
+  assert.ok(tbHtml.includes('data-a="cleartbsearch"'), 'Trial Balance must have cleartbsearch action');
+  reportsState.tb.q = '';
+});
+
 
 
 

@@ -815,31 +815,65 @@ table.coa-table .coa-btn-del:hover {
 }
 
 .cb-search-icon {
-  position: absolute;
-  left: 12px;
-  pointer-events: none;
-  color: #64748b;
-  z-index: 1;
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  pointer-events: none !important;
+  color: #64748b !important;
+  z-index: 2 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .cb-search-inner input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 14px 10px 38px;
-  font-size: 13.5px;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #0f172a;
-  outline: none;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0 40px 0 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  font-size: 14px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  outline: none !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
 }
 
 .cb-search-inner input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-  background: #ffffff;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+  background: #ffffff !important;
+}
+
+.cb-search-clear {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
+  background: #f1f5f9 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  z-index: 3 !important;
+  transition: all 0.15s ease !important;
+}
+
+.cb-search-clear:hover,
+.cb-search-clear:active {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
 /* Header bar action buttons scroll track with right buffer */
@@ -1930,12 +1964,12 @@ aside.open ~ #ov {
     font-weight: 700 !important;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.14) !important;
   }
-  input[placeholder^="Search"]:not(#inv_search_q):not(.parties-search-input):not(.loan-search-input),
-  input[data-k$="q"]:not(.parties-search-input):not(.loan-search-input),
+  /* Plain search and text inputs (WITHOUT embedded icons) */
   #pd_search_q,
   #u_s,
-  .filters input[type=text]:not(.loan-search-input):not(.parties-search-input),
-  .filters input:not([type]):not(.loan-search-input):not(.parties-search-input) {
+  .pd-records-search,
+  .filters input[type=text]:not(.loan-search-input):not(.parties-search-input):not(.money-search-input):not(.cb-search-inner input):not(.inv-search-inner input),
+  .filters input:not([type]):not(.loan-search-input):not(.parties-search-input):not(.money-search-input):not(.cb-search-inner input):not(.inv-search-inner input) {
     min-height: 44px;
     height: 44px;
     padding-left: 16px;
@@ -1946,18 +1980,50 @@ aside.open ~ #ov {
     max-width: 100%;
     box-sizing: border-box;
   }
+  /* All search inputs WITH embedded SVG icons - guaranteed 44px left padding so icon and placeholder never collide */
   #inv_search_q,
   .inv-search-inner input,
   .inv-search-wrap input,
   .cb-search-inner input,
+  .cb-search-wrap input,
+  .tb-search-wrap input,
+  .gl-search-wrap input,
   .money-search-inner input,
+  .money-search-input,
+  .money-search-wrap input,
   .parties-search-wrap input,
-  .loan-search-wrap input {
+  .parties-search-input,
+  .loan-search-wrap input,
+  .loan-search-input,
+  input[data-k="tbq"],
+  input[data-k="glq"],
+  input[data-k="bkq"],
+  input[data-k="jq"],
+  input[data-k="pq"],
+  input[data-k="lq"] {
     padding-left: 44px !important;
     padding-right: 40px !important;
     border-radius: 10px !important;
     height: 44px !important;
     min-height: 44px !important;
+    box-sizing: border-box !important;
+  }
+  /* All embedded search icons - vertically centered & absolute positioned */
+  .cb-search-icon,
+  .money-search-icon,
+  .parties-search-ico,
+  .loan-search-ico,
+  .inv-search-icon {
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #64748b !important;
   }
   .filters > div[style*="min-width"],
   .filters > div[style*="flex:1"],

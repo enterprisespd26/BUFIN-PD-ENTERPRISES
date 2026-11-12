@@ -50,13 +50,12 @@ const CSS = String.raw`
   .mc-row > label, .filters > div:has(input[type=date]) > label { flex: 1 1 50% !important; min-width: 0 !important; display: flex !important; align-items: center !important; gap: 6px !important; margin: 0 !important; font-size: 12px !important; }
   .mc-row input[type=date], .filters input[type=date] { width: 100% !important; min-height: 40px !important; box-sizing: border-box !important; }
 
-  /* Uniform search controls */
-  input[placeholder^="Search"]:not(#inv_search_q):not(.inv-search-inner input):not(.money-search-input):not(.parties-search-input):not(.loan-search-input),
-  input[data-k$="q"]:not(.money-search-input):not(.parties-search-input):not(.loan-search-input),
+  /* Uniform plain search controls (WITHOUT embedded icons) */
   #pd_search_q,
   #u_s,
-  .filters input[type=text]:not(.loan-search-input):not(.parties-search-input),
-  .filters input:not([type]):not(.loan-search-input):not(.parties-search-input) {
+  .pd-records-search,
+  .filters input[type=text]:not(.loan-search-input):not(.parties-search-input):not(.money-search-input):not(.cb-search-inner input):not(.inv-search-inner input),
+  .filters input:not([type]):not(.loan-search-input):not(.parties-search-input):not(.money-search-input):not(.cb-search-inner input):not(.inv-search-inner input) {
     min-height: 44px !important;
     height: 44px !important;
     padding-left: 16px !important;
@@ -67,18 +66,52 @@ const CSS = String.raw`
     max-width: 100% !important;
     box-sizing: border-box !important;
   }
+
+  /* All search inputs WITH embedded SVG icons - guaranteed 44px left padding to eliminate icon-text overlap */
   #inv_search_q,
   .inv-search-inner input,
   .inv-search-wrap input,
   .cb-search-inner input,
+  .cb-search-wrap input,
+  .tb-search-wrap input,
+  .gl-search-wrap input,
   .money-search-inner input,
+  .money-search-input,
+  .money-search-wrap input,
   .parties-search-input,
-  .loan-search-input {
+  .parties-search-wrap input,
+  .loan-search-input,
+  .loan-search-wrap input,
+  input[data-k="tbq"],
+  input[data-k="glq"],
+  input[data-k="bkq"],
+  input[data-k="jq"],
+  input[data-k="pq"],
+  input[data-k="lq"] {
     padding-left: 44px !important;
     padding-right: 40px !important;
     border-radius: 10px !important;
     height: 44px !important;
     min-height: 44px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* All embedded search icons - vertically centered & absolute positioned */
+  .cb-search-icon,
+  .money-search-icon,
+  .parties-search-ico,
+  .loan-search-ico,
+  .inv-search-icon {
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #64748b !important;
   }
   .money-search-wrap {
     width: 100% !important;
@@ -411,7 +444,10 @@ const CSS = String.raw`
   }
   .gl-search-wrap input, .cb-search-wrap input {
     width: 100% !important;
-    min-height: 40px !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    padding-left: 44px !important;
+    padding-right: 40px !important;
     font-size: 14px !important;
     box-sizing: border-box !important;
   }
