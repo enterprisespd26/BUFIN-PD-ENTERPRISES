@@ -6932,10 +6932,10 @@ code {
     background: #FFFFFF !important;
     border: 1px solid #E2E8F0 !important;
     border-radius: 14px !important;
-    padding: 12px 14px !important;
-    margin: 0 0 10px !important;
+    padding: 14px 16px !important;
+    margin: 0 0 12px !important;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
-    gap: 4px !important;
+    gap: 2px !important;
   }
 
   table.txns-table td.mc-cell,
@@ -6948,9 +6948,10 @@ code {
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
-    padding: 7px 0 !important;
+    padding: 8px 0 !important;
     border-bottom: 1px dashed #E2E8F0 !important;
-    font-size: 13px !important;
+    font-size: 13.5px !important;
+    gap: 12px !important;
   }
 
   table.txns-table td.mc-cell:last-child,
@@ -6965,20 +6966,22 @@ code {
   table.mcard.txns-table td.mc-cell::before {
     content: attr(data-label) !important;
     flex: 0 0 auto !important;
-    max-width: 48% !important;
+    max-width: 44% !important;
     color: #64748B !important;
-    font-size: 11px !important;
+    font-size: 11.5px !important;
     font-weight: 600 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.04em !important;
     text-align: left !important;
   }
 
-  table.txns-table td.mc-cell > *,
-  table.txns-table.mcard td.mc-cell > *,
-  table.mcard.txns-table td.mc-cell > * {
-    max-width: 52% !important;
+  table.txns-table td.mc-cell > *:not(.desc-text),
+  table.txns-table.mcard td.mc-cell > *:not(.desc-text),
+  table.mcard.txns-table td.mc-cell > *:not(.desc-text) {
+    max-width: 56% !important;
     text-align: right !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
   }
 
   table.txns-table td.mc-title,
@@ -6989,34 +6992,65 @@ code {
     align-items: center !important;
     justify-content: space-between !important;
     width: 100% !important;
-    font-size: 15px !important;
+    font-size: 16px !important;
     font-weight: 700 !important;
     color: #0F172A !important;
-    padding: 2px 0 8px !important;
-    border-bottom: 1px solid #E2E8F0 !important;
+    padding: 4px 0 10px !important;
+    border-bottom: 1.5px solid #E2E8F0 !important;
     margin-bottom: 4px !important;
   }
 
   table.txns-table td.col-desc,
   table.txns-table.mcard td.col-desc,
   table.mcard.txns-table td.col-desc {
-    max-width: 52% !important;
-    text-align: right !important;
-    font-size: 12px !important;
-    line-height: 1.35 !important;
-    color: #64748B !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 8px 0 !important;
+    gap: 4px !important;
+    border-bottom: 1px dashed #E2E8F0 !important;
+  }
+
+  table.txns-table td.col-desc::before,
+  table.txns-table.mcard td.col-desc::before,
+  table.mcard.txns-table td.col-desc::before {
+    flex: 0 0 auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin-bottom: 2px !important;
+    text-align: left !important;
+  }
+
+  table.txns-table td.col-desc .desc-text,
+  table.txns-table.mcard td.col-desc .desc-text,
+  table.mcard.txns-table td.col-desc .desc-text {
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: left !important;
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+    color: #334155 !important;
+    background: #F8FAFC !important;
+    border: 1px solid #F1F5F9 !important;
+    border-radius: 8px !important;
+    padding: 8px 10px !important;
+    box-sizing: border-box !important;
+    word-break: break-word !important;
+    display: block !important;
   }
 
   table.txns-table td.col-amt,
   table.txns-table.mcard td.col-amt,
   table.mcard.txns-table td.col-amt {
-    font-size: 15px !important;
+    font-size: 16px !important;
     font-weight: 800 !important;
+    font-variant-numeric: tabular-nums !important;
     text-align: right !important;
+    padding: 9px 0 !important;
   }
 }
 

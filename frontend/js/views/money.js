@@ -262,7 +262,7 @@ function renderTxnTable(list, kind, emptyMsg) {
                 <td class="col-category">${esc(d.catName)}</td>
                 <td class="col-method"><span class="method-tag">${esc(d.method)}</span></td>
                 <td class="col-ref"><span class="ref-badge">${esc(d.refNo)}</span></td>
-                <td class="col-desc" title="${esc(d.desc)}">${esc(d.desc)}</td>
+                <td class="col-desc" title="${esc(d.desc)}"><span class="desc-text">${esc(d.desc)}</span></td>
                 <td class="num col-amt" style="color:#15803D;font-weight:700">+${fmt(d.amt)}</td>
                 <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
               </tr>`;
@@ -309,7 +309,7 @@ function renderTxnTable(list, kind, emptyMsg) {
                 <td class="col-category">${esc(d.catName)}</td>
                 <td class="col-method"><span class="method-tag">${esc(d.method)}</span></td>
                 <td class="col-ref"><span class="ref-badge">${esc(d.refNo)}</span></td>
-                <td class="col-desc" title="${esc(d.desc)}">${esc(d.desc)}</td>
+                <td class="col-desc" title="${esc(d.desc)}"><span class="desc-text">${esc(d.desc)}</span></td>
                 <td class="num col-amt" style="color:#B91C1C;font-weight:700">-${fmt(d.amt)}</td>
                 <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
               </tr>`;
@@ -365,7 +365,7 @@ function renderTxnTable(list, kind, emptyMsg) {
               <td class="col-category">${esc(d.catName)}</td>
               <td class="col-method"><span class="method-tag">${esc(d.method)}</span></td>
               <td class="col-ref"><span class="ref-badge">${esc(d.refNo)}</span></td>
-              <td class="col-desc" title="${esc(d.desc)}">${esc(d.desc)}</td>
+              <td class="col-desc" title="${esc(d.desc)}"><span class="desc-text">${esc(d.desc)}</span></td>
               <td class="num col-amt" style="font-weight:700;color:${amtColor}">${amtSign}${fmt(d.amt)}</td>
               <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
             </tr>`;

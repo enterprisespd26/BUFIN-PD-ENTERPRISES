@@ -765,28 +765,71 @@ const CSS = String.raw`
   table.mcard, table.mcard tbody, table.mcard tfoot { display: block !important; width: 100% !important; border: 0 !important; background: transparent !important; }
   table.mcard thead, table.mcard tr.mc-head { display: none !important; }
 
-  table.mcard tr { display: flex !important; flex-direction: column; background: #fff !important; border: 1px solid var(--bd, var(--m-line)) !important;
-    border-radius: 14px; padding: 2px 14px 4px !important; margin: 0 0 10px !important; box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+  table.mcard tr { display: flex !important; flex-direction: column; background: #fff !important; border: 1px solid var(--bd, #e2e8f0) !important;
+    border-radius: 14px; padding: 12px 16px !important; margin: 0 0 12px !important; box-shadow: 0 1px 3px rgba(15,23,42,.05); box-sizing: border-box !important; }
   table.mcard tr.k:active { background: #f5f7ff !important; }
   table.mcard tr.tot { background: #f4f6fb !important; }
 
   table.mcard td.mc-cell { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important;
-    padding: 8px 0 !important; border: 0 !important; border-bottom: 1px dashed var(--bd, var(--m-line)) !important; background: transparent !important;
+    padding: 8px 0 !important; border: 0 !important; border-bottom: 1px dashed var(--bd, #e2e8f0) !important; background: transparent !important;
     font-size: 13.5px; line-height: 1.4; min-width: 0; box-sizing: border-box !important; }
   table.mcard td.mc-cell:last-child { border-bottom: 0 !important; }
-  table.mcard td.mc-cell::before { content: attr(data-label); flex: 0 0 35% !important; max-width: 40% !important; text-align: left; color: var(--t2, var(--m-mute));
+  table.mcard td.mc-cell::before { content: attr(data-label); flex: 0 0 auto !important; max-width: 44% !important; text-align: left; color: var(--t2, #64748b);
     font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .35px; }
   table.mcard td.mc-empty { display: none !important; }
 
-  table.mcard td.mc-title { order: -1; display: flex !important; flex-direction: column !important; align-items: stretch !important; justify-content: flex-start !important; text-align: left !important; font-size: 15px; font-weight: 700; color: var(--tx, var(--m-ink));
-    padding: 6px 0 10px !important; border-bottom: 1px solid var(--bd, var(--m-line)) !important; margin-bottom: 4px !important; }
+  table.mcard td.mc-title { order: -1; display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; text-align: left !important; font-size: 15.5px; font-weight: 700; color: var(--tx, #0f172a);
+    padding: 4px 0 10px !important; border-bottom: 1.5px solid var(--bd, #e2e8f0) !important; margin-bottom: 4px !important; }
   table.mcard td.mc-title::before, table.mcard td.mc-span::before, table.mcard td.mc-actions::before { display: none !important; }
   table.mcard td.mc-title select, table.mcard td.mc-title input { width: 100% !important; min-height: 44px !important; font-size: 15px !important; font-weight: 600 !important; padding: 8px 12px !important; border-radius: 8px !important; border: 1px solid var(--bd, #cbd5e1) !important; box-sizing: border-box !important; background: #fff !important; }
+
+  table.mcard td.mc-cell[data-label*="Description"],
+  table.mcard td.mc-cell[data-label*="Notes"],
+  table.mcard td.mc-cell[data-label*="Narration"],
+  table.mcard td.col-desc {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
+    padding: 8px 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: left !important;
+  }
+  table.mcard td.mc-cell[data-label*="Description"]::before,
+  table.mcard td.mc-cell[data-label*="Notes"]::before,
+  table.mcard td.mc-cell[data-label*="Narration"]::before,
+  table.mcard td.col-desc::before {
+    flex: 0 0 auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin-bottom: 2px !important;
+    text-align: left !important;
+  }
+  table.mcard td.mc-cell[data-label*="Description"] .desc-text,
+  table.mcard td.mc-cell[data-label*="Notes"] .desc-text,
+  table.mcard td.mc-cell[data-label*="Narration"] .desc-text,
+  table.mcard td.col-desc .desc-text {
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: left !important;
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+    color: #334155 !important;
+    background: #f8fafc !important;
+    border: 1px solid #f1f5f9 !important;
+    border-radius: 8px !important;
+    padding: 8px 10px !important;
+    box-sizing: border-box !important;
+    word-break: break-word !important;
+    display: block !important;
+  }
 
   table.mcard td.mc-span { display: block !important; text-align: left !important; font-weight: 700; padding: 12px 0 !important; border-bottom: 0 !important; }
   table.mcard td.mc-span.empty { text-align: center !important; color: var(--t2, var(--m-mute)); font-weight: 500; padding: 22px 0 !important; }
 
-  table.mcard td.mc-amt, table.mcard td.mc-cell[data-label="Amount"] { font-weight: 700; color: var(--tx, var(--m-ink)); text-align: right !important; width: 100% !important; }
+  table.mcard td.mc-amt, table.mcard td.mc-cell[data-label="Amount"], table.mcard td.mc-cell[data-label*="Amount"] { font-weight: 800; font-size: 16px !important; font-variant-numeric: tabular-nums !important; color: var(--tx, var(--m-ink)); text-align: right !important; width: 100% !important; }
   table.mcard td.mc-cell input, table.mcard td.mc-cell select { flex: 1 1 60% !important; max-width: 65% !important; width: auto !important; min-height: 44px !important; padding: 8px 12px !important; font-size: 14px !important; border-radius: 8px !important; border: 1px solid var(--bd, #cbd5e1) !important; box-sizing: border-box !important; text-align: right !important; text-align-last: right !important; background: #fff !important; }
 
   table.mcard td.mc-actions { display: flex !important; width: 100% !important; justify-content: flex-end !important; align-items: center !important; padding: 10px 0 4px !important; border-top: 1px solid var(--bd, #e2e8f0) !important; border-bottom: 0 !important; margin-top: 6px !important; box-sizing: border-box !important; }
