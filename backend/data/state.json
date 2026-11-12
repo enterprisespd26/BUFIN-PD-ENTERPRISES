@@ -1,186 +1,631 @@
 {
-  "version": 38,
+  "version": 45,
   "data": {
     "biz": {
-      "name": "PD ENTERPRISES",
-      "owner": "Pritam Das",
-      "gstin": "21IFNPD3153M1ZC",
+      "upi": "N/A",
       "addr": "Plot No-302, Khata No-111, Khaira, At- Muhanchuan, Po- Panichhatra, Dist- Balasore, Odisha – 756059, India",
-      "phone": "+91 7684010176",
-      "email": "enterprisespd26@gmail.com",
-      "state": "Odisha",
-      "prefix": "PD/2627/",
-      "bank_name": "State Bank of India (SBI)",
-      "account_holder": "PD ENTERPRISES",
-      "account_no": "00000045659125494",
-      "account_type": "Current Account",
-      "account_desc": "CA-REGULAR-PUB-OTH-ALL-INR",
-      "ifsc": "SBIN0009825",
-      "micr": "756002536",
-      "bank_addr": "Plot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059",
       "bank": "State Bank of India (SBI) - A/C: 00000045659125494\nIFSC: SBIN0009825 | MICR: 756002536\nCurrent Account: CA-REGULAR-PUB-OTH-ALL-INR\nPlot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059",
-      "upi": "7684010176@upi",
+      "ifsc": "SBIN0009825",
+      "lock": "",
+      "micr": "756002536",
+      "name": "PD ENTERPRISES",
+      "email": "enterprisespd26@gmail.com",
+      "gstin": "21IFNPD3153M1ZC",
+      "owner": "Pritam Das",
+      "phone": "+91 7684010176",
+      "state": "Odisha",
       "terms": "1. Payment within 15 days.\n2. Goods once sold will not be taken back.\n3. Weight at our weighbridge is final.\n4. Subject to Balasore jurisdiction.",
-      "lock": ""
+      "prefix": "PD/2627/",
+      "bank_addr": "Plot No-302, Khata No-111, Panichhatara, Muhanchuan – 756059",
+      "bank_name": "State Bank of India (SBI)",
+      "account_no": "00000045659125494",
+      "account_desc": "CA-REGULAR-PUB-OTH-ALL-INR",
+      "account_type": "Current Account",
+      "account_holder": "PD ENTERPRISES",
+      "cloudinary_key": "573667157386361",
+      "cloudinary_name": "iqsinmcr"
     },
+    "seq": {
+      "jv": 7,
+      "loan": 4,
+      "exp": 2,
+      "trf": 0,
+      "bill": 0,
+      "sale": 0
+    },
+    "docs": [],
+    "audit": [
+      {
+        "a": "settings",
+        "d": "updated",
+        "at": "2026-11-10T12:46:53.263Z"
+      },
+      {
+        "a": "settings",
+        "d": "updated",
+        "at": "2026-11-10T12:46:55.208Z"
+      },
+      {
+        "a": "settings",
+        "d": "updated",
+        "at": "2026-11-10T12:47:14.431Z"
+      },
+      {
+        "a": "settings",
+        "d": "updated",
+        "at": "2026-11-10T12:48:34.317Z"
+      },
+      {
+        "a": "settings",
+        "d": "updated",
+        "at": "2026-11-10T12:48:35.534Z"
+      },
+      {
+        "a": "settings",
+        "d": "updated",
+        "at": "2026-11-10T12:48:50.039Z"
+      },
+      {
+        "at": "2026-11-01T10:00:00.000Z",
+        "a": "register loan",
+        "d": "LN-0001"
+      },
+      {
+        "at": "2026-11-01T10:05:00.000Z",
+        "a": "register loan",
+        "d": "LN-0002"
+      },
+      {
+        "at": "2026-11-01T10:10:00.000Z",
+        "a": "register loan",
+        "d": "LN-0003"
+      },
+      {
+        "at": "2026-11-01T10:15:00.000Z",
+        "a": "register loan",
+        "d": "LN-0004"
+      },
+      {
+        "at": "2026-11-01T10:20:00.000Z",
+        "a": "post JV-0005",
+        "d": "in"
+      },
+      {
+        "at": "2026-11-01T10:25:00.000Z",
+        "a": "post JV-0006",
+        "d": "out"
+      },
+      {
+        "at": "2026-11-01T10:30:00.000Z",
+        "a": "post JV-0007",
+        "d": "out"
+      }
+    ],
+    "items": [],
+    "loans": [
+      {
+        "id": "ln_pitamber_01",
+        "ref": "LN-0001",
+        "name": "Unsecured Loan - Pitamber Mohanty",
+        "dir": "taken",
+        "party": "p_pitamber_mohanty",
+        "partyName": "Pitamber Mohanty",
+        "principal": 15000000,
+        "repaid": 0,
+        "rate": 0,
+        "date": "2026-11-01",
+        "due": "",
+        "emi": 0,
+        "acct": "1010",
+        "notes": "Unsecured business loan from Pitamber Mohanty",
+        "last": "2026-11-01",
+        "hist": []
+      },
+      {
+        "id": "ln_mr_patra_01",
+        "ref": "LN-0002",
+        "name": "Unsecured Loan - Mr. Patra",
+        "dir": "taken",
+        "party": "p_mr_patra",
+        "partyName": "Mr. Patra",
+        "principal": 20000000,
+        "repaid": 0,
+        "rate": 0,
+        "date": "2026-11-01",
+        "due": "",
+        "emi": 0,
+        "acct": "1010",
+        "notes": "Unsecured business loan from Mr. Patra",
+        "last": "2026-11-01",
+        "hist": []
+      },
+      {
+        "id": "ln_muna_01",
+        "ref": "LN-0003",
+        "name": "Unsecured Loan - Muna (1)",
+        "dir": "taken",
+        "party": "p_muna",
+        "partyName": "Muna",
+        "principal": 6000000,
+        "repaid": 0,
+        "rate": 0,
+        "date": "2026-11-01",
+        "due": "",
+        "emi": 0,
+        "acct": "1010",
+        "notes": "Unsecured business loan from Muna (Tranche 1)",
+        "last": "2026-11-01",
+        "hist": []
+      },
+      {
+        "id": "ln_muna_02",
+        "ref": "LN-0004",
+        "name": "Unsecured Loan - Muna (2)",
+        "dir": "taken",
+        "party": "p_muna",
+        "partyName": "Muna",
+        "principal": 5000000,
+        "repaid": 0,
+        "rate": 0,
+        "date": "2026-11-01",
+        "due": "",
+        "emi": 0,
+        "acct": "1010",
+        "notes": "Unsecured business loan from Muna (Tranche 2)",
+        "last": "2026-11-01",
+        "hist": []
+      }
+    ],
+    "entries": [
+      {
+        "id": "ent_loan_pitamber_01",
+        "ref": "JV-0001",
+        "date": "2026-11-01",
+        "narr": "Unsecured Loan - Pitamber Mohanty - Principal borrowed from Pitamber Mohanty",
+        "src": "loan",
+        "meta": {
+          "loan": "ln_pitamber_01",
+          "kind": "disb",
+          "pr": 15000000,
+          "int": 0,
+          "acct": "1010",
+          "party": "p_pitamber_mohanty",
+          "partyName": "Pitamber Mohanty",
+          "ref": "LN-0001",
+          "docNo": "LN-0001",
+          "loanName": "Unsecured Loan - Pitamber Mohanty",
+          "method": "Bank Transfer",
+          "desc": "Unsecured Loan - Pitamber Mohanty - Initial principal disbursement (₹1,50,000.00)"
+        },
+        "lines": [
+          {
+            "a": "1010",
+            "d": 15000000,
+            "c": 0,
+            "p": "p_pitamber_mohanty"
+          },
+          {
+            "a": "2100",
+            "d": 0,
+            "c": 15000000,
+            "p": "p_pitamber_mohanty"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-11-01T10:00:00.000Z"
+      },
+      {
+        "id": "ent_loan_patra_01",
+        "ref": "JV-0002",
+        "date": "2026-11-01",
+        "narr": "Unsecured Loan - Mr. Patra - Principal borrowed from Mr. Patra",
+        "src": "loan",
+        "meta": {
+          "loan": "ln_mr_patra_01",
+          "kind": "disb",
+          "pr": 20000000,
+          "int": 0,
+          "acct": "1010",
+          "party": "p_mr_patra",
+          "partyName": "Mr. Patra",
+          "ref": "LN-0002",
+          "docNo": "LN-0002",
+          "loanName": "Unsecured Loan - Mr. Patra",
+          "method": "Bank Transfer",
+          "desc": "Unsecured Loan - Mr. Patra - Initial principal disbursement (₹2,00,000.00)"
+        },
+        "lines": [
+          {
+            "a": "1010",
+            "d": 20000000,
+            "c": 0,
+            "p": "p_mr_patra"
+          },
+          {
+            "a": "2100",
+            "d": 0,
+            "c": 20000000,
+            "p": "p_mr_patra"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-11-01T10:05:00.000Z"
+      },
+      {
+        "id": "ent_loan_muna_01",
+        "ref": "JV-0003",
+        "date": "2026-11-01",
+        "narr": "Unsecured Loan - Muna (1) - Principal borrowed from Muna",
+        "src": "loan",
+        "meta": {
+          "loan": "ln_muna_01",
+          "kind": "disb",
+          "pr": 6000000,
+          "int": 0,
+          "acct": "1010",
+          "party": "p_muna",
+          "partyName": "Muna",
+          "ref": "LN-0003",
+          "docNo": "LN-0003",
+          "loanName": "Unsecured Loan - Muna (1)",
+          "method": "Bank Transfer",
+          "desc": "Unsecured Loan - Muna (1) - Initial principal disbursement (₹60,000.00)"
+        },
+        "lines": [
+          {
+            "a": "1010",
+            "d": 6000000,
+            "c": 0,
+            "p": "p_muna"
+          },
+          {
+            "a": "2100",
+            "d": 0,
+            "c": 6000000,
+            "p": "p_muna"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-11-01T10:10:00.000Z"
+      },
+      {
+        "id": "ent_loan_muna_02",
+        "ref": "JV-0004",
+        "date": "2026-11-01",
+        "narr": "Unsecured Loan - Muna (2) - Principal borrowed from Muna",
+        "src": "loan",
+        "meta": {
+          "loan": "ln_muna_02",
+          "kind": "disb",
+          "pr": 5000000,
+          "int": 0,
+          "acct": "1010",
+          "party": "p_muna",
+          "partyName": "Muna",
+          "ref": "LN-0004",
+          "docNo": "LN-0004",
+          "loanName": "Unsecured Loan - Muna (2)",
+          "method": "Bank Transfer",
+          "desc": "Unsecured Loan - Muna (2) - Initial principal disbursement (₹50,000.00)"
+        },
+        "lines": [
+          {
+            "a": "1010",
+            "d": 5000000,
+            "c": 0,
+            "p": "p_muna"
+          },
+          {
+            "a": "2100",
+            "d": 0,
+            "c": 5000000,
+            "p": "p_muna"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-11-01T10:15:00.000Z"
+      },
+      {
+        "id": "ent_cap_intro_01",
+        "ref": "JV-0005",
+        "date": "2026-11-01",
+        "narr": "Initial self capital introduced by proprietor into bank account",
+        "src": "in",
+        "meta": {
+          "method": "Bank Transfer",
+          "ref": "CAP-001",
+          "acct": "1010",
+          "cat": "3000",
+          "party": "",
+          "partyName": "Pritam Das",
+          "desc": "Initial self capital introduced by proprietor into bank account"
+        },
+        "lines": [
+          {
+            "a": "1010",
+            "d": 1000000,
+            "c": 0
+          },
+          {
+            "a": "3000",
+            "d": 0,
+            "c": 1000000
+          }
+        ],
+        "status": "posted",
+        "at": "2026-11-01T10:20:00.000Z"
+      },
+      {
+        "id": "ent_exp_license_01",
+        "ref": "JV-0006",
+        "date": "2026-11-01",
+        "narr": "Rinku Toppo - Company license registration and processing fee paid to Rinku Toppo",
+        "src": "out",
+        "meta": {
+          "method": "Bank Transfer",
+          "ref": "LIC-001",
+          "acct": "1010",
+          "cat": "5700",
+          "party": "p_rinku_toppo",
+          "partyName": "Rinku Toppo",
+          "payee": "Rinku Toppo",
+          "desc": "Company license registration and processing fee paid to Rinku Toppo"
+        },
+        "lines": [
+          {
+            "a": "5700",
+            "d": 6000000,
+            "c": 0,
+            "p": "p_rinku_toppo"
+          },
+          {
+            "a": "1010",
+            "d": 0,
+            "c": 6000000,
+            "p": "p_rinku_toppo"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-11-01T10:25:00.000Z"
+      },
+      {
+        "id": "ent_exp_gst_legal_01",
+        "ref": "JV-0007",
+        "date": "2026-11-01",
+        "narr": "Registration / Legal Services - GST registration, bank account opening, and miscellaneous compliance charges",
+        "src": "out",
+        "meta": {
+          "method": "Bank Transfer",
+          "ref": "REG-001",
+          "acct": "1010",
+          "cat": "5800",
+          "party": "p_registration_legal",
+          "partyName": "Registration / Legal Services",
+          "payee": "Registration / Legal Services",
+          "desc": "GST registration, bank account opening, and miscellaneous compliance charges"
+        },
+        "lines": [
+          {
+            "a": "5800",
+            "d": 345000,
+            "c": 0,
+            "p": "p_registration_legal"
+          },
+          {
+            "a": "1010",
+            "d": 0,
+            "c": 345000,
+            "p": "p_registration_legal"
+          }
+        ],
+        "status": "posted",
+        "at": "2026-11-01T10:30:00.000Z"
+      }
+    ],
+    "parties": [
+      {
+        "id": "p_pitamber_mohanty",
+        "name": "Pitamber Mohanty",
+        "type": "supplier",
+        "phone": "",
+        "gstin": "",
+        "state": "Odisha",
+        "terms": "0"
+      },
+      {
+        "id": "p_mr_patra",
+        "name": "Mr. Patra",
+        "type": "supplier",
+        "phone": "",
+        "gstin": "",
+        "state": "Odisha",
+        "terms": "0"
+      },
+      {
+        "id": "p_muna",
+        "name": "Muna",
+        "type": "supplier",
+        "phone": "",
+        "gstin": "",
+        "state": "Odisha",
+        "terms": "0"
+      },
+      {
+        "id": "p_rinku_toppo",
+        "name": "Rinku Toppo",
+        "type": "supplier",
+        "phone": "",
+        "gstin": "",
+        "state": "Odisha",
+        "terms": "0"
+      },
+      {
+        "id": "p_registration_legal",
+        "name": "Registration / Legal Services",
+        "type": "supplier",
+        "phone": "",
+        "gstin": "",
+        "state": "Odisha",
+        "terms": "0"
+      }
+    ],
     "accounts": [
       {
+        "t": "A",
+        "cash": true,
         "code": "1000",
-        "name": "Cash in Hand",
-        "t": "A",
-        "cash": true
+        "name": "Cash in Hand"
       },
       {
+        "t": "A",
+        "cash": true,
         "code": "1010",
-        "name": "Bank Account",
-        "t": "A",
-        "cash": true
+        "name": "Bank Account"
       },
       {
+        "t": "A",
+        "cash": false,
         "code": "1100",
-        "name": "Accounts Receivable",
-        "t": "A",
-        "cash": false
+        "name": "Accounts Receivable"
       },
       {
+        "t": "A",
+        "cash": false,
         "code": "1200",
-        "name": "Inventory",
-        "t": "A",
-        "cash": false
+        "name": "Inventory"
       },
       {
+        "t": "A",
+        "cash": false,
         "code": "1300",
-        "name": "Input GST",
-        "t": "A",
-        "cash": false
+        "name": "Input GST"
       },
       {
+        "t": "A",
+        "cash": false,
         "code": "1400",
-        "name": "Loan Receivable",
-        "t": "A",
-        "cash": false
+        "name": "Loan Receivable"
       },
       {
+        "t": "A",
+        "cash": false,
         "code": "1500",
-        "name": "Equipment",
-        "t": "A",
-        "cash": false
+        "name": "Equipment"
       },
       {
+        "t": "L",
+        "cash": false,
         "code": "2000",
-        "name": "Accounts Payable",
-        "t": "L",
-        "cash": false
+        "name": "Accounts Payable"
       },
       {
+        "t": "L",
+        "cash": false,
         "code": "2100",
-        "name": "Loan Payable",
-        "t": "L",
-        "cash": false
+        "name": "Loan Payable"
       },
       {
+        "t": "L",
+        "cash": false,
         "code": "2200",
-        "name": "Output GST",
-        "t": "L",
-        "cash": false
+        "name": "Output GST"
       },
       {
+        "t": "E",
+        "cash": false,
         "code": "3000",
-        "name": "Owner's Capital",
-        "t": "E",
-        "cash": false
+        "name": "Owner's Capital"
       },
       {
+        "t": "E",
+        "cash": false,
         "code": "3100",
-        "name": "Drawings",
-        "t": "E",
-        "cash": false
+        "name": "Drawings"
       },
       {
+        "t": "E",
+        "cash": false,
         "code": "3200",
-        "name": "Opening Balance Equity",
-        "t": "E",
-        "cash": false
+        "name": "Opening Balance Equity"
       },
       {
+        "t": "I",
+        "cash": false,
         "code": "4000",
-        "name": "Sales Revenue",
-        "t": "I",
-        "cash": false
+        "name": "Sales Revenue"
       },
       {
+        "t": "I",
+        "cash": false,
         "code": "4100",
-        "name": "Sales Returns & Allowances",
-        "t": "I",
-        "cash": false
+        "name": "Sales Returns & Allowances"
       },
       {
+        "t": "I",
+        "cash": false,
         "code": "4200",
-        "name": "Discounts Given",
-        "t": "I",
-        "cash": false
+        "name": "Discounts Given"
       },
       {
+        "t": "I",
+        "cash": false,
         "code": "4300",
-        "name": "Interest Income",
-        "t": "I",
-        "cash": false
+        "name": "Interest Income"
       },
       {
+        "t": "X",
+        "cash": false,
         "code": "5000",
-        "name": "Purchases / Cost of Goods Sold",
-        "t": "X",
-        "cash": false
+        "name": "Purchases / Cost of Goods Sold"
       },
       {
+        "t": "X",
+        "cash": false,
         "code": "5100",
-        "name": "Rent",
-        "t": "X",
-        "cash": false
+        "name": "Rent"
       },
       {
+        "t": "X",
+        "cash": false,
         "code": "5200",
-        "name": "Electricity & Water",
-        "t": "X",
-        "cash": false
+        "name": "Electricity & Water"
       },
       {
+        "t": "X",
+        "cash": false,
         "code": "5300",
-        "name": "Salaries & Wages",
-        "t": "X",
-        "cash": false
+        "name": "Salaries & Wages"
       },
       {
+        "t": "X",
+        "cash": false,
         "code": "5400",
-        "name": "Transport & Freight",
-        "t": "X",
-        "cash": false
+        "name": "Transport & Freight"
       },
       {
+        "t": "X",
+        "cash": false,
         "code": "5500",
-        "name": "Interest Expense",
+        "name": "Interest Expense"
+      },
+      {
+        "t": "X",
+        "cash": false,
+        "code": "5600",
+        "name": "Miscellaneous Expenses"
+      },
+      {
+        "code": "5700",
+        "name": "Licenses & Permits / Registration Expense",
         "t": "X",
         "cash": false
       },
       {
-        "code": "5600",
-        "name": "Miscellaneous Expenses",
+        "code": "5800",
+        "name": "Legal, GST & Bank Charges",
         "t": "X",
         "cash": false
       }
-    ],
-    "parties": [],
-    "entries": [],
-    "docs": [],
-    "loans": [],
-    "seq": {
-      "jv": 0,
-      "sale": 0,
-      "bill": 0,
-      "exp": 0,
-      "trf": 0
-    },
-    "items": [],
-    "audit": []
+    ]
   }
 }
