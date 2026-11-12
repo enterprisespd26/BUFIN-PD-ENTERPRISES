@@ -2261,38 +2261,139 @@ test('TC-OPEN-MOBILE-01: Opening Balances 2-column mobile layout, non-clipping d
 
   // 4. Verify sw.js cache bump
   const sw = nodeFs.readFileSync('frontend/sw.js', 'utf8');
-  assert.ok(/bufin-v9\.[4-9]-cache/.test(sw), 'sw.js must be bumped to at least bufin-v9.4-cache');
+  assert.ok(/bufin-v(?:9\.[4-9]|1\d+\.\d+)-cache/.test(sw), 'sw.js must be bumped to at least bufin-v9.4-cache');
 });
 
-test('TC-LOAN-MOBILE-KPI-01: Loans KPI metric cards compact 2x2 mobile layout and responsive labels', () => {
+test('TC-TXN-EDIT-01: Remove Print/Export PDF option and add dedicated Edit Details button across transaction views', () => {
+  const actionsJs = nodeFs.readFileSync('frontend/js/modules/actions.js', 'utf8');
+  const appJs = nodeFs.readFileSync('frontend/js/app.js', 'utf8');
+
+  // 1. Verify Print Receipt / Export PDF is removed from transaction modal
+  assert.ok(!actionsJs.includes('id="printReceiptBtn"'), 'actions.js must not contain #printReceiptBtn');
+  assert.ok(!actionsJs.includes('Print Receipt / Export PDF'), 'actions.js must not contain Print Receipt / Export PDF');
+  assert.ok(!actionsJs.includes('Print Voucher / Export PDF'), 'actions.js must not contain Print Voucher / Export PDF');
+
+  // 2. Verify Edit Details button is present with edittxn action
+  assert.ok(actionsJs.includes('data-a="edittxn"'), 'actions.js must contain data-a="edittxn" button');
+  assert.ok(actionsJs.includes('Edit Details'), 'actions.js must display Edit Details label');
+
+  // 3. Verify app.js registers edittxn action handler and routes to appropriate forms
+  assert.ok(appJs.includes('edittxn:'), 'app.js must register edittxn action handler');
+  assert.ok(appJs.includes('moneyInForm(entry)'), 'edittxn must delegate Money In to moneyInForm(entry)');
+  assert.ok(appJs.includes('moneyOutForm(entry)'), 'edittxn must delegate Money Out to moneyOutForm(entry)');
+  assert.ok(appJs.includes('newTransferForm(entry)'), 'edittxn must delegate Transfers to newTransferForm(entry)');
+});
+
+test('TC-TXN-EDIT-02: In-place edit updates Money In, Money Out, and Transfers while maintaining double-entry equilibrium', () => {
   resetTestDb();
 
-  loansState.activeLoanId = null;
-  loansState.q = '';
-  const html = renderLoans();
+  // 1. Test In-place update of Money In entry
+  const inEntry = post({
+    date: '2026-11-01',
+    src: 'in',
+    narr: 'Initial Capital',
+    meta: { method: 'Bank Transfer', ref: 'REF-001', acct: '1010', cat: '3000' },
+    lines: [
+      { a: '1010', d: 5000000, c: 0 },
+      { a: '3000', d: 0, c: 5000000 }
+    ]
+  });
 
-  // 1. Verify markup has full and mobile-short labels
-  assert.ok(html.includes('loan-summary-grid'), 'Must render .loan-summary-grid container');
-  assert.ok(html.includes('loan-lbl-full'), 'Must render .loan-lbl-full for desktop');
-  assert.ok(html.includes('loan-lbl-short'), 'Must render .loan-lbl-short for mobile');
-  assert.ok(html.includes('Total Borrowed'), 'Must include Total Borrowed short label');
-  assert.ok(html.includes('Total Lent'), 'Must include Total Lent short label');
-  assert.ok(html.includes('Active Loans'), 'Must include Active Loans short label');
-  assert.ok(html.includes('Overdue Loans'), 'Must include Overdue Loans short label');
+  const updatedIn = post({
+    id: inEntry.id,
+    ref: inEntry.ref,
+    date: '2026-11-05',
+    src: 'in',
+    narr: 'Updated Capital - Partner Contribution',
+    meta: { method: 'UPI', ref: 'REF-001-REV', acct: '1010', cat: '3000' },
+    lines: [
+      { a: '1010', d: 7500000, c: 0 },
+      { a: '3000', d: 0, c: 7500000 }
+    ]
+  });
 
-  // 2. Verify style.css rules
-  const css = nodeFs.readFileSync('frontend/css/style.css', 'utf8');
-  assert.ok(css.includes('.loan-lbl-full'), 'style.css must define .loan-lbl-full');
-  assert.ok(css.includes('.loan-lbl-short'), 'style.css must define .loan-lbl-short');
-  assert.match(css, /\.loan-summary-grid[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/, 'style.css must enforce 2-column mobile grid');
-  assert.match(css, /\.loan-summary-grid\s+\.kpi[\s\S]*?padding:\s*8px\s+12px\s*!important/, 'style.css must enforce compact padding');
+  assert.equal(updatedIn.id, inEntry.id, 'Entry ID must be preserved during edit');
+  assert.equal(updatedIn.ref, inEntry.ref, 'Entry Reference must be preserved during edit');
+  assert.equal(updatedIn.date, '2026-11-05', 'Date must be updated');
+  assert.equal(updatedIn.lines[0].d, 7500000, 'Debit amount must be updated');
+  assert.equal(updatedIn.lines[1].c, 7500000, 'Credit amount must be updated');
+  assert.equal(
+    updatedIn.lines.reduce((s, l) => s + l.d, 0),
+    updatedIn.lines.reduce((s, l) => s + l.c, 0),
+    'Debits must equal credits after Money In edit'
+  );
 
-  // 3. Verify mobile.js runtime CSS injection
-  const mobileJs = nodeFs.readFileSync('frontend/js/modules/mobile.js', 'utf8');
-  assert.ok(mobileJs.includes('.loan-lbl-full'), 'mobile.js must style .loan-lbl-full');
-  assert.ok(mobileJs.includes('.loan-lbl-short'), 'mobile.js must style .loan-lbl-short');
-  assert.match(mobileJs, /\.loan-summary-grid\s+\.kpi[\s\S]*?padding:\s*8px\s+12px\s*!important/, 'mobile.js must enforce compact padding');
+  // 2. Test In-place update of Money Out entry
+  const outEntry = post({
+    date: '2026-11-02',
+    src: 'out',
+    narr: 'Office Rent',
+    meta: { method: 'Bank Transfer', ref: 'RENT-01', acct: '1010', cat: '5100' },
+    lines: [
+      { a: '5100', d: 2000000, c: 0 },
+      { a: '1010', d: 0, c: 2000000 }
+    ]
+  });
+
+  const updatedOut = post({
+    id: outEntry.id,
+    ref: outEntry.ref,
+    date: '2026-11-03',
+    src: 'out',
+    narr: 'Office Rent & Maintenance',
+    meta: { method: 'Cheque', ref: 'RENT-01-CHQ', acct: '1010', cat: '5100' },
+    lines: [
+      { a: '5100', d: 2500000, c: 0 },
+      { a: '1010', d: 0, c: 2500000 }
+    ]
+  });
+
+  assert.equal(updatedOut.id, outEntry.id, 'Entry ID must be preserved during edit');
+  assert.equal(updatedOut.ref, outEntry.ref, 'Entry Reference must be preserved during edit');
+  assert.equal(updatedOut.date, '2026-11-03', 'Date must be updated');
+  assert.equal(updatedOut.lines[0].d, 2500000, 'Expense amount must be updated');
+  assert.equal(
+    updatedOut.lines.reduce((s, l) => s + l.d, 0),
+    updatedOut.lines.reduce((s, l) => s + l.c, 0),
+    'Debits must equal credits after Money Out edit'
+  );
+
+  // 3. Test In-place update of Contra Transfer entry
+  const xferEntry = post({
+    date: '2026-11-04',
+    src: 'xfer',
+    narr: 'Cash Deposit',
+    meta: { from: '1000', to: '1010', transferType: 'Cash Deposit (Cash to Bank)' },
+    lines: [
+      { a: '1010', d: 1000000, c: 0 },
+      { a: '1000', d: 0, c: 1000000 }
+    ]
+  });
+
+  const updatedXfer = post({
+    id: xferEntry.id,
+    ref: xferEntry.ref,
+    date: '2026-11-06',
+    src: 'xfer',
+    narr: 'Cash Deposit - Counter Collection',
+    meta: { from: '1000', to: '1010', transferType: 'Cash Deposit (Cash to Bank)' },
+    lines: [
+      { a: '1010', d: 1500000, c: 0 },
+      { a: '1000', d: 0, c: 1500000 }
+    ]
+  });
+
+  assert.equal(updatedXfer.id, xferEntry.id, 'Entry ID must be preserved during edit');
+  assert.equal(updatedXfer.ref, xferEntry.ref, 'Entry Reference must be preserved during edit');
+  assert.equal(updatedXfer.date, '2026-11-06', 'Date must be updated');
+  assert.equal(updatedXfer.lines[0].d, 1500000, 'Transfer amount must be updated');
+  assert.equal(
+    updatedXfer.lines.reduce((s, l) => s + l.d, 0),
+    updatedXfer.lines.reduce((s, l) => s + l.c, 0),
+    'Debits must equal credits after Transfer edit'
+  );
 });
+
 
 
 

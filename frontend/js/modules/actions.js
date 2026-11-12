@@ -355,11 +355,13 @@ export function showEnt(id) {
     </div>
 
     <!-- Action Buttons -->
-    <div class="row no-print" style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:16px;">
-      <button type="button" id="printReceiptBtn" style="display:inline-flex;align-items:center;gap:6px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-        ${isOutflow ? 'Print Voucher / Export PDF' : 'Print Receipt / Export PDF'}
-      </button>
+    <div class="row modal-actions no-print" style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:16px;">
+      ${((e.src === 'in' || e.src === 'out' || e.src === 'exp' || e.src === 'pay' || e.src === 'xfer' || e.src === 'jv') && e.status === 'posted') ? `
+        <button type="button" class="btn p" data-a="edittxn" data-i="${e.id}" style="display:inline-flex;align-items:center;gap:6px;background:#2563eb;color:#ffffff;font-weight:600;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          <span>Edit Details</span>
+        </button>
+      ` : ''}
       ${linkedDoc ? `
         <button type="button" class="btn" id="viewLinkedDocBtn" style="display:inline-flex;align-items:center;gap:6px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
@@ -372,13 +374,7 @@ export function showEnt(id) {
           Reverse Entry
         </button>
       ` : ''}
-      ${e.src === 'jv' && e.status === 'posted' ? `
-        <button type="button" class="btn" data-a="editjv" data-i="${e.id}" style="display:inline-flex;align-items:center;gap:6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-          Edit Journal
-        </button>
-      ` : ''}
-      <button type="button" id="closeEntBtn" class="p">Close</button>
+      <button type="button" id="closeEntBtn" class="btn alt" style="padding:8px 16px;">Close</button>
     </div>
   `);
 
@@ -406,9 +402,6 @@ export function showEnt(id) {
       }
     });
   }
-
-  const printBtn = $('#printReceiptBtn');
-  if (printBtn) printBtn.onclick = () => window.print();
 
   const closeHeaderBtn = $('#closeHeaderBtn');
   if (closeHeaderBtn) closeHeaderBtn.onclick = closeM;
@@ -1023,8 +1016,16 @@ export function stmt2(i) {
   $('#closeStmtBtn').onclick = closeM;
 }
 
-export function moneyInForm() {
+export async function moneyInForm(existingEntry = null) {
+  const isEdit = !!(existingEntry && existingEntry.id);
   let inAttachments = [];
+  if (isEdit && existingEntry.id) {
+    try {
+      inAttachments = (await getAttachments(existingEntry.id)) || [];
+    } catch (e) {
+      inAttachments = [];
+    }
+  }
   const customers = (db.parties || []).filter(isC);
 
   const bankMethods = [
@@ -1035,13 +1036,32 @@ export function moneyInForm() {
     'Other'
   ];
 
-  form('Money In (Record Received)',
+  // Derive existing values if editing
+  const debitLine = existingEntry?.lines?.find(l => l.d > 0) || null;
+  const creditLine = existingEntry?.lines?.find(l => l.c > 0 && l.a !== debitLine?.a) || existingEntry?.lines?.find(l => l.c > 0) || null;
+  const existingAmt = debitLine ? (debitLine.d / 100).toFixed(2) : '';
+  const existingDate = existingEntry ? existingEntry.date : today();
+  const existingAcct = debitLine?.a || existingEntry?.meta?.acct || '1010';
+  const existingCat = existingEntry?.meta?.cat || creditLine?.a || '1100';
+  const existingRef = existingEntry?.meta?.ref || existingEntry?.ref || '';
+  const existingDesc = existingEntry?.meta?.desc !== undefined ? existingEntry.meta.desc : (existingEntry?.narr || '');
+  const existingPartyId = existingEntry?.meta?.party || creditLine?.p || debitLine?.p || '';
+  const existingPartyName = existingEntry?.meta?.partyName || existingEntry?.meta?.contributor || existingEntry?.meta?.payer || '';
+  const existingCapitalType = existingEntry?.meta?.capitalType || 'Additional Capital';
+  const existingContributor = existingEntry?.meta?.contributor || existingPartyName || (db.biz?.owner || 'PD ENTERPRISES');
+  const existingPayer = existingEntry?.meta?.payer || existingPartyName || '';
+  const existingSource = existingEntry?.meta?.sourceDesc || '';
+  const existingMethod = existingEntry?.meta?.method || (existingAcct === '1000' ? 'Cash' : 'Bank Transfer / NEFT / RTGS');
+  const existingInvoiceId = existingEntry?.meta?.invoiceId || '';
+  const isCustomParty = existingPartyId === '__CUSTOM__' || (existingPartyName && !customers.some(p => p.id === existingPartyId));
+
+  form(isEdit ? `Edit Money Received (${existingEntry.ref})` : 'Money In (Record Received)',
     `<div class="two">
-      ${fld('date', 'Date', 'date', today(), 1)}
+      ${fld('date', 'Date', 'date', existingDate, 1)}
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label>Deposit To Account *
           <select name="acct" id="txn_acct" required>
-            ${accOpts(a => a.cash)}
+            ${accOpts(a => a.cash, existingAcct)}
           </select>
         </label>
         <div id="txn_in_cash_bal_hint" style="font-size:12px; color:var(--t2); padding-left:2px; display:none;"></div>
@@ -1049,25 +1069,25 @@ export function moneyInForm() {
 
       <label style="grid-column: 1 / -1;">Income Category *
         <select name="cat" id="txn_cat" required>
-          <option value="1100" selected>Customer Payment / Receipt (Trade Accounts Receivable)</option>
-          <option value="3000">Capital Introduced (Owner's Capital / Equity)</option>
-          <option value="4300">Interest Income</option>
-          <option value="4200">Other Miscellaneous Income</option>
+          <option value="1100"${existingCat === '1100' ? ' selected' : ''}>Customer Payment / Receipt (Trade Accounts Receivable)</option>
+          <option value="3000"${existingCat === '3000' ? ' selected' : ''}>Capital Introduced (Owner's Capital / Equity)</option>
+          <option value="4300"${existingCat === '4300' ? ' selected' : ''}>Interest Income</option>
+          <option value="4200"${existingCat === '4200' ? ' selected' : ''}>Other Miscellaneous Income</option>
         </select>
       </label>
 
       <!-- Section 1: Customer Payment (cat === 1100) -->
-      <div id="in_sec_customer" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px;">
+      <div id="in_sec_customer" style="grid-column: 1 / -1; display: ${existingCat === '1100' ? 'flex' : 'none'}; flex-direction: column; gap: 8px;">
         <label>Customer / Payer *
           <select name="party" id="txn_party">
             <option value="">-- None / Walk-in Customer --</option>
-            ${customers.map(p => `<option value="${p.id}">${esc(p.name)}${p.phone ? ' (' + esc(p.phone) + ')' : ''}</option>`).join('')}
-            <option value="__CUSTOM__">➕ Enter custom customer name...</option>
+            ${customers.map(p => `<option value="${p.id}"${p.id === existingPartyId ? ' selected' : ''}>${esc(p.name)}${p.phone ? ' (' + esc(p.phone) + ')' : ''}</option>`).join('')}
+            <option value="__CUSTOM__"${isCustomParty ? ' selected' : ''}>➕ Enter custom customer name...</option>
           </select>
         </label>
-        <div id="txn_custom_wrap" style="display:none">
+        <div id="txn_custom_wrap" style="display:${isCustomParty ? 'block' : 'none'}">
           <label>Customer Name *
-            <input type="text" name="custom_party" id="txn_custom_party" placeholder="Type customer name...">
+            <input type="text" name="custom_party" id="txn_custom_party" value="${esc(existingPartyName)}" placeholder="Type customer name...">
           </label>
         </div>
         <label>Select Unpaid Invoice (Optional)
@@ -1079,28 +1099,28 @@ export function moneyInForm() {
       </div>
 
       <!-- Section 2: Capital Introduced (cat === 3000) -->
-      <div id="in_sec_capital" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
+      <div id="in_sec_capital" style="grid-column: 1 / -1; display: ${existingCat === '3000' ? 'flex' : 'none'}; flex-direction: column; gap: 8px;">
         <div class="two">
           <label>Proprietor / Investor Name *
-            <input type="text" name="proprietor_name" id="txn_proprietor_name" value="${esc(db.biz?.owner || 'PD ENTERPRISES')}" placeholder="e.g. Proprietor, Investor Name...">
+            <input type="text" name="proprietor_name" id="txn_proprietor_name" value="${esc(existingContributor)}" placeholder="e.g. Proprietor, Investor Name...">
           </label>
           <label>Capital Type *
             <select name="capital_type" id="txn_capital_type">
-              <option value="Additional Capital" selected>Additional Capital</option>
-              <option value="Initial Capital Infusion">Initial Capital Infusion</option>
+              <option value="Additional Capital"${existingCapitalType === 'Additional Capital' ? ' selected' : ''}>Additional Capital</option>
+              <option value="Initial Capital Infusion"${existingCapitalType === 'Initial Capital Infusion' ? ' selected' : ''}>Initial Capital Infusion</option>
             </select>
           </label>
         </div>
       </div>
 
       <!-- Section 3: Interest & Other Income (cat === 4300 || cat === 4200) -->
-      <div id="in_sec_other_income" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
+      <div id="in_sec_other_income" style="grid-column: 1 / -1; display: ${(existingCat === '4300' || existingCat === '4200') ? 'flex' : 'none'}; flex-direction: column; gap: 8px;">
         <div class="two">
           <label>Payer / Source Name
-            <input type="text" name="income_payer" id="txn_income_payer" placeholder="e.g. Bank, Financial Institution, Payer Name...">
+            <input type="text" name="income_payer" id="txn_income_payer" value="${esc(existingPayer)}" placeholder="e.g. Bank, Financial Institution, Payer Name...">
           </label>
           <label>Income Source Description
-            <input type="text" name="income_source" id="txn_income_source" placeholder="e.g. Savings Interest, Scrap Handling, Scrap Recovery...">
+            <input type="text" name="income_source" id="txn_income_source" value="${esc(existingSource)}" placeholder="e.g. Savings Interest, Scrap Handling, Scrap Recovery...">
           </label>
         </div>
       </div>
@@ -1109,19 +1129,19 @@ export function moneyInForm() {
       <div id="txn_method_wrap" style="grid-column: 1 / -1;">
         <label>Payment Method
           <select name="method" id="txn_method">
-            ${bankMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
+            ${bankMethods.map(m => `<option value="${m}"${m === existingMethod ? ' selected' : ''}>${m}</option>`).join('')}
           </select>
         </label>
       </div>
 
       <!-- Amount and Reference in ONE LINE -->
       <div class="amt-ref-row">
-        ${fld('amt', 'Amount Received (₹)', 'number', '', 1, 'min="0.01" step="any" placeholder="0.00"')}
-        ${fld('ref', 'Reference No.', 'text', '', 0, 'placeholder="e.g. UTR / Cheque / Txn ID"')}
+        ${fld('amt', 'Amount Received (₹)', 'number', existingAmt, 1, 'min="0.01" step="any" placeholder="0.00"')}
+        ${fld('ref', 'Reference No.', 'text', existingRef, 0, 'placeholder="e.g. UTR / Cheque / Txn ID"')}
       </div>
 
       <label style="grid-column: 1 / -1;">Description / Notes
-        <textarea name="desc" id="txn_desc" rows="2" placeholder="Itemized details or specific receipt context..."></textarea>
+        <textarea name="desc" id="txn_desc" rows="2" placeholder="Itemized details or specific receipt context...">${esc(existingDesc)}</textarea>
       </label>
 
       <div style="grid-column: 1 / -1;">
@@ -1142,6 +1162,16 @@ export function moneyInForm() {
       const cat = v.cat;
       let postedEnt = null;
 
+      if (isEdit) {
+        // Rollback previous invoice allocation if applicable
+        const prevInvoices = (db.docs || []).filter(d => d.type === 'sale' && d.pays?.some(p => p.je === existingEntry.id));
+        prevInvoices.forEach(inv => {
+          inv.pays = inv.pays.filter(p => p.je !== existingEntry.id);
+          const paidSum = inv.pays.reduce((s, p) => s + (p.amt || 0), 0);
+          inv.paid = paidSum / 100;
+        });
+      }
+
       if (cat === '3000') {
         // Capital Introduced (Owner's Capital)
         const contributor = (v.proprietor_name || '').trim() || (db.biz?.owner || "PD ENTERPRISES");
@@ -1151,10 +1181,13 @@ export function moneyInForm() {
           : `${contributor} - ${capitalType} (Capital Introduced)`;
 
         postedEnt = post({
+          id: isEdit ? existingEntry.id : undefined,
+          ref: isEdit ? existingEntry.ref : undefined,
           date: v.date,
           src: 'in',
           narr: narr,
           meta: {
+            ...(isEdit ? existingEntry.meta : {}),
             method: finalMethod,
             ref: userRef,
             acct: v.acct,
@@ -1208,10 +1241,13 @@ export function moneyInForm() {
           : (invNo ? `${partyName} - Payment for Invoice ${invNo}` : (partyName ? `${partyName} - Customer Payment` : 'Customer Payment'));
 
         const pJe = postedEnt = post({
+          id: isEdit ? existingEntry.id : undefined,
+          ref: isEdit ? existingEntry.ref : undefined,
           date: v.date,
           src: 'in',
           narr: narr,
           meta: {
+            ...(isEdit ? existingEntry.meta : {}),
             method: finalMethod,
             ref: userRef || invNo,
             docNo: invNo,
@@ -1253,10 +1289,13 @@ export function moneyInForm() {
           : (sourceDesc ? (payer ? `${payer} - ${sourceDesc}` : sourceDesc) : (payer ? `${payer} - ${catName}` : catName));
 
         postedEnt = post({
+          id: isEdit ? existingEntry.id : undefined,
+          ref: isEdit ? existingEntry.ref : undefined,
           date: v.date,
           src: 'in',
           narr: narr,
           meta: {
+            ...(isEdit ? existingEntry.meta : {}),
             method: finalMethod,
             ref: userRef,
             acct: v.acct,
@@ -1278,7 +1317,7 @@ export function moneyInForm() {
         saveAttachments(postedEnt.id, inAttachments);
       }
     },
-    'Save Transaction',
+    isEdit ? 'Update Transaction' : 'Save Transaction',
     () => {
       bindAttachmentEvents({
         idPrefix: 'in_att',
@@ -1336,13 +1375,14 @@ export function moneyInForm() {
           return;
         }
 
-        const openInvoices = (db.docs || []).filter(d => d.type === 'sale' && !d.cancelled && d.party === custId && out(d) > 0);
+        const openInvoices = (db.docs || []).filter(d => d.type === 'sale' && !d.cancelled && d.party === custId && (out(d) > 0 || (isEdit && d.pays?.some(p => p.je === existingEntry.id))));
         if (openInvoices.length > 0) {
           invoiceRefSel.innerHTML = '<option value="">-- Select Unpaid Invoice to Settle (Optional) --</option>' +
             openInvoices.map(b => {
               const due = (out(b) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 });
               const invNo = b.no || b.sno || b.id;
-              return `<option value="${b.id}" data-due="${(out(b) / 100).toFixed(2)}" data-no="${esc(invNo)}">Invoice #${esc(invNo)} (${b.date}) — Due: ₹${due}</option>`;
+              const isSelected = isEdit && (existingInvoiceId === b.id || b.pays?.some(p => p.je === existingEntry.id));
+              return `<option value="${b.id}" data-due="${(out(b) / 100).toFixed(2)}" data-no="${esc(invNo)}"${isSelected ? ' selected' : ''}>Invoice #${esc(invNo)} (${b.date}) — Due: ₹${due}</option>`;
             }).join('');
         } else {
           invoiceRefSel.innerHTML = '<option value="">-- No pending unpaid invoices (On-Account Receipt) --</option>';
@@ -1374,6 +1414,11 @@ export function moneyInForm() {
 
       if (catEl) catEl.onchange = switchCategory;
       switchCategory();
+
+      if (isEdit) {
+        if (methSel && existingMethod) methSel.value = existingMethod;
+        if (existingInvoiceId && invoiceRefSel) invoiceRefSel.value = existingInvoiceId;
+      }
 
       if (partySel) {
         partySel.onchange = () => {
@@ -1410,8 +1455,16 @@ export function moneyInForm() {
   );
 }
 
-export function moneyOutForm() {
+export async function moneyOutForm(existingEntry = null) {
+  const isEdit = !!(existingEntry && existingEntry.id);
   let outAttachments = [];
+  if (isEdit && existingEntry.id) {
+    try {
+      outAttachments = (await getAttachments(existingEntry.id)) || [];
+    } catch (e) {
+      outAttachments = [];
+    }
+  }
   const suppliers = db.parties.filter(isS);
   const lenders = db.parties.filter(p => p.type === 'lender' || (db.loans || []).some(l => l.party === p.id));
   const borrowedLoans = (db.loans || []).filter(l => l.dir === 'taken');
@@ -1427,14 +1480,58 @@ export function moneyOutForm() {
     'Other'
   ];
 
-  form('Money Out (Record Payment)',
+  // Derive existing values if editing
+  const creditLine = existingEntry?.lines?.find(l => l.c > 0) || null;
+  const existingAmt = creditLine ? (creditLine.c / 100).toFixed(2) : '';
+  const existingDate = existingEntry ? existingEntry.date : today();
+  const existingAcct = creditLine?.a || existingEntry?.meta?.acct || '1010';
+  const existingRef = existingEntry?.meta?.ref || existingEntry?.ref || '';
+  const existingDesc = existingEntry?.meta?.desc !== undefined ? existingEntry.meta.desc : (existingEntry?.narr || '');
+  const existingMethod = existingEntry?.meta?.method || (existingAcct === '1000' ? 'Cash' : 'Bank Transfer / NEFT / RTGS');
+
+  let detectedCat = 'operating';
+  if (existingEntry?.meta?.cat === 'supplier' || existingEntry?.src === 'pay' || existingEntry?.lines?.some(l => l.a === '2000')) {
+    detectedCat = 'supplier';
+  } else if (existingEntry?.meta?.cat === 'loan' || existingEntry?.lines?.some(l => l.a === '2100' || l.a === '5500')) {
+    detectedCat = 'loan';
+  } else if (existingEntry?.meta?.customCat || existingEntry?.meta?.cat === 'other') {
+    detectedCat = 'other';
+  } else if (existingEntry?.meta?.cat === 'operating' || existingEntry?.meta?.opAcc || existingEntry?.lines?.some(l => ['5700', '5800', '5100', '5200', '5400', '5300', '1300'].includes(l.a))) {
+    detectedCat = 'operating';
+  } else {
+    detectedCat = 'operating';
+  }
+
+  // Operating fields
+  const existingOpAcc = existingEntry?.meta?.opAcc || existingEntry?.lines?.find(l => l.d > 0 && l.a !== '1300')?.a || '5700';
+  const existingOpPayee = existingEntry?.meta?.payee || existingEntry?.meta?.partyName || '';
+  const existingOpGstRate = existingEntry?.meta?.gstRate !== undefined ? String(existingEntry.meta.gstRate) : '0';
+
+  // Supplier fields
+  const existingSupplierId = existingEntry?.meta?.party || existingEntry?.lines?.find(l => l.p)?.p || '';
+  const existingSupplierName = existingEntry?.meta?.partyName || '';
+  const existingBillId = existingEntry?.meta?.billId || '';
+  const isCustomSupplier = existingSupplierId === '__CUSTOM__' || (existingSupplierName && !suppliers.some(p => p.id === existingSupplierId));
+
+  // Loan fields
+  const existingLoanId = existingEntry?.meta?.loanId || (existingEntry?.meta?.party ? 'party_' + existingEntry.meta.party : '');
+  const existingPrincipal = existingEntry?.meta?.principal !== undefined ? (existingEntry.meta.principal / 100).toFixed(2) : (existingEntry?.lines?.find(l => l.a === '2100')?.d ? (existingEntry.lines.find(l => l.a === '2100').d / 100).toFixed(2) : '');
+  const existingInterest = existingEntry?.meta?.interest !== undefined ? (existingEntry.meta.interest / 100).toFixed(2) : (existingEntry?.lines?.find(l => l.a === '5500')?.d ? (existingEntry.lines.find(l => l.a === '5500').d / 100).toFixed(2) : '');
+  const existingLenderName = existingEntry?.meta?.partyName || '';
+  const isCustomLender = existingLoanId === '__CUSTOM__' || (existingLenderName && !lenders.some(p => p.id === existingLoanId) && !borrowedLoans.some(l => l.id === existingLoanId));
+
+  // Other fields
+  const existingOtherPayee = existingEntry?.meta?.payee || '';
+  const existingCustomCat = existingEntry?.meta?.customCat || existingEntry?.meta?.catName || '';
+
+  form(isEdit ? `Edit Payment Voucher (${existingEntry.ref})` : 'Money Out (Record Payment)',
     `<div class="two">
-      ${fld('date', 'Date', 'date', today(), 1)}
+      ${fld('date', 'Date', 'date', existingDate, 1)}
       
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label>Paid From Account *
           <select name="acct" id="txn_acct" required>
-            ${accOpts(a => a.cash)}
+            ${accOpts(a => a.cash, existingAcct)}
           </select>
         </label>
         <div id="txn_cash_bal_hint" style="font-size:12px; color:var(--t2); padding-left:2px; display:none;"></div>
@@ -1442,10 +1539,10 @@ export function moneyOutForm() {
 
       <label style="grid-column: 1 / -1;">Expense / Payment Category *
         <select name="cat" id="txn_cat" required>
-          <option value="operating" selected>Operating / Setup Expense</option>
-          <option value="supplier">Supplier Payment</option>
-          <option value="loan">Loan Repayment / EMI</option>
-          <option value="other">Other Miscellaneous Expense</option>
+          <option value="operating"${detectedCat === 'operating' ? ' selected' : ''}>Operating / Setup Expense</option>
+          <option value="supplier"${detectedCat === 'supplier' ? ' selected' : ''}>Supplier Payment</option>
+          <option value="loan"${detectedCat === 'loan' ? ' selected' : ''}>Loan Repayment / EMI</option>
+          <option value="other"${detectedCat === 'other' ? ' selected' : ''}>Other Miscellaneous Expense</option>
         </select>
       </label>
 
@@ -1458,29 +1555,29 @@ export function moneyOutForm() {
       </div>
 
       <!-- Section 1: Operating / Setup Expense -->
-      <div id="sec_operating" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px;">
+      <div id="sec_operating" style="grid-column: 1 / -1; display: ${detectedCat === 'operating' ? 'flex' : 'none'}; flex-direction: column; gap: 8px;">
         <label>Payee / Service Provider Name
-          <input type="text" name="op_payee" id="txn_op_payee" placeholder="e.g. Rinku Toppo, Legal Services, Landlord, Power Utility...">
+          <input type="text" name="op_payee" id="txn_op_payee" value="${esc(existingOpPayee)}" placeholder="e.g. Rinku Toppo, Legal Services, Landlord, Power Utility...">
         </label>
         <label>Expense Ledger Account *
           <select name="op_acc" id="txn_op_acc" required>
-            <option value="5700" selected>5700 - Licenses & Permits / Registration Expense</option>
-            <option value="5800">5800 - Legal, GST & Compliance Charges</option>
-            <option value="5100">5100 - Rent Expense (Operational)</option>
-            <option value="5200">5200 - Transport Expense (Operational)</option>
-            <option value="5400">5400 - Utilities / Electricity & Water</option>
-            <option value="5300">5300 - Salaries & Wages</option>
-            ${extraExpenseAccounts.map(a => `<option value="${a.code}">${a.code} - ${esc(a.name)}</option>`).join('')}
+            <option value="5700"${existingOpAcc === '5700' ? ' selected' : ''}>5700 - Licenses & Permits / Registration Expense</option>
+            <option value="5800"${existingOpAcc === '5800' ? ' selected' : ''}>5800 - Legal, GST & Compliance Charges</option>
+            <option value="5100"${existingOpAcc === '5100' ? ' selected' : ''}>5100 - Rent Expense (Operational)</option>
+            <option value="5200"${existingOpAcc === '5200' ? ' selected' : ''}>5200 - Transport Expense (Operational)</option>
+            <option value="5400"${existingOpAcc === '5400' ? ' selected' : ''}>5400 - Utilities / Electricity & Water</option>
+            <option value="5300"${existingOpAcc === '5300' ? ' selected' : ''}>5300 - Salaries & Wages</option>
+            ${extraExpenseAccounts.map(a => `<option value="${a.code}"${a.code === existingOpAcc ? ' selected' : ''}>${a.code} - ${esc(a.name)}</option>`).join('')}
           </select>
         </label>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
           <label>GST % (Input Tax Credit)
             <select name="op_gst_rate" id="txn_op_gst_rate">
-              <option value="0" selected>0% (Nil / Exempt / Non-GST)</option>
-              <option value="5">5%</option>
-              <option value="12">12%</option>
-              <option value="18">18%</option>
-              <option value="28">28%</option>
+              <option value="0"${existingOpGstRate === '0' ? ' selected' : ''}>0% (Nil / Exempt / Non-GST)</option>
+              <option value="5"${existingOpGstRate === '5' ? ' selected' : ''}>5%</option>
+              <option value="12"${existingOpGstRate === '12' ? ' selected' : ''}>12%</option>
+              <option value="18"${existingOpGstRate === '18' ? ' selected' : ''}>18%</option>
+              <option value="28"${existingOpGstRate === '28' ? ' selected' : ''}>28%</option>
             </select>
           </label>
           <div id="op_calc_summary" style="background:#f8fafc; border:1px solid var(--bd); border-radius:8px; padding:6px 10px; font-size:12px; display:flex; flex-direction:column; justify-content:center;">
@@ -1490,17 +1587,17 @@ export function moneyOutForm() {
       </div>
 
       <!-- Section 2: Supplier Payment -->
-      <div id="sec_supplier" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
+      <div id="sec_supplier" style="grid-column: 1 / -1; display: ${detectedCat === 'supplier' ? 'flex' : 'none'}; flex-direction: column; gap: 8px;">
         <label>Supplier / Payee (Mandatory) *
           <select name="supplier_id" id="txn_supplier_id">
             <option value="">-- Select Active Supplier --</option>
-            ${suppliers.map(p => `<option value="${p.id}">${esc(p.name)}${p.phone ? ' (' + esc(p.phone) + ')' : ''}</option>`).join('')}
-            <option value="__CUSTOM__">➕ Enter custom supplier name...</option>
+            ${suppliers.map(p => `<option value="${p.id}"${p.id === existingSupplierId ? ' selected' : ''}>${esc(p.name)}${p.phone ? ' (' + esc(p.phone) + ')' : ''}</option>`).join('')}
+            <option value="__CUSTOM__"${isCustomSupplier ? ' selected' : ''}>➕ Enter custom supplier name...</option>
           </select>
         </label>
-        <div id="txn_custom_supplier_wrap" style="display:none">
+        <div id="txn_custom_supplier_wrap" style="display:${isCustomSupplier ? 'block' : 'none'}">
           <label>Payment to (Name of person or Business) *
-            <input type="text" name="custom_supplier" id="txn_custom_supplier" placeholder="Type person or business name...">
+            <input type="text" name="custom_supplier" id="txn_custom_supplier" value="${esc(existingSupplierName)}" placeholder="Type person or business name...">
           </label>
         </div>
         <label>Pending Purchase Bill Reference
@@ -1512,26 +1609,26 @@ export function moneyOutForm() {
       </div>
 
       <!-- Section 3: Loan Repayment / EMI -->
-      <div id="sec_loan" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
+      <div id="sec_loan" style="grid-column: 1 / -1; display: ${detectedCat === 'loan' ? 'flex' : 'none'}; flex-direction: column; gap: 8px;">
         <label>Lender Name / Loan Account *
           <select name="loan_id" id="txn_loan_id">
             <option value="">-- Select Lender / Loan Account --</option>
-            ${borrowedLoans.map(l => `<option value="${l.id}">${esc(l.ref || l.name)} · Lender: ${esc(l.partyName || pn(l.party))}</option>`).join('')}
-            ${lenders.map(p => `<option value="party_${p.id}">Lender: ${esc(p.name)}</option>`).join('')}
-            <option value="__CUSTOM__">➕ Other Lender...</option>
+            ${borrowedLoans.map(l => `<option value="${l.id}"${l.id === existingLoanId ? ' selected' : ''}>${esc(l.ref || l.name)} · Lender: ${esc(l.partyName || pn(l.party))}</option>`).join('')}
+            ${lenders.map(p => `<option value="party_${p.id}"${('party_' + p.id) === existingLoanId ? ' selected' : ''}>Lender: ${esc(p.name)}</option>`).join('')}
+            <option value="__CUSTOM__"${isCustomLender ? ' selected' : ''}>➕ Other Lender...</option>
           </select>
         </label>
-        <div id="txn_custom_loan_wrap" style="display:none">
+        <div id="txn_custom_loan_wrap" style="display:${isCustomLender ? 'block' : 'none'}">
           <label>Custom Lender Name *
-            <input type="text" name="custom_lender" id="txn_custom_lender" placeholder="Type lender name...">
+            <input type="text" name="custom_lender" id="txn_custom_lender" value="${esc(existingLenderName)}" placeholder="Type lender name...">
           </label>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
           <label>Principal Repayment (₹)
-            <input type="number" step="any" min="0" name="loan_principal" id="txn_loan_principal" placeholder="0.00">
+            <input type="number" step="any" min="0" name="loan_principal" id="txn_loan_principal" value="${existingPrincipal}" placeholder="0.00">
           </label>
           <label>Interest Paid (₹)
-            <input type="number" step="any" min="0" name="loan_interest" id="txn_loan_interest" placeholder="0.00">
+            <input type="number" step="any" min="0" name="loan_interest" id="txn_loan_interest" value="${existingInterest}" placeholder="0.00">
           </label>
         </div>
         <div id="loan_split_hint" style="font-size:12px; color:var(--t2); padding-left:2px;">
@@ -1540,12 +1637,12 @@ export function moneyOutForm() {
       </div>
 
       <!-- Section 4: Other Miscellaneous Expense -->
-      <div id="sec_other" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
+      <div id="sec_other" style="grid-column: 1 / -1; display: ${detectedCat === 'other' ? 'flex' : 'none'}; flex-direction: column; gap: 8px;">
         <label>Payee / Vendor Name (Optional)
-          <input type="text" name="other_payee" id="txn_other_payee" placeholder="e.g. Local shop, contractor, vendor...">
+          <input type="text" name="other_payee" id="txn_other_payee" value="${esc(existingOtherPayee)}" placeholder="e.g. Local shop, contractor, vendor...">
         </label>
         <label>Expense Category / Description *
-          <input type="text" name="custom_cat" id="txn_custom_cat" placeholder="Enter custom Expense / Payment Category (e.g. Repairs, Office Supplies)...">
+          <input type="text" name="custom_cat" id="txn_custom_cat" value="${esc(existingCustomCat)}" placeholder="Enter custom Expense / Payment Category (e.g. Repairs, Office Supplies)...">
         </label>
       </div>
 
@@ -1553,7 +1650,7 @@ export function moneyOutForm() {
       <div id="txn_method_wrap" style="grid-column: 1 / -1;">
         <label>Payment Method
           <select name="method" id="txn_method">
-            ${bankMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
+            ${bankMethods.map(m => `<option value="${m}"${m === existingMethod ? ' selected' : ''}>${m}</option>`).join('')}
           </select>
         </label>
       </div>
@@ -1562,20 +1659,20 @@ export function moneyOutForm() {
       <div class="amt-ref-row" id="amt_ref_row">
         <div id="std_amt_wrap">
           <label id="std_amt_label">Total Amount Paid (₹) *
-            <input type="number" step="any" min="0.01" name="amt" id="txn_amt" placeholder="0.00" required>
+            <input type="number" step="any" min="0.01" name="amt" id="txn_amt" value="${existingAmt}" placeholder="0.00" required>
           </label>
         </div>
 
         <div id="txn_ref_wrap">
           <label id="txn_ref_label">Reference No. (UTR / Cheque No. / Txn ID)
-            <input type="text" name="ref" id="txn_ref" placeholder="e.g. UTR / Cheque / Txn ID">
+            <input type="text" name="ref" id="txn_ref" value="${esc(existingRef)}" placeholder="e.g. UTR / Cheque / Txn ID">
           </label>
         </div>
       </div>
 
       <!-- Description / Notes -->
       <label style="grid-column: 1 / -1;" id="txn_desc_label">Description / Notes
-        <textarea name="desc" id="txn_desc" rows="2" placeholder="Itemized details, material type, quantity, or specific context..."></textarea>
+        <textarea name="desc" id="txn_desc" rows="2" placeholder="Itemized details, material type, quantity, or specific context...">${esc(existingDesc)}</textarea>
       </label>
 
       <!-- Document Attachment / Camera Scan -->
@@ -1605,9 +1702,30 @@ export function moneyOutForm() {
       if (outflowPaisa <= 0) throw Error('Total amount paid must be above zero');
 
       if (isCash) {
-        const check = checkCashLiquidity('1000', outflowPaisa);
-        if (!check.ok) {
-          throw Error(check.error || 'Insufficient cash in hand balance. Please deposit funds or pay via Bank Account.');
+        const addedBack = (isEdit && existingAcct === '1000' && creditLine) ? creditLine.c : 0;
+        const curCash = net('1000') + addedBack;
+        if (outflowPaisa > curCash) {
+          throw Error(`Insufficient cash in hand balance. Available: ${fmt(Math.max(0, curCash))}. Please deposit funds or pay via Bank Account.`);
+        }
+      }
+
+      if (isEdit) {
+        // Rollback previous bill allocation if applicable
+        const prevBills = (db.docs || []).filter(d => d.type === 'bill' && d.pays?.some(p => p.je === existingEntry.id));
+        prevBills.forEach(b => {
+          b.pays = b.pays.filter(p => p.je !== existingEntry.id);
+          const paidSum = b.pays.reduce((s, p) => s + (p.amt || 0), 0);
+          b.paid = paidSum / 100;
+        });
+
+        // Rollback previous loan repayment if applicable
+        const prevLoanId = existingEntry.meta?.loanId;
+        const prevPrinc = existingEntry.meta?.principal || (existingEntry.lines?.find(l => l.a === '2100')?.d || 0);
+        if (prevLoanId && prevPrinc > 0) {
+          const prevLoan = (db.loans || []).find(l => l.id === prevLoanId);
+          if (prevLoan) {
+            prevLoan.repaid = Math.max(0, (prevLoan.repaid || 0) - prevPrinc);
+          }
         }
       }
 
@@ -1656,10 +1774,13 @@ export function moneyOutForm() {
           : (payeeName ? `${payeeName} - ${catName}` : catName);
 
         postedEnt = post({
+          id: isEdit ? existingEntry.id : undefined,
+          ref: isEdit ? existingEntry.ref : undefined,
           date: v.date,
           src: 'out',
           narr: narr,
           meta: {
+            ...(isEdit ? existingEntry.meta : {}),
             method: finalMethod,
             ref: userRef,
             acct: v.acct,
@@ -1708,10 +1829,13 @@ export function moneyOutForm() {
           : (billNo ? `${supplierName} - Payment for Bill ${billNo}` : `${supplierName} - Supplier Payment`);
 
         const pJe = postedEnt = post({
+          id: isEdit ? existingEntry.id : undefined,
+          ref: isEdit ? existingEntry.ref : undefined,
           date: v.date,
           src: 'out',
           narr: narr,
           meta: {
+            ...(isEdit ? existingEntry.meta : {}),
             method: finalMethod,
             ref: userRef || billNo,
             docNo: billNo,
@@ -1789,10 +1913,13 @@ export function moneyOutForm() {
           : `${lenderName} - Loan Repayment / EMI (Principal: ${fmt(princPaisa)}${intPaisa > 0 ? ', Interest: ' + fmt(intPaisa) : ''})`;
 
         postedEnt = post({
+          id: isEdit ? existingEntry.id : undefined,
+          ref: isEdit ? existingEntry.ref : undefined,
           date: v.date,
           src: 'out',
           narr: narr,
           meta: {
+            ...(isEdit ? existingEntry.meta : {}),
             method: finalMethod,
             ref: userRef || loanRef,
             acct: v.acct,
@@ -1849,10 +1976,13 @@ export function moneyOutForm() {
           : (payee ? `${payee} - ${customCatName}` : customCatName);
 
         postedEnt = post({
+          id: isEdit ? existingEntry.id : undefined,
+          ref: isEdit ? existingEntry.ref : undefined,
           date: v.date,
           src: 'out',
           narr: narr,
           meta: {
+            ...(isEdit ? existingEntry.meta : {}),
             method: finalMethod,
             ref: userRef,
             acct: v.acct,
@@ -1875,7 +2005,7 @@ export function moneyOutForm() {
         saveAttachments(postedEnt.id, outAttachments);
       }
     },
-    'Save Transaction',
+    isEdit ? 'Update Transaction' : 'Save Transaction',
     () => {
       bindAttachmentEvents({
         idPrefix: 'out_att',
@@ -1933,20 +2063,23 @@ export function moneyOutForm() {
         const bal = net(code);
         const sb = $('#sb') || document.querySelector('#f button[type="submit"]') || document.querySelector('#f button.p');
 
+        const currentExistingPaisa = (isEdit && code === existingAcct) ? (creditLine ? creditLine.c : 0) : 0;
+        const effectiveBal = bal + currentExistingPaisa;
+
         if (cashHintEl) {
           cashHintEl.style.display = 'block';
-          cashHintEl.innerHTML = `Available ${isCash ? 'Cash in Hand' : (acc(code)?.name || 'Account')}: <b style="color:${bal <= 0 ? '#dc2626' : '#0f5132'}">${fmt(bal)}</b>`;
+          cashHintEl.innerHTML = `Available ${isCash ? 'Cash in Hand' : (acc(code)?.name || 'Account')}: <b style="color:${effectiveBal <= 0 ? '#dc2626' : '#0f5132'}">${fmt(effectiveBal)}</b>`;
         }
 
         let needed = 0;
         try { needed = P(amtInput?.value || '0'); } catch (e) {}
 
-        if (needed > 0 && needed > bal) {
+        if (needed > 0 && needed > effectiveBal) {
           if (cashWarnEl) cashWarnEl.style.display = 'block';
           if (cashWarnText) {
             cashWarnText.textContent = isCash
               ? 'Insufficient balance in Cash in Hand. Please deposit funds or pay via Bank Account.'
-              : `Insufficient balance in ${acc(code)?.name || 'Bank Account'} (Available: ${fmt(Math.max(0, bal))}, Required: ${fmt(needed)}).`;
+              : `Insufficient balance in ${acc(code)?.name || 'Bank Account'} (Available: ${fmt(Math.max(0, effectiveBal))}, Required: ${fmt(needed)}).`;
           }
           if (sb) {
             sb.disabled = true;
@@ -1989,14 +2122,15 @@ export function moneyOutForm() {
           return;
         }
 
-        const openBills = db.docs.filter(d => d.type === 'bill' && !d.cancelled && d.party === supId && out(d) > 0);
+        const openBills = db.docs.filter(d => d.type === 'bill' && !d.cancelled && d.party === supId && (out(d) > 0 || (isEdit && d.pays?.some(p => p.je === existingEntry.id))));
         if (openBills.length > 0) {
           billRefSel.innerHTML = '<option value="">-- Select Pending Bill to Settle (Optional) --</option>' +
             openBills.map(b => {
               const due = (out(b) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 });
               const billNo = b.sno || b.no;
               const mat = b.mat || (b.lines && b.lines[0]?.n) || 'Goods';
-              return `<option value="${b.id}" data-due="${(out(b) / 100).toFixed(2)}" data-no="${esc(billNo)}" data-mat="${esc(mat)}">Bill #${esc(billNo)} (${b.date}) — Due: ₹${due} [${esc(mat)}]</option>`;
+              const isSelected = isEdit && (existingBillId === b.id || b.pays?.some(p => p.je === existingEntry.id));
+              return `<option value="${b.id}" data-due="${(out(b) / 100).toFixed(2)}" data-no="${esc(billNo)}" data-mat="${esc(mat)}"${isSelected ? ' selected' : ''}>Bill #${esc(billNo)} (${b.date}) — Due: ₹${due} [${esc(mat)}]</option>`;
             }).join('');
         } else {
           billRefSel.innerHTML = '<option value="">-- No pending unpaid bills (On-Account Payment) --</option>';
@@ -2055,7 +2189,7 @@ export function moneyOutForm() {
         } else if (cat === 'other') {
           // 4. Other Miscellaneous Expense
           if (secOther) secOther.style.display = 'flex';
-          if (customCatInput) customCatInput.focus();
+          if (customCatInput && !isEdit) customCatInput.focus();
         }
         checkLiquidityWarn();
       }
@@ -2065,6 +2199,11 @@ export function moneyOutForm() {
 
       if (catEl) catEl.onchange = switchCategory;
       switchCategory();
+
+      if (isEdit) {
+        if (methSel && existingMethod) methSel.value = existingMethod;
+        if (existingBillId && billRefSel) billRefSel.value = existingBillId;
+      }
 
       if (supplierSel) {
         supplierSel.onchange = () => {
@@ -2134,21 +2273,28 @@ export function moneyOutForm() {
   );
 }
 
-export function txnForm(kind) {
+export function txnForm(kind, existingEntry = null) {
   if (kind === 'out') {
-    return moneyOutForm();
+    return moneyOutForm(existingEntry);
   }
-  return moneyInForm();
+  return moneyInForm(existingEntry);
 }
 
-export function newExpForm() {
-  return moneyOutForm();
+export function newExpForm(existingEntry = null) {
+  return moneyOutForm(existingEntry);
 }
 
-export function newTransferForm() {
+export function newTransferForm(existingEntry = null) {
+  const isEdit = !!(existingEntry && existingEntry.id);
   const cashAccounts = db.accounts.filter(a => a.cash);
-  const defaultFrom = '1000'; // Cash in Hand
-  const defaultTo = cashAccounts.find(a => a.code !== defaultFrom)?.code || '1010'; // Bank Account
+  const creditLine = existingEntry?.lines?.find(l => l.c > 0) || null;
+  const debitLine = existingEntry?.lines?.find(l => l.d > 0) || null;
+  const defaultFrom = creditLine?.a || '1000'; // Cash in Hand
+  const defaultTo = debitLine?.a || cashAccounts.find(a => a.code !== defaultFrom)?.code || '1010'; // Bank Account
+  const existingAmt = creditLine ? (creditLine.c / 100).toFixed(2) : '';
+  const existingDate = existingEntry ? existingEntry.date : today();
+  const existingRef = existingEntry?.meta?.ref || '';
+  const existingDesc = existingEntry?.meta?.desc !== undefined ? existingEntry.meta.desc : (existingEntry?.narr || '');
 
   const svgIcons = {
     bank: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-bank"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/></svg>`,
@@ -2157,7 +2303,7 @@ export function newTransferForm() {
     warning: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
   };
 
-  form('Transfer Money (Contra Voucher)',
+  form(isEdit ? `Edit Transfer (${existingEntry.ref})` : 'Transfer Money (Contra Voucher)',
     `<div class="xfer-form">
       <div class="xfer-form-grid">
         <!-- Date Field -->
@@ -2174,7 +2320,7 @@ export function newTransferForm() {
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
             </span>
-            <input type="date" name="date" id="xfer_date" class="xfer-input with-prefix-icon" value="${today()}" required>
+            <input type="date" name="date" id="xfer_date" class="xfer-input with-prefix-icon" value="${existingDate}" required>
           </div>
         </div>
 
@@ -2185,7 +2331,7 @@ export function newTransferForm() {
           </label>
           <div class="xfer-input-wrap">
             <span class="xfer-input-prefix-currency" aria-hidden="true">₹</span>
-            <input type="number" name="amt" id="xfer_amt" class="xfer-input with-prefix-currency" min="0.01" step="any" placeholder="0.00" required>
+            <input type="number" name="amt" id="xfer_amt" class="xfer-input with-prefix-currency" min="0.01" step="any" value="${existingAmt}" placeholder="0.00" required>
           </div>
         </div>
 
@@ -2275,7 +2421,7 @@ export function newTransferForm() {
                 <line x1="16" x2="14" y1="3" y2="21"/>
               </svg>
             </span>
-            <input type="text" name="ref" id="xfer_ref" class="xfer-input with-prefix-icon" placeholder="e.g. UTR / Cheque / ATM ID">
+            <input type="text" name="ref" id="xfer_ref" class="xfer-input with-prefix-icon" value="${esc(existingRef)}" placeholder="e.g. UTR / Cheque / ATM ID">
           </div>
         </div>
 
@@ -2293,7 +2439,7 @@ export function newTransferForm() {
               Notes / Narration
             </span>
           </label>
-          <textarea name="desc" id="xfer_desc" class="xfer-textarea" rows="2" placeholder="Optional notes (e.g. Counter cash deposit to SBI, ATM withdrawal for petty cash)..."></textarea>
+          <textarea name="desc" id="xfer_desc" class="xfer-textarea" rows="2" placeholder="Optional notes (e.g. Counter cash deposit to SBI, ATM withdrawal for petty cash)...">${esc(existingDesc)}</textarea>
         </div>
       </div>
     </div>`,
@@ -2315,7 +2461,8 @@ export function newTransferForm() {
       const isToCash = v.to === '1000' || (toAcc?.name || '').toLowerCase().includes('cash');
 
       // Rule 2: Balance check
-      const fromBal = net(v.from);
+      const addedBack = (isEdit && v.from === creditLine?.a) ? creditLine.c : 0;
+      const fromBal = net(v.from) + addedBack;
       if (isFromCash && a > fromBal) {
         throw Error(`Insufficient cash in hand balance. Available: ${fmt(Math.max(0, fromBal))}. Please deposit funds or pay via Bank Account.`);
       }
@@ -2336,10 +2483,13 @@ export function newTransferForm() {
       const narr = userNotes || `${transferType} - ${fromAcc?.name || v.from} to ${toAcc?.name || v.to}`;
 
       post({
+        id: isEdit ? existingEntry.id : undefined,
+        ref: isEdit ? existingEntry.ref : undefined,
         date: v.date,
         src: 'xfer',
         narr: narr,
         meta: {
+          ...(isEdit ? existingEntry.meta : {}),
           ref: (v.ref || '').trim(),
           from: v.from,
           to: v.to,
@@ -2352,7 +2502,7 @@ export function newTransferForm() {
         ]
       });
     },
-    'Confirm Transfer',
+    isEdit ? 'Update Transfer' : 'Confirm Transfer',
     () => {
       const dlg = $('#dlg');
       if (dlg) {
@@ -2403,7 +2553,8 @@ export function newTransferForm() {
         const toCode = toSel.value;
 
         // Update balances
-        const fromBal = net(fromCode);
+        const addedBack = (isEdit && fromCode === creditLine?.a) ? creditLine.c : 0;
+        const fromBal = net(fromCode) + addedBack;
         const toBal = net(toCode);
         if (fromBalEl) {
           const isNeg = fromBal < 0;

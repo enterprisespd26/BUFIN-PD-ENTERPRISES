@@ -24,7 +24,7 @@ import { showPinLogin, initPinKeypad, unlockApp } from './views/login.js';
 
 import {
   showEnt, showDoc, payForm, partyPay, docForm2, partyForm, stmt2,
-  txnForm, newExpForm, newTransferForm, showLoan2, loanForm2, repayForm2,
+  txnForm, newExpForm, newTransferForm, moneyInForm, moneyOutForm, showLoan2, loanForm2, repayForm2,
   editLoanModal, deleteLoanAction, exportLoanCsv,
   jvForm2, quickAddModal, showCsvModal, showBackupModal, showRestoreModal
 } from './modules/actions.js';
@@ -1150,6 +1150,16 @@ const ACTIONS = {
   },
   newloan: loanForm2,
   newjv: jvForm2,
+  edittxn: i => {
+    closeM();
+    const entry = db.entries.find(x => x.id === i);
+    if (!entry) return;
+    if (entry.src === 'in') moneyInForm(entry);
+    else if (entry.src === 'out' || entry.src === 'exp' || entry.src === 'pay') moneyOutForm(entry);
+    else if (entry.src === 'xfer') newTransferForm(entry);
+    else if (entry.src === 'jv') jvForm2(entry);
+    else jvForm2(entry);
+  },
   editjv: i => {
     closeM();
     const entry = db.entries.find(x => x.id === i);
