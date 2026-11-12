@@ -1415,9 +1415,9 @@ export function moneyOutForm() {
   const suppliers = db.parties.filter(isS);
   const lenders = db.parties.filter(p => p.type === 'lender' || (db.loans || []).some(l => l.party === p.id));
   const borrowedLoans = (db.loans || []).filter(l => l.dir === 'taken');
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const curD = new Date();
-  const curMonthText = `${monthNames[curD.getMonth()]} ${curD.getFullYear()}`;
+  const extraExpenseAccounts = (db.accounts || []).filter(a =>
+    a.t === 'E' && !['5700', '5800', '5100', '5200', '5400', '5300', '5000', '5500', '5600', '2000', '2100', '3100'].includes(a.code)
+  );
 
   const bankMethods = [
     'Bank Transfer / NEFT / RTGS',
@@ -1442,27 +1442,12 @@ export function moneyOutForm() {
 
       <label style="grid-column: 1 / -1;">Expense / Payment Category *
         <select name="cat" id="txn_cat" required>
-          <option value="2000" selected>Supplier Payment (Accounts Payable)</option>
-          <option value="5000">Purchases / Cost of Goods Sold</option>
-          <option value="5100">Rent Expense (Operational)</option>
-          <option value="5200">Transport Expense (Operational)</option>
-          <option value="5400">Utilities (Operational)</option>
-          <option value="5300">Salaries</option>
-          <option value="5500">Interest Expense</option>
-          <option value="5600">Miscellaneous Expense</option>
-          <option value="5700">Licenses & Permits / Registration Expense</option>
-          <option value="5800">Legal, GST & Compliance Charges</option>
-          <option value="3100">Drawings (Owner's Personal Withdrawal)</option>
-          <option value="other">Other</option>
+          <option value="operating" selected>Operating / Setup Expense</option>
+          <option value="supplier">Supplier Payment</option>
+          <option value="loan">Loan Repayment / EMI</option>
+          <option value="other">Other Miscellaneous Expense</option>
         </select>
       </label>
-
-      <!-- Custom Category input: opens when "Other" is chosen -->
-      <div id="txn_custom_cat_wrap" style="grid-column: 1 / -1; display: none;">
-        <label>Expense / Payment Category *
-          <input type="text" name="custom_cat" id="txn_custom_cat" placeholder="Enter custom Expense / Payment Category...">
-        </label>
-      </div>
 
       <!-- Insufficient Cash Warning Banner -->
       <div id="cash_insufficient_warn" style="grid-column: 1 / -1; display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; font-size:12.5px; color:#991b1b;">
@@ -1472,8 +1457,40 @@ export function moneyOutForm() {
         </div>
       </div>
 
-      <!-- Section 1: Supplier Payment (cat === 2000) -->
-      <div id="sec_supplier" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px;">
+      <!-- Section 1: Operating / Setup Expense -->
+      <div id="sec_operating" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px;">
+        <label>Payee / Service Provider Name
+          <input type="text" name="op_payee" id="txn_op_payee" placeholder="e.g. Rinku Toppo, Legal Services, Landlord, Power Utility...">
+        </label>
+        <label>Expense Ledger Account *
+          <select name="op_acc" id="txn_op_acc" required>
+            <option value="5700" selected>5700 - Licenses & Permits / Registration Expense</option>
+            <option value="5800">5800 - Legal, GST & Compliance Charges</option>
+            <option value="5100">5100 - Rent Expense (Operational)</option>
+            <option value="5200">5200 - Transport Expense (Operational)</option>
+            <option value="5400">5400 - Utilities / Electricity & Water</option>
+            <option value="5300">5300 - Salaries & Wages</option>
+            ${extraExpenseAccounts.map(a => `<option value="${a.code}">${a.code} - ${esc(a.name)}</option>`).join('')}
+          </select>
+        </label>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+          <label>GST % (Input Tax Credit)
+            <select name="op_gst_rate" id="txn_op_gst_rate">
+              <option value="0" selected>0% (Nil / Exempt / Non-GST)</option>
+              <option value="5">5%</option>
+              <option value="12">12%</option>
+              <option value="18">18%</option>
+              <option value="28">28%</option>
+            </select>
+          </label>
+          <div id="op_calc_summary" style="background:#f8fafc; border:1px solid var(--bd); border-radius:8px; padding:6px 10px; font-size:12px; display:flex; flex-direction:column; justify-content:center;">
+            <span style="color:var(--t2);">Base: <b id="op_disp_base">₹0.00</b> | Input GST: <b id="op_disp_gst">₹0.00</b></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Supplier Payment -->
+      <div id="sec_supplier" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
         <label>Supplier / Payee (Mandatory) *
           <select name="supplier_id" id="txn_supplier_id">
             <option value="">-- Select Active Supplier --</option>
@@ -1494,108 +1511,41 @@ export function moneyOutForm() {
         <div id="bill_due_hint" style="font-size:12px;color:var(--t2);margin-top:-2px;display:none;"></div>
       </div>
 
-      <!-- Section 2: COGS Purchases (cat === 5000) -->
-      <div id="sec_cogs" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
-        <div class="two">
-          <label>Supplier / Payee (Optional / Walk-in)
-            <select name="cogs_party" id="txn_cogs_party">
-              <option value="">-- None / Walk-in --</option>
-              ${suppliers.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
-              <option value="__CUSTOM__">➕ Enter custom name...</option>
-            </select>
-          </label>
-          <div id="txn_custom_cogs_wrap" style="display:none">
-            <label>Custom Payee Name
-              <input type="text" name="custom_cogs_party" id="txn_custom_cogs_party" placeholder="Type payee name...">
-            </label>
-          </div>
-          <label>Item / Material Description
-            <input type="text" name="item_desc" id="txn_item_desc" list="cogs_item_list" placeholder="e.g. Iron scrap, Steel scrap...">
-            <datalist id="cogs_item_list">
-              ${db.items.map(it => `<option value="${esc(it.n)}">`).join('')}
-            </datalist>
-          </label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <label>Quantity / Weight
-              <input type="number" step="any" min="0" name="qty" id="txn_qty" placeholder="e.g. 100">
-            </label>
-            <label>Unit
-              <select name="unit" id="txn_unit">
-                <option value="kg" selected>kg</option>
-                <option value="quintal">quintal</option>
-                <option value="ton">ton</option>
-                <option value="pcs">pcs</option>
-              </select>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section 3: Operational Expenses (cat === 5100, 5200, 5400) -->
-      <div id="sec_operational" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
-        <div class="two">
-          <label>Amount before GST (₹) *
-            <input type="number" step="any" min="0.01" name="base_amt" id="txn_base_amt" placeholder="0.00">
-          </label>
-          <label>GST % / Input Credit Selector *
-            <select name="gst_rate" id="txn_gst_rate">
-              <option value="0">0% (Exempt / Nil)</option>
-              <option value="5">5%</option>
-              <option value="12">12%</option>
-              <option value="18" selected>18%</option>
-              <option value="28">28%</option>
-            </select>
-          </label>
-          <label style="grid-column: 1 / -1;">Payee / Service Provider Name (Optional)
-            <input type="text" name="op_payee" id="txn_op_payee" placeholder="e.g. Landlord, Transport Agency, Power Utility...">
-          </label>
-        </div>
-        <div id="op_calc_summary" style="background:#f1f5f9;border:1px solid var(--bd);border-radius:6px;padding:8px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;">
-          <span>Base: <b id="op_disp_base">₹0.00</b> + Input GST: <b id="op_disp_gst">₹0.00</b></span>
-          <span style="font-size:14px;color:#842029;font-weight:700;">Total Paid: <span id="op_disp_tot">₹0.00</span></span>
-        </div>
-      </div>
-
-      <!-- Section 4: Salaries (cat === 5300) -->
-      <div id="sec_salaries" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
-        <div class="two">
-          <label>Employee Name / Payee *
-            <input type="text" name="emp_name" id="txn_emp_name" placeholder="e.g. Ramesh Kumar">
-          </label>
-          <label>Salary Month / Period *
-            <input type="text" name="salary_period" id="txn_salary_period" placeholder="e.g. October 2026" value="${curMonthText}">
-          </label>
-        </div>
-      </div>
-
-      <!-- Section 5: Interest Expense (cat === 5500) -->
-      <div id="sec_interest" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
-        <label>Loan Account Reference / Lender Dropdown *
+      <!-- Section 3: Loan Repayment / EMI -->
+      <div id="sec_loan" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
+        <label>Lender Name / Loan Account *
           <select name="loan_id" id="txn_loan_id">
-            <option value="">-- Select Borrowed Loan / Lender --</option>
-            ${borrowedLoans.map(l => `<option value="${l.id}">${esc(l.ref || l.name)} (${esc(l.name)}) · Lender: ${esc(l.partyName || pn(l.party))}</option>`).join('')}
+            <option value="">-- Select Lender / Loan Account --</option>
+            ${borrowedLoans.map(l => `<option value="${l.id}">${esc(l.ref || l.name)} · Lender: ${esc(l.partyName || pn(l.party))}</option>`).join('')}
             ${lenders.map(p => `<option value="party_${p.id}">Lender: ${esc(p.name)}</option>`).join('')}
             <option value="__CUSTOM__">➕ Other Lender...</option>
           </select>
         </label>
         <div id="txn_custom_loan_wrap" style="display:none">
-          <label>Custom Lender Name
+          <label>Custom Lender Name *
             <input type="text" name="custom_lender" id="txn_custom_lender" placeholder="Type lender name...">
           </label>
         </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+          <label>Principal Repayment (₹)
+            <input type="number" step="any" min="0" name="loan_principal" id="txn_loan_principal" placeholder="0.00">
+          </label>
+          <label>Interest Paid (₹)
+            <input type="number" step="any" min="0" name="loan_interest" id="txn_loan_interest" placeholder="0.00">
+          </label>
+        </div>
+        <div id="loan_split_hint" style="font-size:12px; color:var(--t2); padding-left:2px;">
+          Enter Principal and/or Interest. Total Amount Paid will auto-calculate.
+        </div>
       </div>
 
-      <!-- Section 6: Miscellaneous Expense (cat === 5600) -->
-      <div id="sec_misc" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
-        <label>Payee Name (Optional)
-          <input type="text" name="misc_payee" id="txn_misc_payee" placeholder="e.g. Local shop, incidental service...">
-        </label>
-      </div>
-
-      <!-- Section 7: Other / Custom Category (cat === 'other') -->
+      <!-- Section 4: Other Miscellaneous Expense -->
       <div id="sec_other" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
         <label>Payee / Vendor Name (Optional)
-          <input type="text" name="other_payee" id="txn_other_payee" placeholder="e.g. Vendor, Service Provider, Contractor...">
+          <input type="text" name="other_payee" id="txn_other_payee" placeholder="e.g. Local shop, contractor, vendor...">
+        </label>
+        <label>Expense Category / Description *
+          <input type="text" name="custom_cat" id="txn_custom_cat" placeholder="Enter custom Expense / Payment Category (e.g. Repairs, Office Supplies)...">
         </label>
       </div>
 
@@ -1611,13 +1561,13 @@ export function moneyOutForm() {
       <!-- Standard Amount and Reference No. in ONE LINE -->
       <div class="amt-ref-row" id="amt_ref_row">
         <div id="std_amt_wrap">
-          <label id="std_amt_label">Amount Paid (₹) *
-            <input type="number" step="any" min="0.01" name="amt" id="txn_amt" placeholder="0.00">
+          <label id="std_amt_label">Total Amount Paid (₹) *
+            <input type="number" step="any" min="0.01" name="amt" id="txn_amt" placeholder="0.00" required>
           </label>
         </div>
 
         <div id="txn_ref_wrap">
-          <label id="txn_ref_label">Reference No.
+          <label id="txn_ref_label">Reference No. (UTR / Cheque No. / Txn ID)
             <input type="text" name="ref" id="txn_ref" placeholder="e.g. UTR / Cheque / Txn ID">
           </label>
         </div>
@@ -1645,26 +1595,89 @@ export function moneyOutForm() {
       const cat = v.cat;
       let postedEnt = null;
 
-      // Validate Cash in Hand liquidity before posting outflow
+      // Validate liquidity
+      let outflowPaisa = 0;
+      if (cat === 'loan' && (v.loan_principal || v.loan_interest)) {
+        outflowPaisa = (v.loan_principal ? P(v.loan_principal) : 0) + (v.loan_interest ? P(v.loan_interest) : 0);
+      } else {
+        outflowPaisa = P(v.amt || '0');
+      }
+      if (outflowPaisa <= 0) throw Error('Total amount paid must be above zero');
+
       if (isCash) {
-        let outflowPaisa = 0;
-        if (['5100', '5200', '5400'].includes(cat)) {
-          const bP = P(v.base_amt || '0');
-          const gR = parseFloat(v.gst_rate || 0);
-          outflowPaisa = bP + Math.round(bP * gR / 100);
-        } else {
-          outflowPaisa = P(v.amt || '0');
-        }
-        if (outflowPaisa > 0) {
-          const check = checkCashLiquidity('1000', outflowPaisa);
-          if (!check.ok) {
-            throw Error(check.error || 'Insufficient cash in hand balance. Please deposit funds or pay via Bank Account.');
-          }
+        const check = checkCashLiquidity('1000', outflowPaisa);
+        if (!check.ok) {
+          throw Error(check.error || 'Insufficient cash in hand balance. Please deposit funds or pay via Bank Account.');
         }
       }
 
-      if (cat === '2000') {
-        // 1. Supplier Payment (Accounts Payable)
+      if (cat === 'operating') {
+        // 1. Operating / Setup Expense
+        const opAcc = v.op_acc || '5700';
+        const opRate = parseFloat(v.op_gst_rate || 0);
+        const payeeName = (v.op_payee || '').trim();
+        const catName = an(opAcc);
+
+        let partyId = '';
+        if (payeeName) {
+          let existingP = db.parties.find(p => p.name.trim().toLowerCase() === payeeName.toLowerCase());
+          if (!existingP) {
+            existingP = {
+              id: uid(),
+              name: payeeName,
+              type: 'other',
+              phone: '',
+              gstin: '',
+              state: db.biz.state || 'Odisha',
+              terms: '0'
+            };
+            db.parties.push(existingP);
+          } else if (existingP.type === 'supplier' && !db.docs.some(d => d.party === existingP.id && d.type === 'bill')) {
+            existingP.type = 'other';
+          }
+          partyId = existingP.id;
+        }
+
+        const lines = [];
+        let basePaisa = outflowPaisa;
+        let gstPaisa = 0;
+        if (opRate > 0) {
+          basePaisa = Math.round(outflowPaisa * 100 / (100 + opRate));
+          gstPaisa = outflowPaisa - basePaisa;
+          lines.push({ a: opAcc, d: basePaisa, c: 0, p: partyId });
+          lines.push({ a: '1300', d: gstPaisa, c: 0, p: partyId }); // Input GST Credit
+        } else {
+          lines.push({ a: opAcc, d: basePaisa, c: 0, p: partyId });
+        }
+        lines.push({ a: v.acct, d: 0, c: outflowPaisa, p: partyId });
+
+        const narr = userDesc
+          ? (payeeName ? `${payeeName} - ${userDesc}` : userDesc)
+          : (payeeName ? `${payeeName} - ${catName}` : catName);
+
+        postedEnt = post({
+          date: v.date,
+          src: 'out',
+          narr: narr,
+          meta: {
+            method: finalMethod,
+            ref: userRef,
+            acct: v.acct,
+            cat: opAcc,
+            catName: 'Operating / Setup Expense',
+            opAcc: opAcc,
+            base: basePaisa,
+            gst: gstPaisa,
+            gstRate: opRate,
+            payee: payeeName,
+            party: partyId,
+            partyName: payeeName,
+            desc: userDesc
+          },
+          lines: lines
+        });
+      } else if (cat === 'supplier') {
+        // 2. Supplier Payment (Accounts Payable)
         let supplierId = '';
         let supplierName = '';
         if (v.supplier_id === '__CUSTOM__') {
@@ -1687,9 +1700,6 @@ export function moneyOutForm() {
           throw Error('Supplier / Payee is mandatory for Supplier Payment');
         }
 
-        const amtPaisa = P(v.amt);
-        if (!amtPaisa || amtPaisa <= 0) throw Error('Amount paid must be above zero');
-
         const selectedBill = v.bill_ref ? db.docs.find(d => d.id === v.bill_ref) : null;
         const billNo = selectedBill ? (selectedBill.sno || selectedBill.no) : '';
 
@@ -1708,20 +1718,21 @@ export function moneyOutForm() {
             billId: selectedBill ? selectedBill.id : '',
             acct: v.acct,
             cat: '2000',
+            catName: 'Supplier Payment',
             party: supplierId,
             partyName: supplierName,
             desc: userDesc
           },
           lines: [
-            { a: '2000', d: amtPaisa, c: 0, p: supplierId },
-            { a: v.acct, d: 0, c: amtPaisa, p: supplierId }
+            { a: '2000', d: outflowPaisa, c: 0, p: supplierId },
+            { a: v.acct, d: 0, c: outflowPaisa, p: supplierId }
           ]
         });
 
         if (selectedBill) {
           if (!selectedBill.pays) selectedBill.pays = [];
           const curBal = Math.max(0, out(selectedBill));
-          const appliedAmt = Math.min(amtPaisa, curBal);
+          const appliedAmt = Math.min(outflowPaisa, curBal);
           selectedBill.pays.push({
             je: pJe.id,
             amt: appliedAmt,
@@ -1731,181 +1742,51 @@ export function moneyOutForm() {
           });
           selectedBill.paid = ((selectedBill.total || 0) - Math.max(0, curBal - appliedAmt)) / 100;
         }
-      } else if (cat === '5000') {
-        // 2. Purchases / Cost of Goods Sold
-        const amtPaisa = P(v.amt);
-        if (!amtPaisa || amtPaisa <= 0) throw Error('Amount must be above zero');
-
-        let partyId = '';
-        let partyName = '';
-        if (v.cogs_party === '__CUSTOM__') {
-          const customName = (v.custom_cogs_party || '').trim();
-          if (customName) {
-            const existing = db.parties.find(p => p.name.trim().toLowerCase() === customName.toLowerCase());
-            if (existing) {
-              partyId = existing.id;
-              partyName = existing.name;
-            } else {
-              const newP = { id: uid(), name: customName, type: 'supplier', phone: '', gstin: '', state: db.biz.state || 'Odisha', terms: '0' };
-              db.parties.push(newP);
-              partyId = newP.id;
-              partyName = newP.name;
-            }
-          }
-        } else if (v.cogs_party) {
-          partyId = v.cogs_party;
-          partyName = pn(v.cogs_party);
+      } else if (cat === 'loan') {
+        // 3. Loan Repayment / EMI (Principal + Interest)
+        let princPaisa = v.loan_principal ? P(v.loan_principal) : 0;
+        let intPaisa = v.loan_interest ? P(v.loan_interest) : 0;
+        if (princPaisa === 0 && intPaisa === 0) {
+          princPaisa = outflowPaisa;
         }
-
-        const itemStr = (v.item_desc || '').trim();
-        const qtyVal = parseFloat(v.qty || 0);
-        const unitVal = v.unit || 'kg';
-        const qtyDetail = qtyVal > 0 ? `${qtyVal} ${unitVal}` : '';
-        const itemSummary = itemStr ? (qtyDetail ? `${itemStr} (${qtyDetail})` : itemStr) : '';
-
-        const narr = userDesc
-          ? (partyName ? `${partyName} - ${userDesc}` : userDesc)
-          : (itemSummary ? (partyName ? `${partyName} - ${itemSummary}` : `Purchase: ${itemSummary}`) : (partyName ? `${partyName} - Direct Purchases / COGS` : 'Direct Purchases / COGS'));
-
-        postedEnt = post({
-          date: v.date,
-          src: 'out',
-          narr: narr,
-          meta: {
-            method: finalMethod,
-            ref: userRef,
-            acct: v.acct,
-            cat: '5000',
-            party: partyId,
-            partyName: partyName,
-            item: itemStr,
-            qty: qtyVal,
-            unit: unitVal,
-            desc: userDesc
-          },
-          lines: [
-            { a: '5000', d: amtPaisa, c: 0, p: partyId },
-            { a: v.acct, d: 0, c: amtPaisa, p: partyId }
-          ]
-        });
-      } else if (['5100', '5200', '5400', '5700', '5800'].includes(cat)) {
-        // 3. Operational & Regulatory Expenses (Rent, Transport, Utilities, Licenses, Legal)
-        const basePaisa = P(v.base_amt);
-        if (!basePaisa || basePaisa <= 0) throw Error('Amount before GST must be above zero');
-
-        const gstRate = parseFloat(v.gst_rate || 0);
-        const gstPaisa = Math.round(basePaisa * gstRate / 100);
-        const totalPaisa = basePaisa + gstPaisa;
-        const payeeName = (v.op_payee || '').trim();
-        const catName = an(cat);
-
-        let partyId = '';
-        if (payeeName) {
-          let existingP = db.parties.find(p => p.name.trim().toLowerCase() === payeeName.toLowerCase());
-          if (!existingP) {
-            existingP = {
-              id: uid(),
-              name: payeeName,
-              type: 'other',
-              phone: '',
-              gstin: '',
-              state: db.biz.state || 'Odisha',
-              terms: '0'
-            };
-            db.parties.push(existingP);
-          } else if (existingP.type === 'supplier' && !db.docs.some(d => d.party === existingP.id && d.type === 'bill')) {
-            existingP.type = 'other';
-          }
-          partyId = existingP.id;
-        }
-
-        const narr = userDesc
-          ? (payeeName ? `${payeeName} - ${userDesc}` : userDesc)
-          : (payeeName ? `${payeeName} - ${catName}` : catName);
-
-        const lines = [
-          { a: cat, d: basePaisa, c: 0, p: partyId }
-        ];
-        if (gstPaisa > 0) {
-          lines.push({ a: '1300', d: gstPaisa, c: 0, p: partyId }); // Input GST Credit
-        }
-        lines.push({ a: v.acct, d: 0, c: totalPaisa, p: partyId });
-
-        postedEnt = post({
-          date: v.date,
-          src: 'out',
-          narr: narr,
-          meta: {
-            method: finalMethod,
-            ref: userRef,
-            acct: v.acct,
-            cat: cat,
-            base: basePaisa,
-            gst: gstPaisa,
-            gstRate: gstRate,
-            payee: payeeName,
-            party: partyId,
-            partyName: payeeName,
-            desc: userDesc
-          },
-          lines: lines
-        });
-      } else if (cat === '5300') {
-        // 4. Salaries
-        const empName = (v.emp_name || '').trim();
-        if (!empName) throw Error('Employee Name is required for Salaries');
-        const period = (v.salary_period || '').trim() || curMonthText;
-        const amtPaisa = P(v.amt);
-        if (!amtPaisa || amtPaisa <= 0) throw Error('Salary amount must be above zero');
-
-        const narr = userDesc
-          ? `${empName} - ${userDesc}`
-          : `Salary payment to ${empName} (${period})`;
-
-        postedEnt = post({
-          date: v.date,
-          src: 'out',
-          narr: narr,
-          meta: {
-            method: finalMethod,
-            ref: userRef,
-            acct: v.acct,
-            cat: '5300',
-            employee: empName,
-            partyName: empName,
-            period: period,
-            desc: userDesc
-          },
-          lines: [
-            { a: '5300', d: amtPaisa, c: 0 },
-            { a: v.acct, d: 0, c: amtPaisa }
-          ]
-        });
-      } else if (cat === '5500') {
-        // 5. Interest Expense
-        const amtPaisa = P(v.amt);
-        if (!amtPaisa || amtPaisa <= 0) throw Error('Interest amount must be above zero');
 
         let lenderName = '';
         let loanRef = '';
         let loanId = '';
+        let partyId = '';
+
         if (v.loan_id === '__CUSTOM__') {
-          lenderName = (v.custom_lender || '').trim() || 'Lender';
+          lenderName = (v.custom_lender || '').trim();
+          if (!lenderName) throw Error('Please enter Lender Name');
+          let existingP = db.parties.find(p => p.name.trim().toLowerCase() === lenderName.toLowerCase());
+          if (!existingP) {
+            existingP = { id: uid(), name: lenderName, type: 'lender', phone: '', gstin: '', state: db.biz.state || 'Odisha', terms: '0' };
+            db.parties.push(existingP);
+          }
+          partyId = existingP.id;
         } else if (v.loan_id && v.loan_id.startsWith('party_')) {
-          const pId = v.loan_id.replace('party_', '');
-          lenderName = pn(pId);
+          partyId = v.loan_id.replace('party_', '');
+          lenderName = pn(partyId);
         } else if (v.loan_id) {
           const ln = (db.loans || []).find(l => l.id === v.loan_id);
           if (ln) {
             loanId = ln.id;
             loanRef = ln.ref;
+            partyId = ln.party;
             lenderName = ln.partyName || pn(ln.party) || ln.name;
           }
         }
 
+        if (!lenderName) lenderName = 'Lender';
+
+        const lines = [];
+        if (princPaisa > 0) lines.push({ a: '2100', d: princPaisa, c: 0, p: partyId });
+        if (intPaisa > 0) lines.push({ a: '5500', d: intPaisa, c: 0, p: partyId });
+        lines.push({ a: v.acct, d: 0, c: outflowPaisa, p: partyId });
+
         const narr = userDesc
           ? (lenderName ? `${lenderName} - ${userDesc}` : userDesc)
-          : (lenderName ? `Interest payment to ${lenderName}` : 'Interest Expense');
+          : `${lenderName} - Loan Repayment / EMI (Principal: ${fmt(princPaisa)}${intPaisa > 0 ? ', Interest: ' + fmt(intPaisa) : ''})`;
 
         postedEnt = post({
           date: v.date,
@@ -1915,96 +1796,30 @@ export function moneyOutForm() {
             method: finalMethod,
             ref: userRef || loanRef,
             acct: v.acct,
-            cat: '5500',
+            cat: '2100',
+            catName: 'Loan Repayment / EMI',
             loanId: loanId,
-            payee: lenderName,
-            partyName: lenderName,
-            desc: userDesc
-          },
-          lines: [
-            { a: '5500', d: amtPaisa, c: 0 },
-            { a: v.acct, d: 0, c: amtPaisa }
-          ]
-        });
-      } else if (cat === '5600') {
-        // 6. Miscellaneous Expense
-        const amtPaisa = P(v.amt);
-        if (!amtPaisa || amtPaisa <= 0) throw Error('Amount must be above zero');
-        const payee = (v.misc_payee || '').trim();
-
-        let partyId = '';
-        if (payee) {
-          let existingP = db.parties.find(p => p.name.trim().toLowerCase() === payee.toLowerCase());
-          if (!existingP) {
-            existingP = {
-              id: uid(),
-              name: payee,
-              type: 'other',
-              phone: '',
-              gstin: '',
-              state: db.biz.state || 'Odisha',
-              terms: '0'
-            };
-            db.parties.push(existingP);
-          } else if (existingP.type === 'supplier' && !db.docs.some(d => d.party === existingP.id && d.type === 'bill')) {
-            existingP.type = 'other';
-          }
-          partyId = existingP.id;
-        }
-
-        const narr = userDesc
-          ? (payee ? `${payee} - ${userDesc}` : userDesc)
-          : (payee ? `${payee} - Miscellaneous Expense` : 'Miscellaneous Expense');
-
-        postedEnt = post({
-          date: v.date,
-          src: 'out',
-          narr: narr,
-          meta: {
-            method: finalMethod,
-            ref: userRef,
-            acct: v.acct,
-            cat: '5600',
-            payee: payee,
             party: partyId,
-            partyName: payee,
+            partyName: lenderName,
+            principal: princPaisa,
+            interest: intPaisa,
             desc: userDesc
           },
-          lines: [
-            { a: '5600', d: amtPaisa, c: 0, p: partyId },
-            { a: v.acct, d: 0, c: amtPaisa, p: partyId }
-          ]
+          lines: lines
         });
-      } else if (cat === '3100') {
-        // 7. Drawings
-        const amtPaisa = P(v.amt);
-        if (!amtPaisa || amtPaisa <= 0) throw Error('Withdrawal amount must be above zero');
-        const narr = userDesc ? `Owner's Drawings - ${userDesc}` : `Owner's Drawings (${finalMethod})`;
 
-        postedEnt = post({
-          date: v.date,
-          src: 'out',
-          narr: narr,
-          meta: {
-            method: finalMethod,
-            ref: userRef,
-            acct: v.acct,
-            cat: '3100',
-            partyName: db.biz.owner || "Owner's Drawings",
-            desc: userDesc || "Owner's personal drawings"
-          },
-          lines: [
-            { a: '3100', d: amtPaisa, c: 0 },
-            { a: v.acct, d: 0, c: amtPaisa }
-          ]
-        });
+        if (loanId) {
+          const loanObj = (db.loans || []).find(l => l.id === loanId);
+          if (loanObj && princPaisa > 0) {
+            loanObj.repaid = (loanObj.repaid || 0) + princPaisa;
+            loanObj.last = v.date;
+            if ((loanObj.principal || 0) - loanObj.repaid <= 0) loanObj.due = '';
+          }
+        }
       } else if (cat === 'other') {
-        // 8. Other / Custom Expense Category
+        // 4. Other Miscellaneous Expense
         const customCatName = (v.custom_cat || '').trim();
-        if (!customCatName) throw Error('Please enter the Expense / Payment Category name');
-
-        const amtPaisa = P(v.amt);
-        if (!amtPaisa || amtPaisa <= 0) throw Error('Amount paid must be above zero');
+        if (!customCatName) throw Error('Please enter the Expense Category / Description');
 
         const payee = (v.other_payee || '').trim();
         let partyId = '';
@@ -2042,6 +1857,7 @@ export function moneyOutForm() {
             ref: userRef,
             acct: v.acct,
             cat: accountCode,
+            catName: customCatName,
             customCat: customCatName,
             payee: payee,
             party: partyId,
@@ -2049,8 +1865,8 @@ export function moneyOutForm() {
             desc: userDesc
           },
           lines: [
-            { a: accountCode, d: amtPaisa, c: 0, p: partyId },
-            { a: v.acct, d: 0, c: amtPaisa, p: partyId }
+            { a: accountCode, d: outflowPaisa, c: 0, p: partyId },
+            { a: v.acct, d: 0, c: outflowPaisa, p: partyId }
           ]
         });
       }
@@ -2073,23 +1889,21 @@ export function moneyOutForm() {
       const methSel = $('#txn_method');
 
       // Sections
+      const secOperating = $('#sec_operating');
       const secSupplier = $('#sec_supplier');
-      const secCogs = $('#sec_cogs');
-      const secOperational = $('#sec_operational');
-      const secSalaries = $('#sec_salaries');
-      const secInterest = $('#sec_interest');
-      const secMisc = $('#sec_misc');
+      const secLoan = $('#sec_loan');
       const secOther = $('#sec_other');
-      const customCatWrap = $('#txn_custom_cat_wrap');
-      const customCatInput = $('#txn_custom_cat');
-      const amtRefRow = $('#amt_ref_row');
-      const stdAmtWrap = $('#std_amt_wrap');
-      const stdAmtLabel = $('#std_amt_label');
+
+      // Amount & Reference
       const amtInput = $('#txn_amt');
-      const refLabel = $('#txn_ref_label');
-      const descLabel = $('#txn_desc_label');
       const refInput = $('#txn_ref');
       const descInput = $('#txn_desc');
+
+      // Operating fields
+      const opAccSel = $('#txn_op_acc');
+      const opGstRateSel = $('#txn_op_gst_rate');
+      const dispBase = $('#op_disp_base');
+      const dispGst = $('#op_disp_gst');
 
       // Supplier fields
       const supplierSel = $('#txn_supplier_id');
@@ -2098,22 +1912,15 @@ export function moneyOutForm() {
       const billRefSel = $('#txn_bill_ref');
       const billDueHint = $('#bill_due_hint');
 
-      // COGS fields
-      const cogsPartySel = $('#txn_cogs_party');
-      const customCogsWrap = $('#txn_custom_cogs_wrap');
-      const customCogsInput = $('#txn_custom_cogs_party');
-
-      // Operational fields
-      const baseAmtInput = $('#txn_base_amt');
-      const gstRateSel = $('#txn_gst_rate');
-      const dispBase = $('#op_disp_base');
-      const dispGst = $('#op_disp_gst');
-      const dispTot = $('#op_disp_tot');
-
-      // Interest fields
+      // Loan fields
       const loanSel = $('#txn_loan_id');
       const customLoanWrap = $('#txn_custom_loan_wrap');
       const customLoanInput = $('#txn_custom_lender');
+      const loanPrincInput = $('#txn_loan_principal');
+      const loanIntInput = $('#txn_loan_interest');
+
+      // Other fields
+      const customCatInput = $('#txn_custom_cat');
 
       const cashHintEl = $('#txn_cash_bal_hint');
       const cashWarnEl = $('#cash_insufficient_warn');
@@ -2132,21 +1939,13 @@ export function moneyOutForm() {
         }
 
         let needed = 0;
-        const curCat = catEl ? catEl.value : '';
-        if (['5100', '5200', '5400', '5700', '5800'].includes(curCat)) {
-          let b = 0;
-          try { b = P(baseAmtInput?.value || '0'); } catch (e) {}
-          const r = parseFloat(gstRateSel?.value || 0);
-          needed = b + Math.round(b * r / 100);
-        } else {
-          try { needed = P(amtInput?.value || '0'); } catch (e) {}
-        }
+        try { needed = P(amtInput?.value || '0'); } catch (e) {}
 
         if (needed > 0 && needed > bal) {
           if (cashWarnEl) cashWarnEl.style.display = 'block';
           if (cashWarnText) {
             cashWarnText.textContent = isCash
-              ? 'Insufficient balance in Cash in Hand. Please deposit funds or transfer from bank first.'
+              ? 'Insufficient balance in Cash in Hand. Please deposit funds or pay via Bank Account.'
               : `Insufficient balance in ${acc(code)?.name || 'Bank Account'} (Available: ${fmt(Math.max(0, bal))}, Required: ${fmt(needed)}).`;
           }
           if (sb) {
@@ -2206,87 +2005,57 @@ export function moneyOutForm() {
       }
 
       function calcOperationalGst() {
-        if (!baseAmtInput || !gstRateSel || !dispBase || !dispGst || !dispTot) return;
-        let b = 0;
-        try { b = P(baseAmtInput.value || '0'); } catch (e) {}
-        const r = parseFloat(gstRateSel.value || 0);
-        const g = Math.round(b * r / 100);
-        const tot = b + g;
+        if (!amtInput || !opGstRateSel || !dispBase || !dispGst) return;
+        let tot = 0;
+        try { tot = P(amtInput.value || '0'); } catch (e) {}
+        const rate = parseFloat(opGstRateSel.value || 0);
+        let b = tot;
+        let g = 0;
+        if (rate > 0) {
+          b = Math.round(tot * 100 / (100 + rate));
+          g = tot - b;
+        }
         dispBase.textContent = fmt(b);
         dispGst.textContent = fmt(g);
-        dispTot.textContent = fmt(tot);
+        checkLiquidityWarn();
+      }
+
+      function syncLoanSplit() {
+        const p = parseFloat(loanPrincInput?.value || 0);
+        const i = parseFloat(loanIntInput?.value || 0);
+        if (p > 0 || i > 0) {
+          if (amtInput) amtInput.value = (p + i).toFixed(2);
+        }
         checkLiquidityWarn();
       }
 
       function switchCategory() {
-        const cat = catEl.value;
+        const cat = catEl ? catEl.value : 'operating';
 
-        // Hide all dynamic sections first
+        // Hide all category sections first
+        if (secOperating) secOperating.style.display = 'none';
         if (secSupplier) secSupplier.style.display = 'none';
-        if (secCogs) secCogs.style.display = 'none';
-        if (secOperational) secOperational.style.display = 'none';
-        if (secSalaries) secSalaries.style.display = 'none';
-        if (secInterest) secInterest.style.display = 'none';
-        if (secMisc) secMisc.style.display = 'none';
+        if (secLoan) secLoan.style.display = 'none';
         if (secOther) secOther.style.display = 'none';
-        if (customCatWrap) customCatWrap.style.display = 'none';
-        if (stdAmtWrap) stdAmtWrap.style.display = '';
-        if (amtRefRow) amtRefRow.style.gridTemplateColumns = '1fr 1fr';
 
-        if (cat === '2000') {
-          // 1. Supplier Payment
-          if (secSupplier) secSupplier.style.display = 'flex';
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Amount Paid (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. ';
-          if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
-          updateBillOptions();
-        } else if (cat === '5000') {
-          // 2. Purchases / COGS
-          if (secCogs) secCogs.style.display = 'flex';
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Amount (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference / Bill No. ';
-          if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
-        } else if (['5100', '5200', '5400', '5700', '5800'].includes(cat)) {
-          // 3. Operational & Regulatory Expenses
-          if (secOperational) secOperational.style.display = 'flex';
-          if (stdAmtWrap) stdAmtWrap.style.display = 'none';
-          if (amtRefRow) amtRefRow.style.gridTemplateColumns = '1fr';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Bill / Service Ref No. ';
-          if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
+        if (cat === 'operating') {
+          // 1. Operating / Setup Expense
+          if (secOperating) secOperating.style.display = 'flex';
           calcOperationalGst();
-        } else if (cat === '5300') {
-          // 4. Salaries
-          if (secSalaries) secSalaries.style.display = 'flex';
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Salary Amount (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. ';
-          if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
-        } else if (cat === '5500') {
-          // 5. Interest Expense
-          if (secInterest) secInterest.style.display = 'flex';
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Interest Amount (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. ';
-          if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
-        } else if (cat === '5600') {
-          // 6. Miscellaneous Expense
-          if (secMisc) secMisc.style.display = 'flex';
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Amount (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. ';
-          if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
-        } else if (cat === '3100') {
-          // 7. Drawings
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Amount Withdrawn (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Voucher / Ref No. ';
-          if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Reason ';
-        } else if (cat === 'other') {
-          // 8. Other / Custom Expense Category
-          if (customCatWrap) {
-            customCatWrap.style.display = '';
-            if (customCatInput) customCatInput.focus();
+        } else if (cat === 'supplier') {
+          // 2. Supplier Payment
+          if (secSupplier) secSupplier.style.display = 'flex';
+          updateBillOptions();
+        } else if (cat === 'loan') {
+          // 3. Loan Repayment / EMI
+          if (secLoan) secLoan.style.display = 'flex';
+          if (loanPrincInput && !loanPrincInput.value && amtInput?.value) {
+            loanPrincInput.value = amtInput.value;
           }
+        } else if (cat === 'other') {
+          // 4. Other Miscellaneous Expense
           if (secOther) secOther.style.display = 'flex';
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Amount Paid (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. ';
-          if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
+          if (customCatInput) customCatInput.focus();
         }
         checkLiquidityWarn();
       }
@@ -2328,18 +2097,6 @@ export function moneyOutForm() {
         };
       }
 
-      if (cogsPartySel) {
-        cogsPartySel.onchange = () => {
-          if (cogsPartySel.value === '__CUSTOM__') {
-            if (customCogsWrap) customCogsWrap.style.display = '';
-            if (customCogsInput) customCogsInput.focus();
-          } else {
-            if (customCogsWrap) customCogsWrap.style.display = 'none';
-            if (customCogsInput) customCogsInput.value = '';
-          }
-        };
-      }
-
       if (loanSel) {
         loanSel.onchange = () => {
           if (loanSel.value === '__CUSTOM__') {
@@ -2352,14 +2109,26 @@ export function moneyOutForm() {
         };
       }
 
+      if (loanPrincInput) loanPrincInput.oninput = syncLoanSplit;
+      if (loanIntInput) loanIntInput.oninput = syncLoanSplit;
+
       if (amtInput) {
-        amtInput.oninput = checkLiquidityWarn;
+        amtInput.oninput = () => {
+          if (catEl?.value === 'operating') {
+            calcOperationalGst();
+          } else if (catEl?.value === 'loan') {
+            const tot = parseFloat(amtInput?.value || 0);
+            const curI = parseFloat(loanIntInput?.value || 0);
+            if (loanPrincInput) {
+              loanPrincInput.value = Math.max(0, tot - curI).toFixed(2);
+            }
+          }
+          checkLiquidityWarn();
+        };
       }
-      if (baseAmtInput) {
-        baseAmtInput.oninput = calcOperationalGst;
-      }
-      if (gstRateSel) {
-        gstRateSel.onchange = calcOperationalGst;
+
+      if (opGstRateSel) {
+        opGstRateSel.onchange = calcOperationalGst;
       }
     }
   );

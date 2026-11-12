@@ -115,8 +115,13 @@ function resetTestDb() {
       { code: '4300', name: 'Interest Income', t: 'I' },
       { code: '5000', name: 'Purchases / Cost of Goods Sold', t: 'X' },
       { code: '5100', name: 'Rent Expense', t: 'X' },
+      { code: '5200', name: 'Transport Expense', t: 'X' },
+      { code: '5300', name: 'Salaries & Wages', t: 'X' },
+      { code: '5400', name: 'Utilities / Electricity', t: 'X' },
       { code: '5500', name: 'Interest Expense', t: 'X' },
-      { code: '5600', name: 'Miscellaneous Expense', t: 'X' }
+      { code: '5600', name: 'Miscellaneous Expense', t: 'X' },
+      { code: '5700', name: 'Licenses & Permits', t: 'X' },
+      { code: '5800', name: 'Legal, GST & Bank Charges', t: 'X' }
     ],
     parties: [
       { id: 'p_cust1', name: 'Tata Steel Ltd', type: 'customer', state: 'Odisha', gstin: '21ABCDE1234F1Z5', limit: 20000000 }, // ₹2,00,000 limit
@@ -652,6 +657,201 @@ test('TC-MON-04: Money In dynamic category handling (Capital Introduced, Custome
   const othData = getTxnRowData(othJe);
   assert.equal(othData.catName, 'Other Miscellaneous Income');
   assert.equal(othData.partyName, 'Scrap Buyer');
+});
+
+test('TC-MON-05: Money Out refactored category handling (Operating/Setup Expense, Supplier Payment, Loan Repayment/EMI, Other Miscellaneous Expense)', () => {
+  resetTestDb();
+
+  // 0. Initial capital infusion to ensure liquidity
+  post({
+    date: '2026-10-01',
+    src: 'in',
+    lines: [
+      { a: '1010', d: 10000000, c: 0 },
+      { a: '3000', d: 0, c: 10000000 }
+    ]
+  });
+
+  // 1. Operating / Setup Expense: Licenses & Permits (5700) to Rinku Toppo
+  const opJe1 = post({
+    date: '2026-10-02',
+    src: 'out',
+    narr: 'Rinku Toppo - Factory License and Consent to Operate fee',
+    meta: {
+      method: 'Bank Transfer / NEFT / RTGS',
+      ref: 'TXN-LIC-01',
+      acct: '1010',
+      cat: '5700',
+      catName: 'Operating / Setup Expense',
+      opAcc: '5700',
+      payee: 'Rinku Toppo',
+      partyName: 'Rinku Toppo',
+      desc: 'Factory License fee'
+    },
+    lines: [
+      { a: '5700', d: 6000000, c: 0 },
+      { a: '1010', d: 0, c: 6000000 }
+    ]
+  });
+  assert.equal(net('5700'), 6000000, 'Licenses & Permits must have ₹60,000.00 debit');
+  const opData1 = getTxnRowData(opJe1);
+  assert.equal(opData1.catName, 'Operating / Setup Expense');
+  assert.equal(opData1.partyName, 'Rinku Toppo');
+
+  // 1b. Operating / Setup Expense with GST (Legal & GST Charges 5800 + Input GST 1300)
+  const opJe2 = post({
+    date: '2026-10-03',
+    src: 'out',
+    narr: 'Odisha Legal Associates - GST Registration & Compliance Audit',
+    meta: {
+      method: 'Bank Transfer / NEFT / RTGS',
+      ref: 'LEG-991',
+      acct: '1010',
+      cat: '5800',
+      catName: 'Operating / Setup Expense',
+      opAcc: '5800',
+      base: 100000,
+      gst: 18000,
+      gstRate: 18,
+      payee: 'Odisha Legal Associates',
+      partyName: 'Odisha Legal Associates',
+      desc: 'Legal advisory'
+    },
+    lines: [
+      { a: '5800', d: 100000, c: 0 },
+      { a: '1300', d: 18000, c: 0 },
+      { a: '1010', d: 0, c: 118000 }
+    ]
+  });
+  assert.equal(net('5800'), 100000, 'Legal & GST Charges must have ₹1,000.00 debit');
+  assert.equal(net('1300'), 18000, 'Input GST Credit must have ₹180.00 debit');
+  assert.equal(opJe2.lines.reduce((s, l) => s + l.d, 0), opJe2.lines.reduce((s, l) => s + l.c, 0), 'Double-entry debits must equal credits');
+
+  // 2. Supplier Payment (2000) with purchase bill knock-off
+  const supId = 'p_sup_trade';
+  const billDoc = {
+    id: 'bill_scrap_201',
+    no: 'PB-201',
+    sno: 'PB-201',
+    date: '2026-10-04',
+    type: 'bill',
+    party: supId,
+    total: 1500000, // ₹15,000.00
+    paid: 0,
+    pays: []
+  };
+  db.docs.push(billDoc);
+  post({
+    date: '2026-10-04',
+    src: 'bill',
+    narr: 'M/S Balasore Scrap Traders - Purchase PB-201',
+    lines: [
+      { a: '5000', d: 1500000, c: 0, p: supId },
+      { a: '2000', d: 0, c: 1500000, p: supId }
+    ]
+  });
+  assert.equal(sgn(acc('2000'), net('2000')), 1500000, 'Accounts Payable must reflect ₹15,000.00 credit');
+
+  const supPayJe = post({
+    date: '2026-10-05',
+    src: 'out',
+    narr: 'M/S Balasore Scrap Traders - Payment for Bill PB-201',
+    meta: {
+      method: 'Bank Transfer / NEFT / RTGS',
+      ref: 'PB-201',
+      docNo: 'PB-201',
+      billId: 'bill_scrap_201',
+      acct: '1010',
+      cat: '2000',
+      catName: 'Supplier Payment',
+      party: supId,
+      partyName: 'M/S Balasore Scrap Traders'
+    },
+    lines: [
+      { a: '2000', d: 1500000, c: 0, p: supId },
+      { a: '1010', d: 0, c: 1500000, p: supId }
+    ]
+  });
+  billDoc.pays.push({ je: supPayJe.id, amt: 1500000, date: '2026-10-05', method: 'Bank Transfer', acct: '1010' });
+  billDoc.paid = 15000;
+  assert.equal(out(billDoc), 0, 'Purchase bill must be knocked off and balance due must be 0');
+  assert.equal(net('2000'), 0, 'Accounts Payable must clear to 0');
+  const supRowData = getTxnRowData(supPayJe);
+  assert.equal(supRowData.catName, 'Supplier Payment');
+
+  // 3. Loan Repayment / EMI with Principal & Interest split
+  const loanId = 'loan_pitamber_01';
+  const loanObj = {
+    id: loanId,
+    ref: 'LN-0001',
+    name: 'Unsecured Business Loan',
+    dir: 'taken',
+    party: 'p_pitamber',
+    partyName: 'Pitamber Mohanty',
+    principal: 25000000, // ₹2,50,000.00
+    repaid: 0,
+    rate: 12,
+    date: '2026-09-01'
+  };
+  db.loans.push(loanObj);
+
+  const loanPayJe = post({
+    date: '2026-10-06',
+    src: 'out',
+    narr: 'Pitamber Mohanty - Loan Repayment / EMI (Principal: ₹10,000.00, Interest: ₹2,500.00)',
+    meta: {
+      method: 'Bank Transfer / NEFT / RTGS',
+      ref: 'EMI-OCT-01',
+      acct: '1010',
+      cat: '2100',
+      catName: 'Loan Repayment / EMI',
+      loanId: loanId,
+      party: 'p_pitamber',
+      partyName: 'Pitamber Mohanty',
+      principal: 1000000,
+      interest: 250000
+    },
+    lines: [
+      { a: '2100', d: 1000000, c: 0, p: 'p_pitamber' },
+      { a: '5500', d: 250000, c: 0, p: 'p_pitamber' },
+      { a: '1010', d: 0, c: 1250000, p: 'p_pitamber' }
+    ]
+  });
+  loanObj.repaid += 1000000;
+  assert.equal(loanObj.repaid, 1000000, 'Loan repaid balance must increase by ₹10,000.00');
+  assert.equal(net('2100'), 1000000, 'Loan Payable debit balance must be ₹10,000.00 (principal repayment)');
+  assert.equal(net('5500'), 250000, 'Interest Expense debit balance must be ₹2,500.00');
+  assert.equal(loanPayJe.lines.reduce((s, l) => s + l.d, 0), 1250000);
+  assert.equal(loanPayJe.lines.reduce((s, l) => s + l.c, 0), 1250000);
+  const loanRowData = getTxnRowData(loanPayJe);
+  assert.equal(loanRowData.catName, 'Loan Repayment / EMI');
+  assert.equal(loanRowData.partyName, 'Pitamber Mohanty');
+
+  // 4. Other Miscellaneous Expense
+  const customCatCode = getOrCreateExpenseAccount('Office Sanitation & Cleaning');
+  const otherJe = post({
+    date: '2026-10-07',
+    src: 'out',
+    narr: 'CleanPro Services - Office Sanitation & Cleaning',
+    meta: {
+      method: 'Cash',
+      ref: 'VOUCHER-07',
+      acct: '1000',
+      cat: customCatCode,
+      catName: 'Office Sanitation & Cleaning',
+      customCat: 'Office Sanitation & Cleaning',
+      payee: 'CleanPro Services',
+      partyName: 'CleanPro Services'
+    },
+    lines: [
+      { a: customCatCode, d: 85000, c: 0 },
+      { a: '1000', d: 0, c: 85000 }
+    ]
+  });
+  assert.equal(net(customCatCode), 85000, 'Custom expense account must have ₹850.00 debit');
+  const otherRowData = getTxnRowData(otherJe);
+  assert.equal(otherRowData.catName, 'Office Sanitation & Cleaning');
+  assert.equal(otherRowData.partyName, 'CleanPro Services');
 });
 
 // ========================================================

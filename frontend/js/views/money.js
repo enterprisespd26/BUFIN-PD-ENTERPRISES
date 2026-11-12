@@ -38,8 +38,10 @@ export function getTxnRowData(e) {
     acctName = crCash ? an(crCash.a) : (e.meta?.acct ? an(e.meta.acct) : (e.lines[1] ? an(e.lines[1].a) : ''));
     const debCat = e.lines.find(l => l.d && !acc(l.a)?.cash && l.a !== '1300');
     const catCode = debCat ? debCat.a : (e.meta?.cat || (e.lines[0] ? e.lines[0].a : ''));
-    if (e.meta?.customCat) catName = e.meta.customCat;
-    else if (catCode === '2000') catName = 'Supplier Payment (Accounts Payable)';
+    if (e.meta?.catName) catName = e.meta.catName;
+    else if (e.meta?.customCat) catName = e.meta.customCat;
+    else if (catCode === '2000') catName = 'Supplier Payment';
+    else if (catCode === '2100') catName = 'Loan Repayment / EMI';
     else if (catCode === '5000') catName = 'Purchases / COGS';
     else if (catCode === '5100') catName = 'Rent Expense';
     else if (catCode === '5200') catName = 'Transport Expense';
@@ -47,6 +49,8 @@ export function getTxnRowData(e) {
     else if (catCode === '5400') catName = 'Utilities';
     else if (catCode === '5500') catName = 'Interest Expense';
     else if (catCode === '5600') catName = 'Miscellaneous Expense';
+    else if (catCode === '5700') catName = 'Licenses & Permits';
+    else if (catCode === '5800') catName = 'Legal & GST Charges';
     else if (catCode === '3100') catName = "Owner's Drawings";
     else catName = an(catCode);
   } else if (e.src === 'xfer') {
