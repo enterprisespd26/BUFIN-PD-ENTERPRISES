@@ -435,40 +435,104 @@ const CSS = String.raw`
     font-size: 13px !important;
   }
 
-  .bs-filter-bar .bs-presets, .tb-filter-bar .tb-presets {
+  /* TB & BS Toolbar Mobile Layout: Presets & Date Card side-by-side in Row 1 */
+  .tb-filter-bar,
+  .bs-filter-bar {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .tb-filter-bar .tb-presets,
+  .bs-filter-bar .bs-presets {
+    grid-column: 1 / 2 !important;
+    grid-row: 1 !important;
     display: flex !important;
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
     gap: 6px !important;
     width: 100% !important;
+    min-width: 0 !important;
     padding-bottom: 2px !important;
     scrollbar-width: none !important;
     -webkit-overflow-scrolling: touch !important;
   }
-  .tb-filter-bar .tb-presets > button, .bs-filter-bar .bs-presets > button {
+  .tb-filter-bar .tb-presets > button,
+  .bs-filter-bar .bs-presets > button {
     flex-shrink: 0 !important;
     white-space: nowrap !important;
-    padding: 8px 14px !important;
-    font-size: 13px !important;
-    min-height: 38px !important;
+    padding: 7px 11px !important;
+    font-size: 12px !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
   }
-  .bs-date-range-card, .tb-date-range-card {
-    width: 100% !important;
-    margin: 2px 0 6px 0 !important;
+  .tb-filter-bar .tb-date-range-card,
+  .bs-filter-bar .bs-date-range-card {
+    grid-column: 2 / 3 !important;
+    grid-row: 1 !important;
+    width: auto !important;
+    min-width: 125px !important;
+    max-width: 155px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
   }
-  .bs-date-box, .tb-date-box {
+  .tb-filter-bar .tb-date-box,
+  .bs-filter-bar .bs-date-box {
     width: 100% !important;
-    min-height: 50px !important;
-    padding: 8px 14px !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 3px 8px !important;
+    border-radius: 8px !important;
+    border-width: 1.5px !important;
     box-sizing: border-box !important;
   }
-  .bs-date-box .cb-date-val, .tb-date-box .cb-date-val {
-    font-size: 15.5px !important;
-    font-weight: 700 !important;
+  .tb-filter-bar .tb-date-box .cb-date-header,
+  .bs-filter-bar .bs-date-box .cb-date-header {
+    font-size: 8.5px !important;
+    margin-bottom: 0 !important;
+    line-height: 1 !important;
   }
-  /* TB search full width on mobile */
-  .tb-filter-bar .tb-search-wrap {
+  .tb-filter-bar .tb-date-box .cb-date-header svg,
+  .bs-filter-bar .bs-date-box .cb-date-header svg {
+    width: 11px !important;
+    height: 11px !important;
+  }
+  .tb-filter-bar .tb-date-box .cb-date-val,
+  .bs-filter-bar .bs-date-box .cb-date-val {
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+  .tb-filter-bar .tb-date-box .bs-date-badge,
+  .bs-filter-bar .bs-date-box .bs-date-badge {
+    display: none !important;
+  }
+  .tb-filter-bar .tb-date-box .bs-date-action,
+  .bs-filter-bar .bs-date-box .bs-date-action {
+    display: flex !important;
+    align-items: center !important;
+    margin-left: 6px !important;
+  }
+  .tb-filter-bar .tb-date-box .bs-date-action svg,
+  .bs-filter-bar .bs-date-box .bs-date-action svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+  .tb-filter-bar .tb-toggle-wrap,
+  .bs-filter-bar .bs-toggle-wrap {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
     width: 100% !important;
+    margin: 0 !important;
+  }
+  .tb-filter-bar .tb-search-wrap {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    width: 100% !important;
+    margin: 0 !important;
   }
   .tb-filter-bar .tb-search-wrap input {
     width: 100% !important;
