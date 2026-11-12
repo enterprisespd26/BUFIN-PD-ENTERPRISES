@@ -14,7 +14,7 @@ global.localStorage = {
 
 const domListeners = new Map();
 global.window = {
-  dispatchEvent() {},
+  dispatchEvent() { },
   location: { hash: '#/overview' },
   addEventListener(event, fn) {
     if (!domListeners.has(event)) domListeners.set(event, []);
@@ -29,11 +29,11 @@ global.document = {
     return {
       id,
       style: {},
-      classList: { add() {}, remove() {}, contains() { return false; } },
-      setAttribute() {},
+      classList: { add() { }, remove() { }, contains() { return false; } },
+      setAttribute() { },
       getAttribute() { return null; },
-      appendChild() {},
-      remove() {}
+      appendChild() { },
+      remove() { }
     };
   },
   querySelector() { return null; },
@@ -42,11 +42,11 @@ global.document = {
     return {
       tagName: tag.toUpperCase(),
       style: {},
-      classList: { add() {}, remove() {}, contains() { return false; } },
-      setAttribute() {},
+      classList: { add() { }, remove() { }, contains() { return false; } },
+      setAttribute() { },
       getAttribute() { return null; },
-      appendChild() {},
-      remove() {},
+      appendChild() { },
+      remove() { },
       innerHTML: ''
     };
   },
@@ -366,7 +366,7 @@ test('TC-PUR-01: Purchase Bill posting updates double-entry ledger atomically', 
   });
 
   assert.ok(purchaseJe.ref.startsWith('JV-'), 'Entry must receive sequential JV voucher');
-  
+
   const apBal = sgn(acc('2000'), net('2000'));
   assert.equal(apBal, 5900000, 'Accounts Payable credit balance must be ₹59,000.00');
 
@@ -407,7 +407,7 @@ test('TC-PUR-02: Inventory Stock synchronization strictly from purchases and sal
 
   const stockList = getInventoryStock();
   const ironStock = stockList.find(s => s.name.toLowerCase().includes('iron'));
-  
+
   assert.ok(ironStock, 'Iron scrap must appear in inventory stock');
   assert.equal(ironStock.purchasedQty, 5000, 'Purchased quantity must be 5000 kg');
   assert.equal(ironStock.soldQty, 1500, 'Dispatched/sold quantity must be 1500 kg');
@@ -1202,6 +1202,12 @@ test('TC-PARTY-CLASSIFICATION-01: Lenders and internal expense payees are segreg
   assert.ok(html.includes('Muna'), 'Lenders / Others tab must include Muna');
   assert.ok(html.includes('Rinku Toppo'), 'Lenders / Others tab must include Rinku Toppo');
   assert.ok(html.includes('Registration / Legal Services'), 'Lenders / Others tab must include Registration / Legal Services');
+
+  // Verify lender table row displays outstanding loan liability in "You owe" column
+  partiesState.pt = 'all';
+  html = renderParties();
+  assert.ok(html.includes('1,50,000.00'), 'Pitamber Mohanty lender row must display ₹1,50,000.00 in You owe column');
+  assert.ok(html.includes('1,00,000.00'), 'Mr. Patra lender row must display ₹1,00,000.00 in You owe column');
 
   // Reset
   partiesState.pt = 'all';
@@ -2442,11 +2448,3 @@ test('TC-DATE-CARD-CLICK-01: Calendar picker trigger reliability on date card cl
   assert.match(billsJs, /openInvToPicker/, 'bills.js must provide openInvToPicker helper');
   assert.ok(!billsJs.includes("if (e.target !== inp && inp && typeof inp.showPicker === 'function')"), 'Old e.target !== inp blocker must be removed');
 });
-
-
-
-
-
-
-
-
