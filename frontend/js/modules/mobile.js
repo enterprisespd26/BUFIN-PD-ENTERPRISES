@@ -1047,6 +1047,12 @@ const CSS = String.raw`
   }
 
   /* 0. KPI Metrics 2x2 Grid */
+  .loan-lbl-full {
+    display: none !important;
+  }
+  .loan-lbl-short {
+    display: inline !important;
+  }
   .loan-summary-grid {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -1054,18 +1060,27 @@ const CSS = String.raw`
     margin-bottom: 12px !important;
   }
   .loan-summary-grid .kpi {
-    padding: 10px 12px !important;
+    padding: 8px 12px !important;
     min-height: 52px !important;
     border-radius: 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    box-sizing: border-box !important;
   }
   .loan-summary-grid .kpi span {
     font-size: 11px !important;
-    line-height: 1.2 !important;
+    line-height: 1.25 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     display: block !important;
     margin-bottom: 2px !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
   }
   .loan-summary-grid .kpi b {
     font-size: 16px !important;
@@ -1074,6 +1089,8 @@ const CSS = String.raw`
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     display: block !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
   }
 
   /* 1. Header Action Bar Alignment */

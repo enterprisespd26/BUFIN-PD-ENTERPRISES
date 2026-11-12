@@ -1810,7 +1810,37 @@ test('TC-OPEN-MOBILE-01: Opening Balances 2-column mobile layout, non-clipping d
 
   // 4. Verify sw.js cache bump
   const sw = nodeFs.readFileSync('frontend/sw.js', 'utf8');
-  assert.ok(sw.includes('bufin-v9.3-cache'), 'sw.js must be bumped to bufin-v9.3-cache');
+  assert.ok(sw.includes('bufin-v9.4-cache'), 'sw.js must be bumped to bufin-v9.4-cache');
+});
+
+test('TC-LOAN-MOBILE-KPI-01: Loans KPI metric cards compact 2x2 mobile layout and responsive labels', () => {
+  resetTestDb();
+
+  loansState.activeLoanId = null;
+  loansState.q = '';
+  const html = renderLoans();
+
+  // 1. Verify markup has full and mobile-short labels
+  assert.ok(html.includes('loan-summary-grid'), 'Must render .loan-summary-grid container');
+  assert.ok(html.includes('loan-lbl-full'), 'Must render .loan-lbl-full for desktop');
+  assert.ok(html.includes('loan-lbl-short'), 'Must render .loan-lbl-short for mobile');
+  assert.ok(html.includes('Total Borrowed'), 'Must include Total Borrowed short label');
+  assert.ok(html.includes('Total Lent'), 'Must include Total Lent short label');
+  assert.ok(html.includes('Active Loans'), 'Must include Active Loans short label');
+  assert.ok(html.includes('Overdue Loans'), 'Must include Overdue Loans short label');
+
+  // 2. Verify style.css rules
+  const css = nodeFs.readFileSync('frontend/css/style.css', 'utf8');
+  assert.ok(css.includes('.loan-lbl-full'), 'style.css must define .loan-lbl-full');
+  assert.ok(css.includes('.loan-lbl-short'), 'style.css must define .loan-lbl-short');
+  assert.match(css, /\.loan-summary-grid[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/, 'style.css must enforce 2-column mobile grid');
+  assert.match(css, /\.loan-summary-grid\s+\.kpi[\s\S]*?padding:\s*8px\s+12px\s*!important/, 'style.css must enforce compact padding');
+
+  // 3. Verify mobile.js runtime CSS injection
+  const mobileJs = nodeFs.readFileSync('frontend/js/modules/mobile.js', 'utf8');
+  assert.ok(mobileJs.includes('.loan-lbl-full'), 'mobile.js must style .loan-lbl-full');
+  assert.ok(mobileJs.includes('.loan-lbl-short'), 'mobile.js must style .loan-lbl-short');
+  assert.match(mobileJs, /\.loan-summary-grid\s+\.kpi[\s\S]*?padding:\s*8px\s+12px\s*!important/, 'mobile.js must enforce compact padding');
 });
 
 

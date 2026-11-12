@@ -53,10 +53,10 @@ function renderLoansDashboard() {
 
   return head('Loans', `<button class="p loan-btn-register shrink-0" data-a="newloan">+ Register loan</button>`, 'loan-header-bar') +
     `<div class="grid loan-summary-grid">
-      ${kpi('Total Borrowed Outstanding', fmt(totalBorrowedOut))}
-      ${kpi('Total Lent Outstanding', fmt(totalLentOut))}
-      ${kpi('Active Loans Count', activeCount)}
-      ${kpi('Overdue Loans Count', overdueCount)}
+      ${kpi('<span class="loan-lbl-full">Total Borrowed Outstanding</span><span class="loan-lbl-short">Total Borrowed</span>', fmt(totalBorrowedOut))}
+      ${kpi('<span class="loan-lbl-full">Total Lent Outstanding</span><span class="loan-lbl-short">Total Lent</span>', fmt(totalLentOut))}
+      ${kpi('<span class="loan-lbl-full">Active Loans Count</span><span class="loan-lbl-short">Active Loans</span>', activeCount)}
+      ${kpi('<span class="loan-lbl-full">Overdue Loans Count</span><span class="loan-lbl-short">Overdue Loans</span>', overdueCount > 0 ? `<span style="color:var(--rd,#dc2626);">${overdueCount}</span>` : overdueCount)}
     </div>
     <div class="filters loan-filters-toolbar">
       <div class="loan-filter-pills flex items-center gap-2 overflow-x-auto no-scrollbar py-1 w-full -webkit-overflow-scrolling-touch">
