@@ -61,7 +61,10 @@ export function form(title, html, submit, label, onRender) {
   if (onRender) onRender();
 }
 
-export const fld = (n, l, t, v, req, x) => `<label>${l}${req ? ' *' : ''}<input name="${n}" type="${t || 'text'}" value="${esc(v ?? '')}" ${req ? 'required' : ''} ${t === 'number' ? 'step="any"' : ''} ${x || ''}></label>`;
+export const fld = (n, l, t, v, req, x) => {
+  const needsStar = req && !String(l || '').trim().endsWith('*');
+  return `<label>${l}${needsStar ? ' *' : ''}<input name="${n}" type="${t || 'text'}" value="${esc(v ?? '')}" ${req ? 'required' : ''} ${t === 'number' ? 'step="any"' : ''} ${x || ''}></label>`;
+};
 export const sel = (n, l, o, x) => `<label>${l}<select name="${n}" ${x || ''}>${o}</select></label>`;
 
 export const opts = (l, sel) => l.map(o => `<option value="${esc(o[0])}"${o[0] === sel ? ' selected' : ''}>${esc(o[1])}</option>`).join('');

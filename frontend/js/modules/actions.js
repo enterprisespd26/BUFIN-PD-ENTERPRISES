@@ -1049,7 +1049,7 @@ export function moneyInForm() {
 
   form('Money In (Record Received)',
     `<div class="two">
-      ${fld('date', 'Date *', 'date', today(), 1)}
+      ${fld('date', 'Date', 'date', today(), 1)}
       <label>Deposit To Account *
         <select name="acct" id="txn_acct" required>
           ${accOpts(a => a.cash)}
@@ -1082,8 +1082,8 @@ export function moneyInForm() {
         </label>
       </div>
       <div class="amt-ref-row">
-        ${fld('amt', 'Total Amount Received (₹) *', 'number', '', 1, 'min="0.01" step="any" placeholder="0.00"')}
-        ${fld('ref', 'Reference No. (UTR / Cheque No. / Txn ID)', 'text', '', 0, 'placeholder="e.g. UTR / Cheque / Txn ID"')}
+        ${fld('amt', 'Amount Received (₹)', 'number', '', 1, 'min="0.01" step="any" placeholder="0.00"')}
+        ${fld('ref', 'Reference No.', 'text', '', 0, 'placeholder="e.g. UTR / Cheque / Txn ID"')}
       </div>
       <label style="grid-column: 1 / -1;">Description / Notes
         <textarea name="desc" id="txn_desc" rows="2" placeholder="Itemized details or specific receipt context..."></textarea>
@@ -1232,7 +1232,7 @@ export function moneyOutForm() {
 
   form('Money Out (Record Payment)',
     `<div class="two">
-      ${fld('date', 'Date *', 'date', today(), 1)}
+      ${fld('date', 'Date', 'date', today(), 1)}
       
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label>Paid From Account *
@@ -1414,13 +1414,13 @@ export function moneyOutForm() {
       <!-- Standard Amount and Reference No. in ONE LINE -->
       <div class="amt-ref-row" id="amt_ref_row">
         <div id="std_amt_wrap">
-          <label id="std_amt_label">Total Amount Paid (₹) *
+          <label id="std_amt_label">Amount Paid (₹) *
             <input type="number" step="any" min="0.01" name="amt" id="txn_amt" placeholder="0.00">
           </label>
         </div>
 
         <div id="txn_ref_wrap">
-          <label id="txn_ref_label">Reference No. (UTR / Cheque No. / Txn ID)
+          <label id="txn_ref_label">Reference No.
             <input type="text" name="ref" id="txn_ref" placeholder="e.g. UTR / Cheque / Txn ID">
           </label>
         </div>
@@ -2039,35 +2039,35 @@ export function moneyOutForm() {
         if (cat === '2000') {
           // 1. Supplier Payment
           if (secSupplier) secSupplier.style.display = 'flex';
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Total Amount Paid (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. (UTR / Cheque No. / Txn ID) ';
+          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Amount Paid (₹) * ';
+          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. ';
           if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
           updateBillOptions();
         } else if (cat === '5000') {
           // 2. Purchases / COGS
           if (secCogs) secCogs.style.display = 'flex';
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Total Amount (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. (Bill / Invoice No.) ';
+          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Amount (₹) * ';
+          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference / Bill No. ';
           if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
         } else if (['5100', '5200', '5400', '5700', '5800'].includes(cat)) {
           // 3. Operational & Regulatory Expenses
           if (secOperational) secOperational.style.display = 'flex';
           if (stdAmtWrap) stdAmtWrap.style.display = 'none';
           if (amtRefRow) amtRefRow.style.gridTemplateColumns = '1fr';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Bill / Service Reference No. ';
+          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Bill / Service Ref No. ';
           if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
           calcOperationalGst();
         } else if (cat === '5300') {
           // 4. Salaries
           if (secSalaries) secSalaries.style.display = 'flex';
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Total Salary Amount (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. (Bank Transfer / Cheque No.) ';
+          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Salary Amount (₹) * ';
+          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. ';
           if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
         } else if (cat === '5500') {
           // 5. Interest Expense
           if (secInterest) secInterest.style.display = 'flex';
           if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Interest Amount (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. (Txn ID / UTR) ';
+          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. ';
           if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
         } else if (cat === '5600') {
           // 6. Miscellaneous Expense
@@ -2078,7 +2078,7 @@ export function moneyOutForm() {
         } else if (cat === '3100') {
           // 7. Drawings
           if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Amount Withdrawn (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. / Voucher No. ';
+          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Voucher / Ref No. ';
           if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Reason ';
         } else if (cat === 'other') {
           // 8. Other / Custom Expense Category
@@ -2087,8 +2087,8 @@ export function moneyOutForm() {
             if (customCatInput) customCatInput.focus();
           }
           if (secOther) secOther.style.display = 'flex';
-          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Total Amount Paid (₹) * ';
-          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. (UTR / Cheque No. / Txn ID) ';
+          if (stdAmtLabel && stdAmtLabel.childNodes[0]) stdAmtLabel.childNodes[0].textContent = 'Amount Paid (₹) * ';
+          if (refLabel && refLabel.childNodes[0]) refLabel.childNodes[0].textContent = 'Reference No. ';
           if (descLabel && descLabel.childNodes[0]) descLabel.childNodes[0].textContent = 'Description / Notes ';
         }
         checkLiquidityWarn();
