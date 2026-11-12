@@ -27,6 +27,7 @@ export const ICONS = {
 };
 
 export function injectAttachmentStyles() {
+  if (typeof document === 'undefined') return;
   if (document.getElementById('bufinAttStyles')) return;
   const st = document.createElement('style');
   st.id = 'bufinAttStyles';
