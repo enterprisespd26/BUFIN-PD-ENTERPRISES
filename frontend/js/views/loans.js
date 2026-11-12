@@ -237,9 +237,14 @@ function renderLoanDetail(l) {
   }).join('');
 
   return `
-    <div class="noprint" style="margin-bottom:14px;">
-      <button type="button" class="btn alt sm" data-a="backloans" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:6px 12px;">
-        ← Back to Loans
+    <div class="noprint loan-detail-top-nav">
+      <button type="button" class="btn alt sm loan-back-btn" data-a="backloans">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <span>Back to Loans</span>
+      </button>
+      <button type="button" class="btn alt sm loan-btn-csv-top" data-a="loancsv" data-i="${l.id}" title="Export Statement CSV">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span>Export CSV</span>
       </button>
     </div>
 
@@ -260,35 +265,57 @@ function renderLoanDetail(l) {
     </div>
 
     <!-- MAIN HEADER -->
-    <div class="pd-card" style="margin-bottom:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
-        <div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-            <h2 style="margin:0;font-size:20px;color:var(--tx);">${esc(l.name || l.ref)}</h2>
-            <span style="font-family:monospace;background:var(--mu);padding:2px 8px;border-radius:4px;font-size:12px;">${esc(l.ref)}</span>
+    <div class="pd-card loan-detail-card" style="margin-bottom:16px;">
+      <div class="loan-detail-card-inner">
+        <div class="loan-detail-header-info">
+          <div class="loan-detail-badges">
+            <h2 class="loan-detail-name">${esc(l.name || l.ref)}</h2>
+            <span class="loan-detail-ref">${esc(l.ref)}</span>
             ${t
-              ? `<span class="pd-pill" style="background:#eff6ff;color:#1e40af;font-weight:600;border:1px solid #bfdbfe;">Borrowed (We owe)</span>`
-              : `<span class="pd-pill" style="background:#fef3c7;color:#92400e;font-weight:600;border:1px solid #fde68a;">Lent (Given)</span>`}
+              ? `<span class="pd-pill pill-borrowed">Borrowed (We owe)</span>`
+              : `<span class="pd-pill pill-lent">Lent (Given)</span>`}
             <span class="b ${s[1]}">${s[0]}</span>
           </div>
-          <div style="font-size:13px;color:var(--t2);">
+          <div class="loan-detail-meta">
             Party: <b>${esc(partyName)}</b> · Start Date: <b>${l.date}</b>
           </div>
         </div>
 
-        <div class="pd-btn-row noprint" style="margin:0;gap:8px;flex-wrap:wrap;">
-          ${o > 0 ? `<button type="button" class="p sm" data-a="repay" data-i="${l.id}" style="font-weight:600;">+ Record Payment / EMI</button>` : ''}
-          ${o > 0 ? `<button type="button" class="btn alt sm" data-a="ltop" data-i="${l.id}">Top-up Principal</button>` : ''}
-          ${o > 0 ? `<button type="button" class="btn alt sm" data-a="lfee" data-i="${l.id}">Add Fee / Penalty</button>` : ''}
-          <button type="button" class="btn alt sm" data-a="editloan" data-i="${l.id}">Edit Terms</button>
-          <button type="button" class="btn alt sm" onclick="window.print()">Print Loan Statement</button>
-          <button type="button" class="btn alt sm" data-a="loancsv" data-i="${l.id}">Export CSV</button>
+        <div class="loan-detail-actions noprint">
+          ${o > 0 ? `
+            <button type="button" class="loan-btn-primary loan-act-repay-btn" data-a="repay" data-i="${l.id}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>+ Record Payment / EMI</span>
+            </button>
+          ` : ''}
+          <div class="loan-actions-sub-grid">
+            ${o > 0 ? `
+              <button type="button" class="btn alt sm loan-sub-btn" data-a="ltop" data-i="${l.id}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                <span>Top-up Principal</span>
+              </button>
+            ` : ''}
+            ${o > 0 ? `
+              <button type="button" class="btn alt sm loan-sub-btn" data-a="lfee" data-i="${l.id}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                <span>Add Fee / Penalty</span>
+              </button>
+            ` : ''}
+            <button type="button" class="btn alt sm loan-sub-btn" data-a="editloan" data-i="${l.id}">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+              <span>Edit Terms</span>
+            </button>
+            <button type="button" class="btn alt sm loan-sub-btn" onclick="window.print()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              <span>Print Statement</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- LOAN OVERVIEW GRID -->
-    <div class="grid" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:16px;">
+    <div class="grid loan-detail-kpis" style="margin-bottom:16px;">
       <div class="kpi">
         <span>Current Outstanding</span>
         <b style="font-size:20px;color:${o > 0 ? (t ? 'var(--rd,#dc2626)' : 'var(--ok,#16a34a)') : 'inherit'}">${fmt(o)}</b>
