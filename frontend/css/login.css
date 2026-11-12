@@ -1,4 +1,4 @@
-/* ================= CLEAN LIGHT / WHITE PIN LOGIN THEME ================= */
+/* ================= CLEAN LIGHT PIN LOGIN THEME - SPLIT LAYOUT ================= */
 .login-screen {
   position: fixed;
   inset: 0;
@@ -14,67 +14,173 @@
   box-sizing: border-box;
 }
 
-/* Desktop: Elegant framed card */
+/* Ambient Logo Float & Glowing Pulse Keyframe Animation */
+@keyframes logoAmbientPulse {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.18), 0 2px 6px rgba(0, 0, 0, 0.04);
+    border-color: rgba(37, 99, 235, 0.15);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.04);
+    box-shadow: 0 20px 35px -5px rgba(37, 99, 235, 0.28), 0 4px 12px rgba(37, 99, 235, 0.12);
+    border-color: rgba(37, 99, 235, 0.35);
+  }
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Desktop Split Layout (min-width: 641px) */
 @media (min-width: 641px) {
   .login-screen {
-    padding: 24px;
-    background: #F8FAFC;
+    padding: 32px 24px;
+    background: radial-gradient(circle at 50% 20%, #F8FAFC 0%, #EDF2F7 100%);
   }
 
   .login-card {
     width: 100%;
-    max-width: 380px;
+    max-width: 700px;
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
-    box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(0, 0, 0, 0.04);
     border-radius: 28px;
-    padding: 38px 28px 30px;
-    text-align: center;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    overflow: hidden;
     box-sizing: border-box;
-    animation: cardFadeIn 0.25s ease-out;
+    animation: cardFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .login-header {
-    margin-bottom: 24px;
+  /* Left Side: Branding Panel */
+  .login-brand-side {
+    flex: 1 1 44%;
+    min-width: 270px;
+    background: linear-gradient(160deg, #F8FAFC 0%, #EEF2F6 100%);
+    border-right: 1px solid #E2E8F0;
+    padding: 48px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+    position: relative;
   }
 
   .logo-circle {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 14px;
-    border-radius: 18px;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 18px;
+    border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    background: #FFFFFF;
+    border: 1.5px solid rgba(37, 99, 235, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #FFFFFF;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 14px;
+    box-sizing: border-box;
+    animation: logoAmbientPulse 4s ease-in-out infinite;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    cursor: default;
+  }
+
+  .logo-circle:hover {
+    transform: translateY(-4px) scale(1.08) !important;
+    box-shadow: 0 22px 40px -5px rgba(37, 99, 235, 0.32) !important;
+  }
+
+  .login-brand-title {
+    margin: 0 0 6px;
+    font-size: 28px;
+    font-weight: 800;
+    color: #0F172A;
+    letter-spacing: 2px;
+    line-height: 1.1;
+  }
+
+  .login-brand-sub {
+    margin: 0;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #64748B;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+  }
+
+  .login-brand-tag {
+    margin-top: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #EFF6FF;
+    border: 1px solid #DBEAFE;
+    color: #2563EB;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    user-select: none;
+  }
+
+  /* Right Side: PIN Entry Panel */
+  .login-pin-side {
+    flex: 1 1 56%;
+    padding: 38px 36px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .login-pin-prompt {
+    margin-bottom: 20px;
+  }
+
+  .login-pin-title {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+
+  .login-pin-sub {
+    margin: 0;
+    font-size: 12.5px;
+    color: #64748B;
   }
 
   .pin-display {
     display: flex;
     justify-content: center;
     gap: 16px;
-    margin: 0 auto 26px;
+    margin: 0 auto 22px;
   }
 
   .pin-keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    max-width: 270px;
+    gap: 12px;
+    max-width: 250px;
     margin: 0 auto;
   }
 
   .pin-btn {
-    width: 64px;
-    height: 64px;
-    font-size: 24px !important;
+    width: 60px;
+    height: 60px;
+    font-size: 22px !important;
   }
 }
 
-/* Mobile: Native full-screen edge-to-edge lockscreen experience (no floating card) */
+/* Mobile Screen Layout (max-width: 640px) */
 @media (max-width: 640px) {
   .login-screen {
     padding: 0 !important;
@@ -95,7 +201,7 @@
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    padding: max(28px, env(safe-area-inset-top, 28px)) 24px max(24px, env(safe-area-inset-bottom, 24px)) !important;
+    padding: max(20px, env(safe-area-inset-top, 20px)) 24px max(20px, env(safe-area-inset-bottom, 20px)) !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-evenly !important;
@@ -105,36 +211,75 @@
     animation: none !important;
   }
 
-  .login-header {
-    margin-bottom: 0 !important;
-    padding-top: 4px;
+  .login-brand-side {
+    width: 100% !important;
+    padding: 10px 0 6px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .logo-circle {
-    width: 68px !important;
-    height: 68px !important;
+    width: 66px !important;
+    height: 66px !important;
     border-radius: 20px !important;
-    margin: 0 auto 12px !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+    margin: 0 auto 10px !important;
     background: #FFFFFF !important;
-    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    border: 1.5px solid rgba(37, 99, 235, 0.18) !important;
+    box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.2) !important;
+    padding: 12px !important;
+    animation: logoAmbientPulse 4s ease-in-out infinite !important;
   }
 
-  .login-card h2 {
+  .login-brand-title {
     font-size: 26px !important;
-    letter-spacing: 1px !important;
-    margin-bottom: 6px !important;
+    font-weight: 800 !important;
+    letter-spacing: 1.5px !important;
+    margin: 0 0 4px !important;
+    color: #0F172A !important;
   }
 
-  .login-card p {
-    font-size: 14px !important;
+  .login-brand-sub {
+    font-size: 11px !important;
+    font-weight: 700 !important;
     color: #64748B !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
+  }
+
+  .login-brand-tag {
+    display: none !important;
+  }
+
+  .login-pin-side {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .login-pin-prompt {
+    margin-bottom: 12px !important;
+  }
+
+  .login-pin-title {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    margin: 0 0 2px !important;
+  }
+
+  .login-pin-sub {
+    display: none !important;
   }
 
   .pin-display {
     display: flex !important;
     justify-content: center !important;
-    margin: 12px auto 0 !important;
+    margin: 6px auto 12px !important;
     gap: 20px !important;
   }
 
@@ -149,7 +294,7 @@
     max-width: 320px !important;
     width: 100% !important;
     gap: 16px 22px !important;
-    margin: 10px auto 0 !important;
+    margin: 6px auto 0 !important;
   }
 
   .pin-btn {
@@ -172,11 +317,7 @@
   }
 }
 
-@keyframes cardFadeIn {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
+/* Shared Components */
 .logo-circle {
   overflow: hidden;
   display: flex;
@@ -189,21 +330,6 @@
   height: 100%;
   object-fit: contain;
   display: block;
-}
-
-.login-card h2 {
-  margin: 0 0 6px;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: #0F172A;
-}
-
-.login-card p {
-  margin: 0;
-  font-size: 13px;
-  color: #64748B;
-  line-height: 1.4;
 }
 
 .pin-dot {

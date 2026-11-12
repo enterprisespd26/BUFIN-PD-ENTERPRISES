@@ -58,37 +58,53 @@
   <!-- PIN Login Screen rendered directly in HTML -->
   <div id="pinScreen" class="login-screen">
     <div class="login-card" id="loginCard">
-      <div class="login-header">
-        <div class="logo-circle">
+      <!-- Left Side: App Branding & Logo -->
+      <div class="login-brand-side">
+        <div class="logo-circle" title="BUFIN - PD Enterprises">
           <img src="/svg/app-icon.svg" alt="BUFIN" class="login-app-logo">
         </div>
-        <h2>BUFIN</h2>
-        <p>Enter 4-digit PIN to access business ledger</p>
+        <h2 class="login-brand-title">BUFIN</h2>
+        <p class="login-brand-sub">PD ENTERPRISES</p>
+        <div class="login-brand-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>SECURE LEDGER ACCESS</span>
+        </div>
       </div>
 
-      <div class="pin-display">
-        <div class="pin-dot" id="dot0"></div>
-        <div class="pin-dot" id="dot1"></div>
-        <div class="pin-dot" id="dot2"></div>
-        <div class="pin-dot" id="dot3"></div>
-      </div>
+      <!-- Right Side: PIN Entry Form & Pad -->
+      <div class="login-pin-side">
+        <div class="login-pin-prompt">
+          <p class="login-pin-title">Enter 4-Digit PIN</p>
+          <p class="login-pin-sub">Access business ledger &amp; financials</p>
+        </div>
 
-      <div class="pin-keypad">
-        <button type="button" class="pin-btn" data-n="1">1</button>
-        <button type="button" class="pin-btn" data-n="2">2</button>
-        <button type="button" class="pin-btn" data-n="3">3</button>
-        <button type="button" class="pin-btn" data-n="4">4</button>
-        <button type="button" class="pin-btn" data-n="5">5</button>
-        <button type="button" class="pin-btn" data-n="6">6</button>
-        <button type="button" class="pin-btn" data-n="7">7</button>
-        <button type="button" class="pin-btn" data-n="8">8</button>
-        <button type="button" class="pin-btn" data-n="9">9</button>
-        <button type="button" class="pin-btn fn" id="pinClear">C</button>
-        <button type="button" class="pin-btn" data-n="0">0</button>
-        <button type="button" class="pin-btn fn" id="pinBack">&#x232B;</button>
-      </div>
+        <div class="pin-display">
+          <div class="pin-dot" id="dot0"></div>
+          <div class="pin-dot" id="dot1"></div>
+          <div class="pin-dot" id="dot2"></div>
+          <div class="pin-dot" id="dot3"></div>
+        </div>
 
-      <div class="pin-error" id="pinError"></div>
+        <div class="pin-keypad">
+          <button type="button" class="pin-btn" data-n="1">1</button>
+          <button type="button" class="pin-btn" data-n="2">2</button>
+          <button type="button" class="pin-btn" data-n="3">3</button>
+          <button type="button" class="pin-btn" data-n="4">4</button>
+          <button type="button" class="pin-btn" data-n="5">5</button>
+          <button type="button" class="pin-btn" data-n="6">6</button>
+          <button type="button" class="pin-btn" data-n="7">7</button>
+          <button type="button" class="pin-btn" data-n="8">8</button>
+          <button type="button" class="pin-btn" data-n="9">9</button>
+          <button type="button" class="pin-btn fn" id="pinClear">C</button>
+          <button type="button" class="pin-btn" data-n="0">0</button>
+          <button type="button" class="pin-btn fn" id="pinBack">&#x232B;</button>
+        </div>
+
+        <div class="pin-error" id="pinError"></div>
+      </div>
     </div>
   </div>
 
