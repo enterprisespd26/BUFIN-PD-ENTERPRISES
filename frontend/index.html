@@ -21,9 +21,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/login.css">
-  <link rel="stylesheet" href="css/invoice.css">
+  <link rel="stylesheet" href="css/style.css?v=3.4">
+  <link rel="stylesheet" href="css/login.css?v=3.4">
+  <link rel="stylesheet" href="css/invoice.css?v=3.4">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     try { fetch('/api/ping', { priority: 'low' }).catch(function(){}); } catch(e) {}
@@ -61,7 +61,7 @@
       <!-- Left Side: App Branding & Logo -->
       <div class="login-brand-side">
         <div class="logo-circle" title="BUFIN - PD Enterprises">
-          <img src="/svg/app-icon.svg" alt="BUFIN" class="login-app-logo">
+          <img src="/svg/logo.svg" alt="BUFIN" class="login-app-logo">
         </div>
         <h2 class="login-brand-title">BUFIN</h2>
         <p class="login-brand-sub">PD ENTERPRISES</p>
@@ -118,7 +118,7 @@
   <div id="toast" role="alert"></div>
   <dialog id="dlg"></dialog>
 
-  <script type="module" src="js/app.js?v=3.3"></script>
+  <script type="module" src="js/app.js?v=3.4"></script>
   <script>
     if ('serviceWorker' in navigator) {
       var swRefreshing = false;

@@ -22,7 +22,8 @@ const PRECACHE_ASSETS = [
   '/icons/android-chrome-512x512.png',
   '/icons/maskable-icon-512x512.png',
   '/icons/apple-touch-icon.png',
-  '/svg/app-icon.svg'
+  '/svg/app-icon.svg',
+  '/svg/logo.svg'
 ];
 
 // Install: Pre-cache core app shell
