@@ -111,6 +111,7 @@ function resetTestDb() {
       { code: '3000', name: "Owner's Capital", t: 'Q' },
       { code: '3200', name: 'Opening Balance Equity', t: 'Q' },
       { code: '4000', name: 'Sales Revenue', t: 'I' },
+      { code: '4200', name: 'Other Income', t: 'I' },
       { code: '4300', name: 'Interest Income', t: 'I' },
       { code: '5000', name: 'Purchases / Cost of Goods Sold', t: 'X' },
       { code: '5100', name: 'Rent Expense', t: 'X' },
@@ -523,6 +524,134 @@ test('TC-MON-03: Expense / Payment Category custom "Other" option provisions acc
   assert.equal(rowData.catName, 'Machinery Maintenance', 'Category column must display custom category name');
   assert.equal(rowData.partyName, 'Sharma Engineering', 'Payee must display correctly');
   assert.equal(rowData.amt, 250000, 'Amount must match ₹2,500.00 (250000 paisa)');
+});
+
+test('TC-MON-04: Money In dynamic category handling (Capital Introduced, Customer Payment, Interest Income, Other Income)', () => {
+  resetTestDb();
+
+  // 1. Capital Introduced (3000)
+  const capJe = post({
+    date: '2026-10-01',
+    src: 'in',
+    narr: 'Pritam Mohanty - Additional Capital (Capital Introduced)',
+    meta: {
+      method: 'Bank Transfer / NEFT / RTGS',
+      acct: '1010',
+      cat: '3000',
+      catName: 'Capital Introduced',
+      contributor: 'Pritam Mohanty',
+      capitalType: 'Additional Capital',
+      partyName: 'Pritam Mohanty'
+    },
+    lines: [
+      { a: '1010', d: 1000000, c: 0 },
+      { a: '3000', d: 0, c: 1000000 }
+    ]
+  });
+  assert.equal(net('1010'), 1000000, 'Bank Account must have ₹10,000.00 debit');
+  assert.equal(sgn(acc('3000'), net('3000')), 1000000, "Owner's Capital must have ₹10,000.00 credit");
+  const capData = getTxnRowData(capJe);
+  assert.equal(capData.catName, 'Capital Introduced');
+  assert.equal(capData.partyName, 'Pritam Mohanty');
+
+  // 2. Customer Payment / Receipt (1100) with sales invoice knock-off
+  const custId = 'p_cust1';
+  const saleDoc = {
+    id: 'sale_inv_101',
+    no: 'INV-101',
+    date: '2026-10-02',
+    type: 'sale',
+    party: custId,
+    total: 500000, // ₹5,000.00
+    paid: 0,
+    pays: []
+  };
+  db.docs.push(saleDoc);
+  post({
+    date: '2026-10-02',
+    src: 'sale',
+    narr: 'Tata Steel - Sale INV-101',
+    lines: [
+      { a: '1100', d: 500000, c: 0, p: custId },
+      { a: '4000', d: 0, c: 500000, p: custId }
+    ]
+  });
+
+  const payJe = post({
+    date: '2026-10-03',
+    src: 'in',
+    narr: 'Tata Steel Ltd - Payment for Invoice INV-101',
+    meta: {
+      method: 'UPI',
+      ref: 'INV-101',
+      docNo: 'INV-101',
+      invoiceId: 'sale_inv_101',
+      acct: '1010',
+      cat: '1100',
+      catName: 'Customer Receipt',
+      party: custId,
+      partyName: 'Tata Steel Ltd'
+    },
+    lines: [
+      { a: '1010', d: 500000, c: 0, p: custId },
+      { a: '1100', d: 0, c: 500000, p: custId }
+    ]
+  });
+  saleDoc.pays.push({ je: payJe.id, amt: 500000, date: '2026-10-03', method: 'UPI', acct: '1010' });
+  saleDoc.paid = 5000;
+  assert.equal(out(saleDoc), 0, 'Invoice must be knocked off and fully settled');
+  assert.equal(net('1100'), 0, 'Accounts Receivable for customer must balance to 0');
+  const payData = getTxnRowData(payJe);
+  assert.equal(payData.catName, 'Customer Receipt');
+  assert.equal(payData.partyName, 'Tata Steel Ltd');
+
+  // 3. Interest Income (4300)
+  const intJe = post({
+    date: '2026-10-04',
+    src: 'in',
+    narr: 'State Bank of India - Savings Bank Interest',
+    meta: {
+      method: 'Bank Transfer / NEFT / RTGS',
+      acct: '1010',
+      cat: '4300',
+      catName: 'Interest Income',
+      payer: 'State Bank of India',
+      partyName: 'State Bank of India',
+      sourceDesc: 'Savings Bank Interest'
+    },
+    lines: [
+      { a: '1010', d: 35000, c: 0 },
+      { a: '4300', d: 0, c: 35000 }
+    ]
+  });
+  assert.equal(sgn(acc('4300'), net('4300')), 35000, 'Interest Income must have ₹350.00 credit');
+  const intData = getTxnRowData(intJe);
+  assert.equal(intData.catName, 'Interest Income');
+  assert.equal(intData.partyName, 'State Bank of India');
+
+  // 4. Other Miscellaneous Income (4200)
+  const othJe = post({
+    date: '2026-10-05',
+    src: 'in',
+    narr: 'Scrap Buyer - Miscellaneous Handling Charge Recovery',
+    meta: {
+      method: 'Cash',
+      acct: '1000',
+      cat: '4200',
+      catName: 'Other Miscellaneous Income',
+      payer: 'Scrap Buyer',
+      partyName: 'Scrap Buyer',
+      sourceDesc: 'Miscellaneous Handling Charge Recovery'
+    },
+    lines: [
+      { a: '1000', d: 15000, c: 0 },
+      { a: '4200', d: 0, c: 15000 }
+    ]
+  });
+  assert.equal(sgn(acc('4200'), net('4200')), 15000, 'Other Income must have ₹150.00 credit');
+  const othData = getTxnRowData(othJe);
+  assert.equal(othData.catName, 'Other Miscellaneous Income');
+  assert.equal(othData.partyName, 'Scrap Buyer');
 });
 
 // ========================================================

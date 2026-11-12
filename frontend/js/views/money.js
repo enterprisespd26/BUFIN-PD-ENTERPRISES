@@ -27,7 +27,12 @@ export function getTxnRowData(e) {
     acctName = debCash ? an(debCash.a) : (e.meta?.acct ? an(e.meta.acct) : (e.lines[0] ? an(e.lines[0].a) : ''));
     const crCat = e.lines.find(l => l.c && !acc(l.a)?.cash);
     const catCode = crCat ? crCat.a : (e.meta?.cat || (e.lines[1] ? e.lines[1].a : ''));
-    catName = catCode === '1100' ? 'Customer Receipt (Accounts Receivable)' : an(catCode);
+    if (e.meta?.catName) catName = e.meta.catName;
+    else if (catCode === '1100') catName = 'Customer Receipt (Accounts Receivable)';
+    else if (catCode === '3000') catName = 'Capital Introduced';
+    else if (catCode === '4300') catName = 'Interest Income';
+    else if (catCode === '4200') catName = 'Other Income';
+    else catName = an(catCode);
   } else if (e.src === 'out' || e.src === 'exp') {
     const crCash = e.lines.find(l => l.c && acc(l.a)?.cash);
     acctName = crCash ? an(crCash.a) : (e.meta?.acct ? an(e.meta.acct) : (e.lines[1] ? an(e.lines[1].a) : ''));

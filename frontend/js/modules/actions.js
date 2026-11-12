@@ -1025,19 +1025,7 @@ export function stmt2(i) {
 
 export function moneyInForm() {
   let inAttachments = [];
-  const parties = db.parties.filter(p => isC(p) || p.type === 'other');
-  const catList = db.accounts.filter(a => a.t === 'I' || a.code === '3000' || a.code === '1100');
-  const order = ['1100', '4000', '4100', '4200', '4300', '3000'];
-  catList.sort((x, y) => {
-    const ix = order.indexOf(x.code);
-    const iy = order.indexOf(y.code);
-    return (ix === -1 ? 99 : ix) - (iy === -1 ? 99 : iy);
-  });
-  const catOptions = catList.map(a => {
-    let name = a.name;
-    if (a.code === '1100') name = 'Customer Receipt (Accounts Receivable)';
-    return `<option value="${a.code}"${a.code === '4000' ? ' selected' : ''}>${esc(name)}</option>`;
-  }).join('');
+  const customers = (db.parties || []).filter(isC);
 
   const bankMethods = [
     'Bank Transfer / NEFT / RTGS',
@@ -1050,30 +1038,74 @@ export function moneyInForm() {
   form('Money In (Record Received)',
     `<div class="two">
       ${fld('date', 'Date', 'date', today(), 1)}
-      <label>Deposit To Account *
-        <select name="acct" id="txn_acct" required>
-          ${accOpts(a => a.cash)}
-        </select>
-      </label>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label>Deposit To Account *
+          <select name="acct" id="txn_acct" required>
+            ${accOpts(a => a.cash)}
+          </select>
+        </label>
+        <div id="txn_in_cash_bal_hint" style="font-size:12px; color:var(--t2); padding-left:2px; display:none;"></div>
+      </div>
+
       <label style="grid-column: 1 / -1;">Income Category *
         <select name="cat" id="txn_cat" required>
-          ${catOptions}
+          <option value="1100" selected>Customer Payment / Receipt (Trade Accounts Receivable)</option>
+          <option value="3000">Capital Introduced (Owner's Capital / Equity)</option>
+          <option value="4300">Interest Income</option>
+          <option value="4200">Other Miscellaneous Income</option>
         </select>
       </label>
-      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px;">
-        <label>Customer / Payer
+
+      <!-- Section 1: Customer Payment (cat === 1100) -->
+      <div id="in_sec_customer" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px;">
+        <label>Customer / Payer *
           <select name="party" id="txn_party">
-            <option value="">-- None / Walk-in --</option>
-            ${parties.map(p => `<option value="${p.id}">${esc(p.name)}${p.phone ? ' (' + esc(p.phone) + ')' : ''}</option>`).join('')}
+            <option value="">-- None / Walk-in Customer --</option>
+            ${customers.map(p => `<option value="${p.id}">${esc(p.name)}${p.phone ? ' (' + esc(p.phone) + ')' : ''}</option>`).join('')}
             <option value="__CUSTOM__">➕ Enter custom customer name...</option>
           </select>
         </label>
         <div id="txn_custom_wrap" style="display:none">
-          <label>Custom Customer Name *
+          <label>Customer Name *
             <input type="text" name="custom_party" id="txn_custom_party" placeholder="Type customer name...">
           </label>
         </div>
+        <label>Select Unpaid Invoice (Optional)
+          <select name="invoice_ref" id="txn_invoice_ref">
+            <option value="">-- Select a customer above to load unpaid invoices --</option>
+          </select>
+        </label>
+        <div id="in_invoice_due_hint" style="font-size:12px;color:var(--t2);margin-top:-2px;display:none;"></div>
       </div>
+
+      <!-- Section 2: Capital Introduced (cat === 3000) -->
+      <div id="in_sec_capital" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
+        <div class="two">
+          <label>Proprietor / Investor Name *
+            <input type="text" name="proprietor_name" id="txn_proprietor_name" value="${esc(db.biz?.owner || 'PD ENTERPRISES')}" placeholder="e.g. Proprietor, Investor Name...">
+          </label>
+          <label>Capital Type *
+            <select name="capital_type" id="txn_capital_type">
+              <option value="Additional Capital" selected>Additional Capital</option>
+              <option value="Initial Capital Infusion">Initial Capital Infusion</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <!-- Section 3: Interest & Other Income (cat === 4300 || cat === 4200) -->
+      <div id="in_sec_other_income" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 8px;">
+        <div class="two">
+          <label>Payer / Source Name
+            <input type="text" name="income_payer" id="txn_income_payer" placeholder="e.g. Bank, Financial Institution, Payer Name...">
+          </label>
+          <label>Income Source Description
+            <input type="text" name="income_source" id="txn_income_source" placeholder="e.g. Savings Interest, Scrap Handling, Scrap Recovery...">
+          </label>
+        </div>
+      </div>
+
+      <!-- Payment Method Wrap -->
       <div id="txn_method_wrap" style="grid-column: 1 / -1;">
         <label>Payment Method
           <select name="method" id="txn_method">
@@ -1081,13 +1113,17 @@ export function moneyInForm() {
           </select>
         </label>
       </div>
+
+      <!-- Amount and Reference in ONE LINE -->
       <div class="amt-ref-row">
         ${fld('amt', 'Amount Received (₹)', 'number', '', 1, 'min="0.01" step="any" placeholder="0.00"')}
         ${fld('ref', 'Reference No.', 'text', '', 0, 'placeholder="e.g. UTR / Cheque / Txn ID"')}
       </div>
+
       <label style="grid-column: 1 / -1;">Description / Notes
         <textarea name="desc" id="txn_desc" rows="2" placeholder="Itemized details or specific receipt context..."></textarea>
       </label>
+
       <div style="grid-column: 1 / -1;">
         ${renderAttachmentControl({ idPrefix: 'in_att', files: inAttachments, label: 'Payment Receipt / Challan Attachment' })}
       </div>
@@ -1099,63 +1135,147 @@ export function moneyInForm() {
       if (!v.acct) throw Error('Please select an account');
       if (!v.cat) throw Error('Please select an income category');
 
-      let partyId = '';
-      let partyName = '';
-      if (v.party === '__CUSTOM__') {
-        const customName = (v.custom_party || '').trim();
-        if (!customName) throw Error('Please enter the custom customer name');
-        const existingP = db.parties.find(p => p.name.trim().toLowerCase() === customName.toLowerCase());
-        if (existingP) {
-          partyId = existingP.id;
-          partyName = existingP.name;
-        } else {
-          const newParty = {
-            id: uid(),
-            name: customName,
-            type: 'customer',
-            phone: '',
-            gstin: '',
-            state: db.biz.state || 'Odisha',
-            terms: '0'
-          };
-          db.parties.push(newParty);
-          partyId = newParty.id;
-          partyName = newParty.name;
+      const isCash = v.acct === '1000' || (acc(v.acct)?.name || '').toLowerCase().includes('cash');
+      const finalMethod = isCash ? 'Cash' : (v.method || 'Bank Transfer / NEFT / RTGS');
+      const userRef = (v.ref || '').trim();
+      const userDesc = (v.desc || '').trim();
+      const cat = v.cat;
+      let postedEnt = null;
+
+      if (cat === '3000') {
+        // Capital Introduced (Owner's Capital)
+        const contributor = (v.proprietor_name || '').trim() || (db.biz?.owner || "PD ENTERPRISES");
+        const capitalType = v.capital_type || 'Additional Capital';
+        const narr = userDesc
+          ? `${contributor} - ${userDesc}`
+          : `${contributor} - ${capitalType} (Capital Introduced)`;
+
+        postedEnt = post({
+          date: v.date,
+          src: 'in',
+          narr: narr,
+          meta: {
+            method: finalMethod,
+            ref: userRef,
+            acct: v.acct,
+            cat: '3000',
+            catName: 'Capital Introduced',
+            contributor: contributor,
+            capitalType: capitalType,
+            partyName: contributor,
+            desc: userDesc
+          },
+          lines: [
+            { a: v.acct, d: a, c: 0 },
+            { a: '3000', d: 0, c: a }
+          ]
+        });
+      } else if (cat === '1100') {
+        // Customer Payment / Receipt (Accounts Receivable)
+        let partyId = '';
+        let partyName = '';
+        if (v.party === '__CUSTOM__') {
+          const customName = (v.custom_party || '').trim();
+          if (!customName) throw Error('Please enter the custom customer name');
+          const existingP = db.parties.find(p => p.name.trim().toLowerCase() === customName.toLowerCase());
+          if (existingP) {
+            partyId = existingP.id;
+            partyName = existingP.name;
+          } else {
+            const newParty = {
+              id: uid(),
+              name: customName,
+              type: 'customer',
+              phone: '',
+              gstin: '',
+              state: db.biz.state || 'Odisha',
+              terms: '0'
+            };
+            db.parties.push(newParty);
+            partyId = newParty.id;
+            partyName = newParty.name;
+          }
+        } else if (v.party) {
+          partyId = v.party;
+          partyName = pn(v.party);
         }
-      } else if (v.party) {
-        partyId = v.party;
-        partyName = pn(v.party);
+
+        const selectedInv = v.invoice_ref ? db.docs.find(d => d.id === v.invoice_ref) : null;
+        const invNo = selectedInv ? (selectedInv.no || selectedInv.sno) : '';
+
+        const narr = userDesc
+          ? (partyName ? `${partyName} - ${userDesc}` : userDesc)
+          : (invNo ? `${partyName} - Payment for Invoice ${invNo}` : (partyName ? `${partyName} - Customer Payment` : 'Customer Payment'));
+
+        const pJe = postedEnt = post({
+          date: v.date,
+          src: 'in',
+          narr: narr,
+          meta: {
+            method: finalMethod,
+            ref: userRef || invNo,
+            docNo: invNo,
+            invoiceId: selectedInv ? selectedInv.id : '',
+            acct: v.acct,
+            cat: '1100',
+            catName: 'Customer Receipt',
+            party: partyId || '',
+            partyName: partyName,
+            desc: userDesc
+          },
+          lines: [
+            { a: v.acct, d: a, c: 0, p: partyId },
+            { a: '1100', d: 0, c: a, p: partyId }
+          ]
+        });
+
+        if (selectedInv) {
+          if (!selectedInv.pays) selectedInv.pays = [];
+          const curBal = Math.max(0, out(selectedInv));
+          const appliedAmt = Math.min(a, curBal);
+          selectedInv.pays.push({
+            je: pJe.id,
+            amt: appliedAmt,
+            date: v.date,
+            method: finalMethod,
+            acct: v.acct
+          });
+          selectedInv.paid = ((selectedInv.total || 0) - Math.max(0, curBal - appliedAmt)) / 100;
+        }
+      } else {
+        // Interest Income (4300) or Other Miscellaneous Income (4200)
+        const payer = (v.income_payer || '').trim();
+        const sourceDesc = (v.income_source || '').trim();
+        const catName = cat === '4300' ? 'Interest Income' : 'Other Miscellaneous Income';
+
+        const narr = userDesc
+          ? (payer ? `${payer} - ${userDesc}` : userDesc)
+          : (sourceDesc ? (payer ? `${payer} - ${sourceDesc}` : sourceDesc) : (payer ? `${payer} - ${catName}` : catName));
+
+        postedEnt = post({
+          date: v.date,
+          src: 'in',
+          narr: narr,
+          meta: {
+            method: finalMethod,
+            ref: userRef,
+            acct: v.acct,
+            cat: cat,
+            catName: catName,
+            payer: payer,
+            partyName: payer,
+            sourceDesc: sourceDesc,
+            desc: userDesc
+          },
+          lines: [
+            { a: v.acct, d: a, c: 0 },
+            { a: cat, d: 0, c: a }
+          ]
+        });
       }
 
-      const isCash = v.acct === '1000' || (acc(v.acct)?.name || '').toLowerCase().includes('cash');
-      const finalMethod = isCash ? 'Cash' : (v.method || 'Bank Transfer');
-      const partyDisp = partyName || '';
-      const userDesc = (v.desc || '').trim();
-      const catDisplayName = v.cat === '1100' ? 'Customer Receipt' : an(v.cat);
-      const narr = userDesc
-        ? (partyDisp ? `${partyDisp} - ${userDesc}` : userDesc)
-        : (partyDisp ? `${partyDisp} - ${catDisplayName}` : catDisplayName);
-
-      const ent = post({
-        date: v.date,
-        src: 'in',
-        narr: narr,
-        meta: {
-          method: finalMethod,
-          ref: (v.ref || '').trim(),
-          acct: v.acct,
-          cat: v.cat,
-          party: partyId || '',
-          partyName: partyDisp,
-          desc: userDesc
-        },
-        lines: [
-          { a: v.acct, d: a, c: 0, p: partyId },
-          { a: v.cat, d: 0, c: a, p: partyId }
-        ]
-      });
-      if (inAttachments.length && ent && ent.id) {
-        saveAttachments(ent.id, inAttachments);
+      if (inAttachments.length && postedEnt && postedEnt.id) {
+        saveAttachments(postedEnt.id, inAttachments);
       }
     },
     'Save Transaction',
@@ -1169,15 +1289,34 @@ export function moneyInForm() {
       const acctEl = $('#txn_acct');
       const methWrap = $('#txn_method_wrap');
       const methSel = $('#txn_method');
+      const catEl = $('#txn_cat');
+
+      const secCustomer = $('#in_sec_customer');
+      const secCapital = $('#in_sec_capital');
+      const secOtherIncome = $('#in_sec_other_income');
+
       const partySel = $('#txn_party');
       const customWrap = $('#txn_custom_wrap');
       const customInput = $('#txn_custom_party');
-      const catEl = $('#txn_cat');
+      const invoiceRefSel = $('#txn_invoice_ref');
+      const invoiceDueHint = $('#in_invoice_due_hint');
+
+      const amtInput = $('input[name="amt"]');
+      const refInput = $('input[name="ref"]');
+      const descInput = $('#txn_desc');
+      const cashHintEl = $('#txn_in_cash_bal_hint');
 
       function syncAcctMethod() {
         if (!acctEl || !methWrap || !methSel) return;
         const code = acctEl.value;
         const isCash = code === '1000' || (acc(code)?.name || '').toLowerCase().includes('cash');
+        const bal = net(code);
+
+        if (cashHintEl) {
+          cashHintEl.style.display = 'block';
+          cashHintEl.innerHTML = `Available ${isCash ? 'Cash in Hand' : (acc(code)?.name || 'Account')}: <b style="color:${bal <= 0 ? '#dc2626' : '#0f5132'}">${fmt(bal)}</b>`;
+        }
+
         if (isCash) {
           methWrap.style.display = 'none';
           methSel.innerHTML = '<option value="Cash" selected>Cash</option>';
@@ -1188,8 +1327,53 @@ export function moneyInForm() {
         }
       }
 
+      function updateInvoiceOptions() {
+        if (!partySel || !invoiceRefSel) return;
+        const custId = partySel.value;
+        if (!custId || custId === '__CUSTOM__') {
+          invoiceRefSel.innerHTML = '<option value="">-- ' + (custId === '__CUSTOM__' ? 'Custom customer (On-Account Receipt)' : 'Select a customer above to load unpaid invoices') + ' --</option>';
+          if (invoiceDueHint) invoiceDueHint.style.display = 'none';
+          return;
+        }
+
+        const openInvoices = (db.docs || []).filter(d => d.type === 'sale' && !d.cancelled && d.party === custId && out(d) > 0);
+        if (openInvoices.length > 0) {
+          invoiceRefSel.innerHTML = '<option value="">-- Select Unpaid Invoice to Settle (Optional) --</option>' +
+            openInvoices.map(b => {
+              const due = (out(b) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+              const invNo = b.no || b.sno || b.id;
+              return `<option value="${b.id}" data-due="${(out(b) / 100).toFixed(2)}" data-no="${esc(invNo)}">Invoice #${esc(invNo)} (${b.date}) — Due: ₹${due}</option>`;
+            }).join('');
+        } else {
+          invoiceRefSel.innerHTML = '<option value="">-- No pending unpaid invoices (On-Account Receipt) --</option>';
+          if (invoiceDueHint) invoiceDueHint.style.display = 'none';
+        }
+      }
+
+      function switchCategory() {
+        const cat = catEl ? catEl.value : '1100';
+        if (secCustomer) secCustomer.style.display = 'none';
+        if (secCapital) secCapital.style.display = 'none';
+        if (secOtherIncome) secOtherIncome.style.display = 'none';
+
+        if (cat === '1100') {
+          // Customer Payment / Receipt
+          if (secCustomer) secCustomer.style.display = 'flex';
+          updateInvoiceOptions();
+        } else if (cat === '3000') {
+          // Capital Introduced
+          if (secCapital) secCapital.style.display = 'flex';
+        } else if (cat === '4300' || cat === '4200') {
+          // Interest Income or Other Income
+          if (secOtherIncome) secOtherIncome.style.display = 'flex';
+        }
+      }
+
       if (acctEl) acctEl.onchange = syncAcctMethod;
       syncAcctMethod();
+
+      if (catEl) catEl.onchange = switchCategory;
+      switchCategory();
 
       if (partySel) {
         partySel.onchange = () => {
@@ -1202,10 +1386,23 @@ export function moneyInForm() {
               if (customInput) customInput.value = '';
             }
           }
-          if (partySel.value && partySel.value !== '__CUSTOM__' && catEl && catEl.value === '4000') {
-            catEl.value = '1100';
-          } else if (!partySel.value && catEl && catEl.value === '1100') {
-            catEl.value = '4000';
+          updateInvoiceOptions();
+        };
+      }
+
+      if (invoiceRefSel) {
+        invoiceRefSel.onchange = () => {
+          const opt = invoiceRefSel.options[invoiceRefSel.selectedIndex];
+          if (opt && opt.dataset.due) {
+            if (amtInput) amtInput.value = opt.dataset.due;
+            if (refInput && !refInput.value) refInput.value = opt.dataset.no || '';
+            if (descInput) descInput.value = `Payment received for Invoice ${opt.dataset.no || ''}`;
+            if (invoiceDueHint) {
+              invoiceDueHint.style.display = '';
+              invoiceDueHint.innerHTML = `<span style="color:#0f5132;font-weight:600;">Selected Invoice Due: ₹${parseFloat(opt.dataset.due).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>`;
+            }
+          } else {
+            if (invoiceDueHint) invoiceDueHint.style.display = 'none';
           }
         };
       }
