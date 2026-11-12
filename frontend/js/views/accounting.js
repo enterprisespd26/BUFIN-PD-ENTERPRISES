@@ -315,8 +315,13 @@ export function renderOpen() {
           <span>Unlock &amp; Edit Balances</span>
         </button>
       ` : `
-        <span style="color:#64748b;font-size:13px;">
-          Review balance summary before posting to ledger.
+        <span style="color:#64748b;font-size:13px;display:flex;align-items:center;gap:7px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>Review balance summary before posting to ledger.</span>
         </span>
         <button type="button" class="btn p" data-a="promptopen" style="font-weight:600;padding:8px 18px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

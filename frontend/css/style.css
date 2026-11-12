@@ -2884,6 +2884,57 @@ aside.open ~ #ov {
     flex: 0 0 auto;
     width: auto;
   }
+  .op-bottom-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 14px 20px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+    margin-top: 16px !important;
+    margin-bottom: 24px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .op-bottom-bar > span {
+    font-size: 13.5px !important;
+    color: #64748b !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .op-bottom-bar > button {
+    margin-left: auto !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    padding: 10px 24px !important;
+    min-height: 42px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: #2563eb !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, transform 0.1s ease !important;
+  }
+  .op-bottom-bar > button:hover {
+    background: #1d4ed8 !important;
+  }
+  .op-bottom-bar > button[data-a="unlockopen"] {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+  }
+  .op-bottom-bar > button[data-a="unlockopen"]:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+  }
 }
 
 @media (max-width: 640px) {
@@ -3205,38 +3256,60 @@ aside.open ~ #ov {
     color: #1d4ed8 !important;
   }
 
-  /* Opening Balances Bottom Action Bar on Mobile */
+  /* Opening Balances Container & Bottom Action Bar on Mobile */
+  .wrap.op-wrap,
+  .wrap.op-wrap.mc-wrap {
+    padding-bottom: 0 !important;
+    margin-bottom: 8px !important;
+  }
   .op-bottom-bar {
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 10px !important;
-    margin-top: 14px !important;
-    padding: 12px 14px !important;
+    gap: 12px !important;
+    margin-top: 10px !important;
+    margin-bottom: calc(90px + env(safe-area-inset-bottom, 24px)) !important;
+    padding: 16px !important;
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 12px !important;
+    border-radius: 14px !important;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
     box-sizing: border-box !important;
+    width: 100% !important;
   }
   .op-bottom-bar > span {
-    font-size: 12.5px !important;
+    font-size: 13px !important;
     color: #64748b !important;
     text-align: center !important;
     line-height: 1.4 !important;
     display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
   }
   .op-bottom-bar > button {
     width: 100% !important;
-    min-height: 44px !important;
-    height: 44px !important;
-    font-size: 14.5px !important;
+    min-height: 48px !important;
+    height: 48px !important;
+    font-size: 15px !important;
     font-weight: 700 !important;
     border-radius: 10px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 8px !important;
+    background: #2563eb !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+    border: none !important;
+    cursor: pointer !important;
     box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+  .op-bottom-bar > button[data-a="unlockopen"] {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
   }
 
   /* General Ledger & Cash Book Opening Balance Summary Row */
