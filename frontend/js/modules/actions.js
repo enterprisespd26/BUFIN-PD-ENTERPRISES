@@ -962,7 +962,8 @@ export function partyForm(id, preType, onSaved) {
 export function stmt2(i) {
   const p = db.parties.find(x => x.id === i);
   if (!p) return;
-  const isLoan = p.type === 'lender' || (db.loans || []).some(l => l.party === i);
+  const isLoanMatch = l => l.party === i || (p.name && (l.party === p.name || l.partyName === p.name));
+  const isLoan = p.type === 'lender' || (db.loans || []).some(isLoanMatch);
   const codes = [
     isC(p) ? '1100' : '',
     isS(p) ? '2000' : '',
@@ -973,7 +974,7 @@ export function stmt2(i) {
 
   const blocks = codes.map(c => {
     let run = 0;
-    const rows = ents.flatMap(e => e.lines.filter(l => l.a === c && l.p === i).map(l => {
+    const rows = ents.flatMap(e => (e.lines || []).filter(l => l.a === c && (l.p === i || (p.name && l.p === p.name))).map(l => {
       run += (c === '1100' ? (l.d - l.c) : (l.c - l.d));
       return `<tr><td>${e.date}</td><td>${esc(e.narr)}</td><td class="num">${l.d ? fmt(l.d) : ''}</td><td class="num">${l.c ? fmt(l.c) : ''}</td><td class="num">${fmt(run)}</td></tr>`;
     }));
@@ -984,11 +985,11 @@ export function stmt2(i) {
 
   let extraRows = '';
   if (codes.length === 0) {
-    const pEnts = ents.filter(e => e.lines && e.lines.some(l => l.p === i));
+    const pEnts = ents.filter(e => e.lines && e.lines.some(l => l.p === i || (p.name && l.p === p.name)));
     if (pEnts.length > 0) {
       let run = 0;
       const rows = pEnts.map(e => {
-        const line = e.lines.find(l => l.p === i);
+        const line = e.lines.find(l => l.p === i || (p.name && l.p === p.name));
         const d = line ? line.d : 0;
         const c = line ? line.c : 0;
         run += (d - c);
@@ -999,7 +1000,7 @@ export function stmt2(i) {
     }
   }
 
-  const ln = db.loans.filter(l => l.party === i).map(l => `<li>${l.ref}: ${fmt(l.principal - l.repaid)} outstanding</li>`).join('');
+  const ln = (db.loans || []).filter(isLoanMatch).map(l => `<li>${l.ref}: ${fmt(l.principal - l.repaid)} outstanding</li>`).join('');
 
   modal(`<h3>${esc(p.name)}</h3>
     <p><small>${(PT[p.type] || p.type).split(' (')[0]}${p.phone ? ' · ' + esc(p.phone) : ''}${p.gstin ? ' · GSTIN ' + esc(p.gstin) : ''}${p.state ? ' · ' + esc(p.state) : ''}${p.terms ? ' · ' + p.terms + ' day terms' : ''}</small></p>

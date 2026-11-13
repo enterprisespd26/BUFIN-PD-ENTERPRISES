@@ -12,11 +12,15 @@ export function renderParties() {
   const tradeR = p => db.docs.filter(d => d.party === p.id && d.type === 'sale' && !d.cancelled).reduce((s, d) => s + out(d), 0);
   const tradeY = p => db.docs.filter(d => d.party === p.id && d.type === 'bill' && !d.cancelled).reduce((s, d) => s + out(d), 0);
 
-  const loanR = p => (db.loans || []).filter(l => l.party === p.id && l.dir === 'given').reduce((s, l) => s + Math.max(0, (l.principal || 0) - (l.repaid || 0)), 0);
-  const loanY = p => (db.loans || []).filter(l => l.party === p.id && l.dir === 'taken').reduce((s, l) => s + Math.max(0, (l.principal || 0) - (l.repaid || 0)), 0);
+  const isLoanForParty = (l, p) => l.party === p.id || (p.id && l.party === p.id) || (p.name && (l.party === p.name || l.partyName === p.name));
+  const loanR = p => (db.loans || []).filter(l => isLoanForParty(l, p) && l.dir === 'given').reduce((s, l) => s + Math.max(0, (l.principal || 0) - (l.repaid || 0)), 0);
+  const loanY = p => (db.loans || []).filter(l => isLoanForParty(l, p) && l.dir === 'taken').reduce((s, l) => s + Math.max(0, (l.principal || 0) - (l.repaid || 0)), 0);
 
   const R = p => tradeR(p) + loanR(p);
   const Y = p => tradeY(p) + loanY(p);
+
+  const totalLoanLiability = (db.parties || []).reduce((s, p) => s + loanY(p), 0);
+  const totalLoanAsset = (db.parties || []).reduce((s, p) => s + loanR(p), 0);
 
   const matchesFilter = p => {
     if (f === 'customer') return isC(p);
@@ -42,8 +46,10 @@ export function renderParties() {
     `<div class="grid">
       ${kpi('Customers', db.parties.filter(isC).length)}
       ${kpi('Suppliers', db.parties.filter(isS).length)}
-      ${kpi('Customers owe you (trade only)', fmt(db.parties.filter(isC).reduce((s, p) => s + tradeR(p), 0)))}
-      ${kpi('You owe suppliers (trade only)', fmt(db.parties.filter(isS).reduce((s, p) => s + tradeY(p), 0)))}
+      ${kpi('Customers owe you (trade)', fmt(db.parties.filter(isC).reduce((s, p) => s + tradeR(p), 0)))}
+      ${kpi('You owe suppliers (trade)', fmt(db.parties.filter(isS).reduce((s, p) => s + tradeY(p), 0)))}
+      ${kpi('You owe lenders (loans)', fmt(totalLoanLiability))}
+      ${totalLoanAsset > 0 ? kpi('Borrowers owe you (loans)', fmt(totalLoanAsset)) : ''}
     </div>
     <div class="filters parties-filter-bar">
       <div class="parties-segment-track" role="tablist" aria-label="Filter parties by type">

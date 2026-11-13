@@ -206,24 +206,29 @@ export function billFilePillsHTML(files) {
 }
 
 // ==========================================
-// 1. INDEXEDDB PERSISTENT ATTACHMENT STORAGE
+// 1. INDEXEDDB PERSISTENT ATTACHMENT STORAGE & UPLOAD QUEUE
 // ==========================================
 const DB_NAME = 'bufin_attachments';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'files';
+const STORE_PENDING = 'pending_uploads';
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8 MB
 
 let dbInstance = null;
 
-function getDb() {
+export function getAttachmentDb() {
   if (dbInstance) return Promise.resolve(dbInstance);
   return new Promise((resolve) => {
     try {
       if (typeof indexedDB === 'undefined') return resolve(null);
       const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = () => {
+      req.onupgradeneeded = (e) => {
         const d = req.result;
         if (!d.objectStoreNames.contains(STORE_NAME)) {
           d.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        }
+        if (!d.objectStoreNames.contains(STORE_PENDING)) {
+          d.createObjectStore(STORE_PENDING, { keyPath: 'id' });
         }
       };
       req.onsuccess = () => { dbInstance = req.result; resolve(dbInstance); };
@@ -234,11 +239,11 @@ function getDb() {
 
 export async function saveAttachments(recordId, files) {
   if (!recordId || !files || !files.length) return;
-  const db = await getDb();
+  const db = await getAttachmentDb();
   if (!db) {
     try {
       const smallFiles = files.slice(0, 3).map(f => ({
-        name: f.name, type: f.type, size: f.size, data: f.data?.slice(0, 500000), url: f.url
+        name: f.name, type: f.type, size: f.size, data: f.data?.slice(0, 500000), url: f.url, public_id: f.public_id
       }));
       localStorage.setItem(`bufin_att_${recordId}`, JSON.stringify(smallFiles));
     } catch (e) {}
@@ -256,7 +261,7 @@ export async function saveAttachments(recordId, files) {
 
 export async function getAttachments(recordId) {
   if (!recordId) return [];
-  const db = await getDb();
+  const db = await getAttachmentDb();
   if (!db) {
     try {
       const raw = localStorage.getItem(`bufin_att_${recordId}`);
@@ -274,32 +279,221 @@ export async function getAttachments(recordId) {
 
 export async function deleteAttachments(recordId) {
   if (!recordId) return;
-  const db = await getDb();
+  const db = await getAttachmentDb();
   if (db) {
     try { db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).delete(String(recordId)); } catch (e) {}
   }
   try { localStorage.removeItem(`bufin_att_${recordId}`); } catch (e) {}
 }
 
-// ==========================================
-// 2. IMAGE COMPRESSION & FILE PARSING
-// ==========================================
-export function shrinkImage(file, maxDimension = 1600, quality = 0.84) {
+export async function queuePendingUpload(item) {
+  const db = await getAttachmentDb();
+  if (!db) return false;
   return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_PENDING, 'readwrite');
+      const rec = {
+        id: item.id || `${item.docId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        docId: String(item.docId),
+        docType: item.docType || 'bill',
+        name: item.name || 'file',
+        type: item.type || 'image/jpeg',
+        size: item.size || 0,
+        blob: item.blob || null,
+        data: item.data || null,
+        at: new Date().toISOString()
+      };
+      tx.objectStore(STORE_PENDING).put(rec);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch (e) { resolve(false); }
+  });
+}
+
+export async function getPendingUploads() {
+  const db = await getAttachmentDb();
+  if (!db) return [];
+  return new Promise((resolve) => {
+    try {
+      const req = db.transaction(STORE_PENDING, 'readonly').objectStore(STORE_PENDING).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    } catch (e) { resolve([]); }
+  });
+}
+
+export async function removePendingUpload(id) {
+  const db = await getAttachmentDb();
+  if (!db) return false;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_PENDING, 'readwrite');
+      tx.objectStore(STORE_PENDING).delete(id);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch (e) { resolve(false); }
+  });
+}
+
+// Convert a File or Blob into base64 data URL
+export function fileToDataUrl(fileOrBlob) {
+  return new Promise((resolve, reject) => {
+    if (!fileOrBlob) return reject(new Error('No file provided'));
+    if (typeof fileOrBlob === 'string' && fileOrBlob.startsWith('data:')) return resolve(fileOrBlob);
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Failed to read file into data URL'));
+    reader.readAsDataURL(fileOrBlob);
+  });
+}
+
+// Upload a single file to /api/upload
+export async function uploadFileToServer(fileOrBlob, folder = 'bufin/bills') {
+  let dataUrl;
+  if (typeof fileOrBlob === 'string' && fileOrBlob.startsWith('data:')) {
+    dataUrl = fileOrBlob;
+  } else if (fileOrBlob instanceof Blob || (typeof File !== 'undefined' && fileOrBlob instanceof File)) {
+    dataUrl = await fileToDataUrl(fileOrBlob);
+  } else {
+    throw new Error('Invalid file format for upload');
+  }
+
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file: dataUrl, folder })
+  });
+
+  if (!res.ok) {
+    const errJson = await res.json().catch(() => ({}));
+    throw new Error(errJson.error || `Upload failed with status ${res.status}`);
+  }
+
+  const json = await res.json();
+  if (!json.url) throw new Error('Upload succeeded but server returned no URL');
+  return {
+    url: json.url,
+    public_id: json.public_id || ''
+  };
+}
+
+// Auto-retry queued pending uploads (e.g. on online event or chip click)
+export async function retryPendingUploads(targetDocId = null) {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return false;
+  }
+
+  const pending = await getPendingUploads();
+  if (!pending || !pending.length) return false;
+
+  const items = targetDocId ? pending.filter(p => p.docId === targetDocId) : pending;
+  if (!items.length) return false;
+
+  let anyUploaded = false;
+
+  for (const item of items) {
+    try {
+      let dataUrl = item.data;
+      if (!dataUrl && item.blob) {
+        dataUrl = await fileToDataUrl(item.blob);
+      }
+      if (!dataUrl) continue;
+
+      const folder = item.docType === 'sale' ? 'bufin/invoices' : 'bufin/bills';
+      const result = await uploadFileToServer(dataUrl, folder);
+
+      if (result && result.url) {
+        const { db } = await import('./state.js');
+        const doc = (db.docs || []).find(d => d.id === item.docId);
+        if (doc) {
+          if (!Array.isArray(doc.files)) doc.files = [];
+          const existing = doc.files.find(f => f.name === item.name || f.url === result.url);
+          if (!existing) {
+            doc.files.push({
+              name: item.name,
+              type: item.type,
+              size: item.size,
+              url: result.url,
+              public_id: result.public_id || ''
+            });
+          }
+          doc.hasFiles = true;
+          doc.pendingFiles = Math.max(0, (doc.pendingFiles || 1) - 1);
+          if (doc.pendingFiles === 0) delete doc.pendingFiles;
+          anyUploaded = true;
+        }
+        await removePendingUpload(item.id);
+      }
+    } catch (err) {
+      console.warn('Retry upload failed for item:', item.name, err);
+    }
+  }
+
+  if (anyUploaded) {
+    const { save } = await import('./state.js');
+    save();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('bufin-render'));
+    }
+  }
+
+  return anyUploaded;
+}
+
+// Trigger auto-retry whenever internet connection is restored
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    retryPendingUploads().catch(() => {});
+  });
+}
+
+// Helper to render the pending upload chip
+export function pendingUploadChipHTML(pendingCount, docId) {
+  if (!pendingCount || pendingCount <= 0) return '';
+  return `
+    <button type="button" class="btn alt sm pending-upload-chip" data-ba="retry-upload" data-id="${esc(docId)}" style="display:inline-flex;align-items:center;gap:4px;background:#fffbeb;border:1px solid #fde68a;color:#b45309;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;cursor:pointer;margin-top:3px;box-shadow:0 1px 2px rgba(217,119,6,.08);" title="Click to retry uploading attachments">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      <span>${pendingCount} attachment(s) not uploaded – retry</span>
+    </button>
+  `;
+}
+
+// ==========================================
+// 2. IMAGE COMPRESSION & FILE PARSING (<= 1600 px, JPEG 0.8, 8 MB cap)
+// ==========================================
+export function shrink(file, maxDimension = 1600, quality = 0.8) {
+  return new Promise((resolve) => {
+    if (!file) return resolve(null);
+
+    // Reject files over 8 MB before upload
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast(`File "${file.name}" exceeds 8 MB limit (${formatFileSize(file.size)})`);
+      return resolve(null);
+    }
+
     if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')) {
       toast('PDF files are not stored in database. Please upload an image (JPG, PNG, WebP) or take a photo.');
-      resolve(null);
-      return;
+      return resolve(null);
     }
+
     if (!file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = () => resolve({
-        name: file.name, type: file.type || 'application/octet-stream', size: file.size, data: reader.result
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        data: reader.result,
+        file
       });
       reader.onerror = () => resolve(null);
       reader.readAsDataURL(file);
       return;
     }
+
+    if (typeof Image === 'undefined' || typeof document === 'undefined' || !document.createElement) {
+      return resolve({ name: file.name, type: file.type, size: file.size, file });
+    }
+
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
@@ -315,18 +509,43 @@ export function shrinkImage(file, maxDimension = 1600, quality = 0.84) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', quality);
-      resolve({
-        name: file.name.replace(/\.[^/.]+$/, '') + '.jpg',
-        type: 'image/jpeg',
-        size: Math.round((dataUrl.length * 3) / 4),
-        data: dataUrl
-      });
+      canvas.toBlob(blob => {
+        if (!blob) {
+          if (file.size > MAX_UPLOAD_BYTES) {
+            toast(`Image "${file.name}" exceeds 8 MB limit`);
+            return resolve(null);
+          }
+          return resolve({ name: file.name, type: file.type, size: file.size, file });
+        }
+        if (blob.size > MAX_UPLOAD_BYTES) {
+          toast(`Image "${file.name}" exceeds 8 MB limit even after compression (${formatFileSize(blob.size)})`);
+          return resolve(null);
+        }
+        const shrunkName = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
+        const shrunkFile = new File([blob], shrunkName, { type: 'image/jpeg' });
+        resolve({
+          name: shrunkName,
+          type: 'image/jpeg',
+          size: blob.size,
+          blob,
+          file: shrunkFile
+        });
+      }, 'image/jpeg', quality);
     };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      if (file.size > MAX_UPLOAD_BYTES) {
+        toast(`File "${file.name}" exceeds 8 MB limit`);
+        return resolve(null);
+      }
+      resolve({ name: file.name, type: file.type, size: file.size, file });
+    };
     img.src = url;
   });
 }
+
+// Backwards-compatible alias
+export const shrinkImage = shrink;
 
 export function formatFileSize(bytes) {
   if (!bytes || isNaN(bytes)) return '0 KB';
@@ -643,4 +862,64 @@ export function showAttachmentViewer(files, initialIdx = 0) {
   render();
   document.body.appendChild(overlay);
   window.addEventListener('keydown', keyHandler);
+}
+
+// Viewer helper that uses doc.files URLs first, falling back to local IndexedDB blobs
+export async function showDocAttachments(docOrId, initialIdx = 0) {
+  let doc = typeof docOrId === 'object' && docOrId !== null ? docOrId : null;
+  const docId = doc ? doc.id : docOrId;
+  if (!doc) {
+    const { db } = await import('./state.js');
+    doc = (db.docs || []).find(d => d.id === docId);
+  }
+
+  const docFiles = (doc && Array.isArray(doc.files)) ? doc.files : [];
+  let localFiles = [];
+  try {
+    localFiles = (await getAttachments(docId)) || [];
+  } catch (e) {}
+
+  let pendingFiles = [];
+  try {
+    const allPending = await getPendingUploads();
+    pendingFiles = allPending.filter(p => p.docId === docId);
+  } catch (e) {}
+
+  const viewerFiles = [];
+  const seenNames = new Set();
+
+  // 1. Use doc.files URLs first!
+  for (const f of docFiles) {
+    const localMatch = localFiles.find(l => l.name === f.name);
+    viewerFiles.push({
+      name: f.name,
+      type: f.type,
+      size: f.size,
+      url: f.url || '',
+      public_id: f.public_id || '',
+      data: f.url || localMatch?.data || (localMatch?.blob ? URL.createObjectURL(localMatch.blob) : '')
+    });
+    seenNames.add(f.name);
+  }
+
+  // 2. Fall back to local IndexedDB blobs & pending uploads
+  for (const pf of [...localFiles, ...pendingFiles]) {
+    if (!seenNames.has(pf.name)) {
+      viewerFiles.push({
+        name: pf.name,
+        type: pf.type,
+        size: pf.size,
+        url: pf.url || '',
+        public_id: pf.public_id || '',
+        data: pf.url || pf.data || (pf.blob ? URL.createObjectURL(pf.blob) : '')
+      });
+      seenNames.add(pf.name);
+    }
+  }
+
+  if (!viewerFiles.length) {
+    return toast('No attachments found for this document');
+  }
+
+  showAttachmentViewer(viewerFiles, initialIdx);
 }

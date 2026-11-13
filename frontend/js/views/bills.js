@@ -20,9 +20,19 @@ if (typeof window !== 'undefined') {
 import {
   openCameraScanner,
   showAttachmentViewer,
+  showDocAttachments,
   attachmentPanelHTML,
   billFilePillsHTML,
-  injectAttachmentStyles
+  pendingUploadChipHTML,
+  injectAttachmentStyles,
+  shrink,
+  uploadFileToServer,
+  fileToDataUrl,
+  queuePendingUpload,
+  getPendingUploads,
+  retryPendingUploads,
+  saveAttachments,
+  getAttachments
 } from '../modules/attachments.js';
 
 export const billsState = {
@@ -243,36 +253,16 @@ const itx = async (m, fn) => {
   });
 };
 
-const pGet = id => itx('readonly', s => s.get(id));
-const pPut = o => itx('readwrite', s => s.put(o));
+const pGet = async (id) => {
+  const atts = await getAttachments(id);
+  if (atts && atts.length) return { id, files: atts };
+  return itx('readonly', s => s.get(id));
+};
+const pPut = async (o) => {
+  if (o && o.id && o.files) await saveAttachments(o.id, o.files);
+  return itx('readwrite', s => s.put(o));
+};
 const pDel = id => itx('readwrite', s => s.delete(id));
-
-function shrink(f) {
-  return new Promise(ok => {
-    if (!f.type.startsWith('image/')) return ok(f);
-    const u = URL.createObjectURL(f);
-    const i = new Image();
-    i.onload = () => {
-      const k = Math.min(1, 1800 / Math.max(i.width, i.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(i.width * k);
-      c.height = Math.round(i.height * k);
-      const x = c.getContext('2d');
-      x.fillStyle = '#fff';
-      x.fillRect(0, 0, c.width, c.height);
-      x.drawImage(i, 0, 0, c.width, c.height);
-      c.toBlob(b => {
-        URL.revokeObjectURL(u);
-        ok(b && b.size < f.size ? new File([b], f.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : f);
-      }, 'image/jpeg', 0.82);
-    };
-    i.onerror = () => {
-      URL.revokeObjectURL(u);
-      ok(f);
-    };
-    i.src = u;
-  });
-}
 
 /* ================= RENDER PURCHASE BILLS ================= */
 export function nextBillNo() {
@@ -637,17 +627,21 @@ export function renderBills() {
 
                 return `<tr>
                   <td>${d.date ? d.date.split('-').reverse().join('/') : ''}</td>
-                  <td><b>${esc(d.sup || pn(d.party))}</b></td>
+                  <td>
+                    <b>${esc(d.sup || pn(d.party))}</b>
+                    ${d.pendingFiles ? pendingUploadChipHTML(d.pendingFiles, d.id) : ''}
+                  </td>
                   <td>${esc(d.sno || d.no || '–')}</td>
                   <td>${esc(d.mat || d.desc || 'Scrap')}${d.q ? ' (' + d.q + ' ' + (d.u || 'kg') + ')' : ''}</td>
                   <td style="text-align:right;font-weight:600">${fmt(d.total)}</td>
                   <td><span class="pd-pill ${pillCls}">${pillTxt}</span></td>
                   <td style="text-align:center">
-                    ${d.hasFiles ? `
-                      <button type="button" class="sales-icon-btn sales-btn-view" data-ba="v" data-id="${esc(d.id)}" title="View Attached Receipts & Weighbridge Slips" aria-label="View Attachments" style="color:#2563eb;background:#eff6ff;border:1px solid #dbeafe;">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    ${(d.files && d.files.length) || d.hasFiles ? `
+                      <button type="button" class="sales-icon-btn sales-btn-view" data-ba="v" data-id="${esc(d.id)}" title="View Attached Receipts & Weighbridge Slips" aria-label="View Attachments" style="color:#2563eb;background:#eff6ff;border:1px solid #dbeafe;display:inline-flex;align-items:center;gap:3px;padding:3px 6px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                         </svg>
+                        ${(d.files && d.files.length) ? `<span style="font-size:11px;font-weight:700;">${d.files.length}</span>` : ''}
                       </button>
                     ` : '<span style="color:#94a3b8;font-size:13px;">–</span>'}
                   </td>
@@ -1164,8 +1158,16 @@ export function bindBillsEvents() {
           toast('Only image files (JPG, PNG, WebP) are allowed');
           continue;
         }
-        const b = await shrink(f);
-        billsState.files.push({ name: b.name, type: b.type || 'image/jpeg', blob: b });
+        const b = await shrink(f, 1600, 0.8);
+        if (b) {
+          billsState.files.push({
+            name: b.name,
+            type: b.type || 'image/jpeg',
+            size: b.size,
+            blob: b.blob || b.file || b,
+            file: b.file || b
+          });
+        }
       }
       fileInput.value = '';
       drawAttachedFiles();
@@ -1449,51 +1451,91 @@ export function bindBillsEvents() {
       docObj.pm = pm;
       docObj.nt = nt;
       docObj.je = jeId;
-      docObj.hasFiles = billsState.files.length > 0;
       docObj.cancelled = false;
 
-      if (!existingDoc) {
-        db.docs.push(docObj);
-      }
+      // Attachments handling: Upload BEFORE saving, store only metadata in docObj.files
+      const syncedFiles = [];
+      let pendingCount = 0;
 
-      // Save files in IndexedDB & sync to Cloudinary if available
-      if (billsState.files.length) {
-        for (const f of billsState.files) {
-          if (!f.url) {
+      if (billsState.files && billsState.files.length) {
+        for (let i = 0; i < billsState.files.length; i++) {
+          const f = billsState.files[i];
+          // 1. If already uploaded with remote URL, preserve metadata
+          if (f.url) {
+            syncedFiles.push({
+              name: f.name,
+              type: f.type,
+              size: f.size || (f.blob ? f.blob.size : 0),
+              url: f.url,
+              public_id: f.public_id || ''
+            });
+            continue;
+          }
+
+          // 2. Upload to server BEFORE saving
+          let uploaded = null;
+          try {
+            let dataUrl = f.data;
+            if (!dataUrl && f.blob) {
+              dataUrl = await fileToDataUrl(f.blob);
+            }
+            if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
+              uploaded = await uploadFileToServer(dataUrl, 'bufin/bills');
+            }
+          } catch (upErr) {
+            console.warn('Attachment upload failed or offline:', upErr);
+          }
+
+          if (uploaded && uploaded.url) {
+            f.url = uploaded.url;
+            f.public_id = uploaded.public_id || '';
+            syncedFiles.push({
+              name: f.name,
+              type: f.type,
+              size: f.size || (f.blob ? f.blob.size : 0),
+              url: f.url,
+              public_id: f.public_id
+            });
+          } else {
+            // Upload failed: queue locally in IndexedDB 'pending_uploads'
+            pendingCount++;
             try {
-              let dataUrl = f.data;
-              if (!dataUrl && f.blob) {
-                dataUrl = await new Promise((resolve) => {
-                  const reader = new FileReader();
-                  reader.onloadend = () => resolve(reader.result);
-                  reader.readAsDataURL(f.blob);
-                });
-              }
-              if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
-                const res = await fetch('/api/upload', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ file: dataUrl, folder: 'bufin/bills' })
-                });
-                if (res.ok) {
-                  const json = await res.json();
-                  if (json.url) {
-                    f.url = json.url;
-                    f.public_id = json.public_id;
-                    f.cloud = 'cloudinary';
-                  }
-                }
-              }
-            } catch (err) {
-              console.warn('Cloudinary upload deferred/failed:', err);
+              await queuePendingUpload({
+                id: `${docId}_${i}_${Date.now()}`,
+                docId,
+                docType: 'bill',
+                name: f.name,
+                type: f.type,
+                size: f.size || (f.blob ? f.blob.size : 0),
+                blob: f.blob,
+                data: f.data
+              });
+            } catch (qErr) {
+              console.warn('Could not queue pending upload in IndexedDB:', qErr);
             }
           }
         }
+
+        // Store local copy in IndexedDB for fallback viewing
         try {
+          await saveAttachments(docId, billsState.files);
           await pPut({ id: docId, files: billsState.files });
         } catch (e) {
           console.warn('Could not store files in IndexedDB:', e);
         }
+      }
+
+      // Store ONLY metadata in docObj (NO base64 strings in synced state!)
+      docObj.files = syncedFiles;
+      docObj.hasFiles = (syncedFiles.length + pendingCount) > 0;
+      if (pendingCount > 0) {
+        docObj.pendingFiles = pendingCount;
+      } else {
+        delete docObj.pendingFiles;
+      }
+
+      if (!existingDoc) {
+        db.docs.push(docObj);
       }
 
       save();
@@ -1603,11 +1645,25 @@ export function bindBillsEvents() {
               billsState.editId = id;
               billsState.selectedPartyId = doc.party || null;
               billsState.tab = 'new';
+              let localFiles = [];
               try {
                 const rec = await pGet(id);
-                billsState.files = rec?.files ? [...rec.files] : [];
-              } catch (e) {
-                billsState.files = [];
+                localFiles = rec?.files || [];
+              } catch (e) {}
+              billsState.files = (doc.files || []).map(f => {
+                const localMatch = localFiles.find(l => l.name === f.name || l.url === f.url);
+                return {
+                  name: f.name,
+                  type: f.type,
+                  size: f.size,
+                  url: f.url || '',
+                  public_id: f.public_id || '',
+                  blob: localMatch?.blob,
+                  data: localMatch?.data || f.url
+                };
+              });
+              if (!billsState.files.length && localFiles.length) {
+                billsState.files = [...localFiles];
               }
               container.innerHTML = renderBills();
               bindBillsEvents();
@@ -1615,26 +1671,25 @@ export function bindBillsEvents() {
             }
           });
         }
-        if (doc.hasFiles) {
+        if (doc.pendingFiles) {
           sheetItems.push({
-            label: '📎 View Attachments',
-            icon: '📎',
+            label: `🔄 Retry Uploading ${doc.pendingFiles} Attachment(s)`,
+            icon: '🔄',
             onClick: async () => {
-              try {
-                const rec = await pGet(id);
-                const files = (rec?.files || []).map(f => ({
-                  name: f.name,
-                  type: f.type,
-                  size: f.blob?.size || f.size || 0,
-                  url: f.url || '',
-                  data: f.url || f.data || (f.blob ? URL.createObjectURL(f.blob) : '')
-                }));
-                if (!files.length) return toast('No files attached');
-                showAttachmentViewer(files, 0);
-              } catch (e) {
-                toast('Could not open files: ' + (e?.message || e));
-              }
+              toast('Retrying attachment uploads...');
+              const ok = await retryPendingUploads(doc.id);
+              if (ok) toast('Attachments uploaded and synced');
+              else toast('Upload failed or offline. Will retry automatically when online.');
+              container.innerHTML = renderBills();
+              bindBillsEvents();
             }
+          });
+        }
+        if ((doc.files && doc.files.length) || doc.hasFiles) {
+          sheetItems.push({
+            label: `📎 View Attachments (${doc.files?.length || 1})`,
+            icon: '📎',
+            onClick: () => showDocAttachments(doc.id)
           });
         }
         if (!isPaid && !doc.cancelled) {
@@ -1665,7 +1720,7 @@ export function bindBillsEvents() {
                   });
                 }
                 doc.cancelled = true;
-                // Kept in db.docs - never deleted
+                // Kept in db.docs - never deleted, attachments kept for audit
                 save();
                 toast('Purchase bill cancelled');
                 container.innerHTML = renderBills();
@@ -1681,31 +1736,39 @@ export function bindBillsEvents() {
       if (action === 'voucher') {
         showDoc(id);
       } else if (action === 'v') {
-        try {
-          const rec = await pGet(id);
-          const files = (rec?.files || []).map(f => ({
-            name: f.name,
-            type: f.type,
-            size: f.blob?.size || f.size || 0,
-            url: f.url || '',
-            data: f.url || f.data || (f.blob ? URL.createObjectURL(f.blob) : '')
-          }));
-          if (!files.length) return toast('No files attached');
-          showAttachmentViewer(files, 0);
-        } catch (e) {
-          toast('Could not open files: ' + (e?.message || e));
-        }
+        showDocAttachments(id);
+      } else if (action === 'retry-upload') {
+        toast('Retrying attachment uploads...');
+        const ok = await retryPendingUploads(id);
+        if (ok) toast('Attachments uploaded and synced');
+        else toast('Upload failed or offline. Will retry automatically when online.');
+        container.innerHTML = renderBills();
+        bindBillsEvents();
       } else if (action === 'e') {
         // Edit bill
         if (doc.cancelled) return toast('Cancelled purchase bills cannot be edited');
         billsState.editId = id;
         billsState.selectedPartyId = doc.party || null;
         billsState.tab = 'new';
+        let localFiles = [];
         try {
           const rec = await pGet(id);
-          billsState.files = rec?.files ? [...rec.files] : [];
-        } catch (e) {
-          billsState.files = [];
+          localFiles = rec?.files || [];
+        } catch (e) {}
+        billsState.files = (doc.files || []).map(f => {
+          const localMatch = localFiles.find(l => l.name === f.name || l.url === f.url);
+          return {
+            name: f.name,
+            type: f.type,
+            size: f.size,
+            url: f.url || '',
+            public_id: f.public_id || '',
+            blob: localMatch?.blob,
+            data: localMatch?.data || f.url
+          };
+        });
+        if (!billsState.files.length && localFiles.length) {
+          billsState.files = [...localFiles];
         }
         container.innerHTML = renderBills();
         bindBillsEvents();
@@ -1730,7 +1793,7 @@ export function bindBillsEvents() {
             });
           }
           doc.cancelled = true;
-          // Document is NEVER deleted; kept in db.docs
+          // Document is NEVER deleted; kept in db.docs, attachments kept for audit
           save();
           toast('Purchase bill cancelled');
           container.innerHTML = renderBills();

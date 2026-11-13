@@ -1,8 +1,25 @@
 import { $, $$, esc, fmt, head, toast, today, uid, P, convertRate, downloadCSV, debounce as _utilsDebounce } from '../modules/utils.js';
-import { db, save, post, reverse, out, dstat, pn, isC, isS } from '../modules/state.js';
+import { db, save, post, reverse, out, dstat, pn, isC, isS, paid } from '../modules/state.js';
 import { partyForm, markSalePaid } from '../modules/actions.js';
 import { showActionSheet } from '../modules/components.js';
 import { PD_LOGO } from '../modules/logo_data.js';
+import {
+  openCameraScanner,
+  showAttachmentViewer,
+  showDocAttachments,
+  attachmentPanelHTML,
+  billFilePillsHTML,
+  pendingUploadChipHTML,
+  injectAttachmentStyles,
+  shrink,
+  uploadFileToServer,
+  fileToDataUrl,
+  queuePendingUpload,
+  getPendingUploads,
+  retryPendingUploads,
+  saveAttachments,
+  getAttachments
+} from '../modules/attachments.js';
 
 // Safe debounce fallback: guaranteed never undefined in any scope
 export const debounce = (typeof _utilsDebounce === 'function') ? _utilsDebounce :
@@ -17,6 +34,7 @@ export const debounce = (typeof _utilsDebounce === 'function') ? _utilsDebounce 
 
 if (typeof window !== 'undefined') {
   window.debounce = debounce;
+  injectAttachmentStyles();
 }
 
 export const LOGO = PD_LOGO;
@@ -31,7 +49,8 @@ export const salesState = {
   editNo: null,
   viewNo: null,
   selectedPartyId: null,
-  q: ''
+  q: '',
+  files: []
 };
 
 const hasStamp = () => typeof STAMP === 'string' && STAMP.startsWith('data:image');
@@ -1241,6 +1260,14 @@ export function renderSales() {
           </div>
         </div>
 
+        ${attachmentPanelHTML({
+          uploadId: 'pd_btn_upload_inv',
+          cameraId: 'pd_btn_camera_inv',
+          inputId: 'pd_files',
+          listId: 'pd_fl',
+          listHTML: billFilePillsHTML(salesState.files)
+        })}
+
         <div class="pd-tot" id="pd_totals_box" style="margin-top:16px">
           <div>
             <span style="display:inline-flex;align-items:center;gap:6px;">
@@ -1293,6 +1320,7 @@ export function renderSales() {
                 <th>Vehicle</th>
                 <th style="text-align:right">Total</th>
                 <th>Status</th>
+                <th style="text-align:center">Files</th>
                 <th style="text-align:right">Actions</th>
               </tr>
             </thead>
@@ -1308,10 +1336,23 @@ export function renderSales() {
           return `<tr>
                   <td data-label="Invoice"><b>${esc(d.no)}</b></td>
                   <td data-label="Date">${d.date ? d.date.split('-').reverse().join('/') : ''}</td>
-                  <td data-label="Customer">${esc(d.c?.n || pn(d.party))}</td>
+                  <td data-label="Customer">
+                    <b>${esc(d.c?.n || pn(d.party))}</b>
+                    ${d.pendingFiles ? pendingUploadChipHTML(d.pendingFiles, d.id) : ''}
+                  </td>
                   <td data-label="Vehicle">${esc(d.veh || '')}</td>
                   <td data-label="Total" style="text-align:right;font-weight:600">${fmt(d.total)}</td>
                   <td data-label="Status"><span class="pd-pill ${pillCls}">${pillTxt}</span></td>
+                  <td data-label="Files" style="text-align:center">
+                    ${(d.files && d.files.length) || d.hasFiles ? `
+                      <button type="button" class="sales-icon-btn sales-btn-view" data-action="view-attachments" data-id="${esc(d.id)}" title="View Attached Receipts & Invoices" aria-label="View Attachments" style="color:#2563eb;background:#eff6ff;border:1px solid #dbeafe;display:inline-flex;align-items:center;gap:3px;padding:3px 6px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                        </svg>
+                        ${(d.files && d.files.length) ? `<span style="font-size:11px;font-weight:700;">${d.files.length}</span>` : ''}
+                      </button>
+                    ` : '<span style="color:#94a3b8;font-size:13px;">–</span>'}
+                  </td>
                   <td data-label="Actions" style="text-align:right">
                     <div class="pd-btn-row desktop-actions sales-desktop-actions" style="justify-content:flex-end">
                       <button type="button" class="sales-icon-btn sales-btn-view" data-action="view" data-no="${esc(d.no)}" title="View Invoice" aria-label="View Invoice">
@@ -1336,7 +1377,7 @@ export function renderSales() {
                     <button type="button" class="pd-more-btn" data-action="more" data-no="${esc(d.no)}" data-id="${esc(d.id)}" title="Actions" aria-label="Actions">⋮</button>
                   </td>
                 </tr>`;
-        }).join('') : `<tr><td colspan="7" style="text-align:center;color:var(--t2);padding:24px">No invoices found. Click "New invoice" to create one.</td></tr>`}
+        }).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--t2);padding:24px">No invoices found. Click "New invoice" to create one.</td></tr>`}
             </tbody>
           </table>
         </div>
@@ -1450,6 +1491,7 @@ export function bindSalesEvents() {
       } else if (salesState.tab === 'new') {
         salesState.tab = 'rec';
         salesState.editNo = null;
+        salesState.files = [];
         container.innerHTML = renderSales();
         bindSalesEvents();
       } else {
@@ -1457,6 +1499,7 @@ export function bindSalesEvents() {
         salesState.editNo = null;
         salesState.selectedPartyId = null;
         salesState.lines = [];
+        salesState.files = [];
         salesState.paymentReceived = false;
         salesState.newNo = nextInvNo();
         container.innerHTML = renderSales();
@@ -1473,6 +1516,7 @@ export function bindSalesEvents() {
         salesState.editNo = null;
         salesState.selectedPartyId = null;
         salesState.lines = [];
+        salesState.files = [];
         salesState.paymentReceived = false;
         salesState.newNo = nextInvNo();
       }
@@ -1486,6 +1530,7 @@ export function bindSalesEvents() {
     salesState.editNo = null;
     salesState.selectedPartyId = null;
     salesState.lines = [];
+    salesState.files = [];
     salesState.tab = 'rec';
     container.innerHTML = renderSales();
     bindSalesEvents();
@@ -1869,6 +1914,7 @@ export function bindSalesEvents() {
       salesState.editNo = null;
       salesState.selectedPartyId = null;
       salesState.lines = [{ n: '', h: '', q: 0, u: 'kg', r: 0 }];
+      salesState.files = [];
       salesState.paymentReceived = false;
       salesState.newNo = nextInvNo();
       container.innerHTML = renderSales();
@@ -1876,8 +1922,98 @@ export function bindSalesEvents() {
     };
   }
 
+  // Attachments in Invoice form
+  const fileInput = $('#pd_files');
+  if (fileInput) {
+    fileInput.onchange = async e => {
+      for (const f of e.target.files) {
+        if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
+          toast('PDF files are not stored in the database. Please attach receipt photos or images (JPG, PNG, WebP).');
+          continue;
+        }
+        if (!f.type.startsWith('image/')) {
+          toast('Only image files (JPG, PNG, WebP) are allowed');
+          continue;
+        }
+        const b = await shrink(f, 1600, 0.8);
+        if (b) {
+          salesState.files.push({
+            name: b.name,
+            type: b.type || 'image/jpeg',
+            size: b.size,
+            blob: b.blob || b.file || b,
+            file: b.file || b
+          });
+        }
+      }
+      fileInput.value = '';
+      drawAttachedFiles();
+    };
+  }
+
+  function drawAttachedFiles() {
+    const fl = $('#pd_fl');
+    if (!fl) return;
+    fl.innerHTML = billFilePillsHTML(salesState.files);
+    fl.querySelectorAll('.u-prev-file').forEach(a => {
+      a.onclick = ev => {
+        ev.preventDefault();
+        const idx = parseInt(a.dataset.x, 10);
+        const file = salesState.files[idx];
+        if (file) {
+          const files = salesState.files.map(f => ({
+            name: f.name,
+            type: f.type,
+            size: f.blob?.size || f.size || 0,
+            url: f.url || '',
+            data: f.url || f.data || (f.blob ? URL.createObjectURL(f.blob) : '')
+          }));
+          showAttachmentViewer(files, idx);
+        }
+      };
+    });
+    fl.querySelectorAll('.u-del-file').forEach(a => {
+      a.onclick = ev => {
+        ev.preventDefault();
+        const idx = parseInt(a.dataset.x, 10);
+        if (!isNaN(idx)) {
+          salesState.files.splice(idx, 1);
+          drawAttachedFiles();
+        }
+      };
+    });
+  }
+
+  // Camera scanner
+  const cameraBtn = $('#pd_btn_camera_inv');
+  if (cameraBtn) {
+    cameraBtn.onclick = () => {
+      openCameraScanner(async (file) => {
+        const b = await shrink(file, 1600, 0.8);
+        if (b) {
+          salesState.files.push({
+            name: b.name,
+            type: b.type || 'image/jpeg',
+            size: b.size,
+            blob: b.blob || b.file || b,
+            file: b.file || b
+          });
+          drawAttachedFiles();
+        }
+      });
+    };
+  }
+
+  // Upload button
+  const uploadBtn = $('#pd_btn_upload_inv');
+  if (uploadBtn && fileInput) {
+    uploadBtn.onclick = () => fileInput.click();
+  }
+
+  drawAttachedFiles();
+
   // Save & Preview / Update Invoice
-  const handleSaveInvoice = () => {
+  const handleSaveInvoice = async () => {
     const no = ($('#pd_no')?.value || '').trim();
     const date = $('#pd_dt')?.value || today();
     const veh = ($('#pd_veh')?.value || '').trim();
@@ -2035,6 +2171,90 @@ export function bindSalesEvents() {
         pays: []
       };
 
+      // 1. Process files: upload to /api/upload FIRST
+      // Synced state stores ONLY metadata: doc.files = [{ name, type, size, url, public_id }]
+      // If an upload fails, queue in IndexedDB 'pending_uploads', set pendingFiles: n, and retry when online
+      const pendingUploadsToQueue = [];
+      const syncedFiles = [];
+      const localCachedFiles = [];
+
+      for (const f of salesState.files || []) {
+        if (f.url && f.public_id) {
+          // Already uploaded
+          syncedFiles.push({
+            name: f.name,
+            type: f.type || 'image/jpeg',
+            size: f.size || 0,
+            url: f.url,
+            public_id: f.public_id
+          });
+          localCachedFiles.push({
+            name: f.name,
+            type: f.type || 'image/jpeg',
+            size: f.size || 0,
+            url: f.url,
+            public_id: f.public_id,
+            blob: f.blob || null
+          });
+        } else {
+          // Needs upload
+          let uploadResult = null;
+          try {
+            uploadResult = await uploadFileToServer(f.file || f.blob || f.data, 'bufin/invoices');
+          } catch (e) {
+            uploadResult = null;
+          }
+
+          if (uploadResult && uploadResult.url) {
+            syncedFiles.push({
+              name: f.name,
+              type: f.type || 'image/jpeg',
+              size: f.size || 0,
+              url: uploadResult.url,
+              public_id: uploadResult.public_id || ''
+            });
+            localCachedFiles.push({
+              name: f.name,
+              type: f.type || 'image/jpeg',
+              size: f.size || 0,
+              url: uploadResult.url,
+              public_id: uploadResult.public_id || '',
+              blob: f.blob || null
+            });
+          } else {
+            // Offline or failed upload -> queue locally
+            pendingUploadsToQueue.push({
+              docId,
+              docType: 'sale',
+              name: f.name,
+              type: f.type || 'image/jpeg',
+              size: f.size || 0,
+              blob: f.blob || null,
+              data: f.data || null
+            });
+            localCachedFiles.push({
+              name: f.name,
+              type: f.type || 'image/jpeg',
+              size: f.size || 0,
+              url: '',
+              public_id: '',
+              blob: f.blob || null
+            });
+          }
+        }
+      }
+
+      for (const p of pendingUploadsToQueue) {
+        await queuePendingUpload(p);
+      }
+      if (localCachedFiles.length) {
+        await saveAttachments(docId, localCachedFiles);
+      }
+
+      docObj.files = syncedFiles; // ONLY METADATA! NO BASE64!
+      docObj.pendingFiles = pendingUploadsToQueue.length;
+      docObj.hasFiles = (syncedFiles.length + pendingUploadsToQueue.length) > 0;
+
       // Step 6: Handle payments
       let updatedPays = [];
       if (hasMultiplePayments) {
@@ -2151,6 +2371,7 @@ export function bindSalesEvents() {
       salesState.editNo = null;
       salesState.selectedPartyId = null;
       salesState.lines = [];
+      salesState.files = [];
       container.innerHTML = renderSales();
       bindSalesEvents();
 
@@ -2214,13 +2435,27 @@ export function bindSalesEvents() {
     };
   }
 
-  // Records: Table Action Buttons (View, Edit, Pay, Delete)
+  // Records: Table Action Buttons (View, Edit, Pay, Delete, Attachments)
   container.querySelectorAll('#pd-tab-rec button[data-action]').forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = async () => {
       const action = btn.dataset.action;
       const no = btn.dataset.no;
-      const doc = db.docs.find(d => d.no === no && d.type === 'sale');
+      const id = btn.dataset.id;
+      const doc = db.docs.find(d => (no && d.no === no) || (id && d.id === id));
       if (!doc) return;
+
+      if (action === 'view-attachments') {
+        showDocAttachments(doc);
+        return;
+      } else if (action === 'retry-upload') {
+        toast('Retrying attachment uploads...');
+        const ok = await retryPendingUploads(doc.id);
+        if (ok) toast('Attachments uploaded and synced');
+        else toast('Upload failed or offline. Will retry automatically when online.');
+        container.innerHTML = renderSales();
+        bindSalesEvents();
+        return;
+      }
 
       if (action === 'more') {
         const isPaid = doc.pays && doc.pays.length && doc.pays.reduce((s, p) => s + (p.a || 0), 0) >= (doc.total || 0);
@@ -2232,16 +2467,56 @@ export function bindSalesEvents() {
             onClick: () => showInvoicePreviewModal(doc)
           }
         ];
+        if (doc.pendingFiles) {
+          sheetItems.push({
+            label: `🔄 Retry Uploading ${doc.pendingFiles} Attachment(s)`,
+            icon: '🔄',
+            onClick: async () => {
+              toast('Retrying attachment uploads...');
+              const ok = await retryPendingUploads(doc.id);
+              if (ok) toast('Attachments uploaded and synced');
+              else toast('Upload failed or offline. Will retry automatically when online.');
+              container.innerHTML = renderSales();
+              bindSalesEvents();
+            }
+          });
+        }
+        if ((doc.files && doc.files.length) || doc.hasFiles) {
+          sheetItems.push({
+            label: `📎 View Attachments (${doc.files?.length || 1})`,
+            icon: '📎',
+            onClick: () => showDocAttachments(doc.id)
+          });
+        }
         if (!doc.cancelled) {
           sheetItems.push({
             label: 'Edit Invoice',
             variant: 'edit',
             icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`,
-            onClick: () => {
+            onClick: async () => {
               salesState.tab = 'new';
               salesState.editNo = no;
               salesState.selectedPartyId = doc.party || null;
               salesState.lines = doc.lines && doc.lines.length ? JSON.parse(JSON.stringify(doc.lines)) : [{ n: doc.desc || 'Scrap', h: '', q: 1, u: 'kg', r: doc.base / 100 }];
+              let localFiles = [];
+              try {
+                localFiles = (await getAttachments(doc.id)) || [];
+              } catch (e) {}
+              salesState.files = (doc.files || []).map(f => {
+                const localMatch = localFiles.find(l => l.name === f.name || l.url === f.url);
+                return {
+                  name: f.name,
+                  type: f.type,
+                  size: f.size,
+                  url: f.url || '',
+                  public_id: f.public_id || '',
+                  blob: localMatch?.blob,
+                  data: localMatch?.data || f.url
+                };
+              });
+              if (!salesState.files.length && localFiles.length) {
+                salesState.files = [...localFiles];
+              }
               container.innerHTML = renderSales();
               bindSalesEvents();
             }
@@ -2277,7 +2552,7 @@ export function bindSalesEvents() {
                   });
                 }
                 doc.cancelled = true;
-                // Document is kept in db.docs - never deleted
+                // Document is kept in db.docs - never deleted, attachments kept for audit
                 save();
                 toast('Invoice ' + no + ' cancelled');
                 container.innerHTML = renderSales();
@@ -2295,6 +2570,25 @@ export function bindSalesEvents() {
         salesState.editNo = no;
         salesState.selectedPartyId = doc.party || null;
         salesState.lines = doc.lines && doc.lines.length ? JSON.parse(JSON.stringify(doc.lines)) : [{ n: doc.desc || 'Scrap', h: '', q: 1, u: 'kg', r: doc.base / 100 }];
+        let localFiles = [];
+        try {
+          localFiles = (await getAttachments(doc.id)) || [];
+        } catch (e) {}
+        salesState.files = (doc.files || []).map(f => {
+          const localMatch = localFiles.find(l => l.name === f.name || l.url === f.url);
+          return {
+            name: f.name,
+            type: f.type,
+            size: f.size,
+            url: f.url || '',
+            public_id: f.public_id || '',
+            blob: localMatch?.blob,
+            data: localMatch?.data || f.url
+          };
+        });
+        if (!salesState.files.length && localFiles.length) {
+          salesState.files = [...localFiles];
+        }
         container.innerHTML = renderSales();
         bindSalesEvents();
       } else if (action === 'pay') {
@@ -2317,7 +2611,7 @@ export function bindSalesEvents() {
             });
           }
           doc.cancelled = true;
-          // Document is NEVER deleted; kept in db.docs
+          // Document is NEVER deleted; kept in db.docs, attachments kept for audit
           save();
           toast('Invoice ' + no + ' cancelled');
           container.innerHTML = renderSales();
