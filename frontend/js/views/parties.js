@@ -1,5 +1,5 @@
 import { esc, fmt, head, kpi } from '../modules/utils.js';
-import { db, PT, isC, isS, out, partyTypeLabel } from '../modules/state.js';
+import { db, PT, isC, isS, isL, isX, out, partyTypeLabel } from '../modules/state.js';
 
 export const partiesState = {
   pt: 'all',
@@ -38,7 +38,7 @@ export function renderParties() {
   const matchesFilter = p => {
     if (f === 'customer') return isC(p);
     if (f === 'supplier') return isS(p);
-    if (f === 'other' || f === 'lender') return !isC(p) && !isS(p);
+    if (f === 'other' || f === 'lender') return isL(p) || isX(p) || (!isC(p) && !isS(p));
     return true;
   };
 

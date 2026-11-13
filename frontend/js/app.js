@@ -25,9 +25,12 @@ import { renderCoa, renderOpen, renderJv, renderGl, renderBook, accountingState,
 import { renderTb, renderPl, renderBs, reportsState, exportTbCsv, exportPlChartPng, exportPlCsv, attachPlChartTooltips, exportBsCsv } from './views/reports.js';
 import { renderSettings } from './views/settings.js';
 import { showPinLogin, initPinKeypad, unlockApp } from './views/login.js';
+import { showFirstRunWizard } from './views/wizard.js';
+import { isFirstRunNeeded } from './modules/state.js';
 
 import {
   showEnt, showDoc, payForm, partyPay, docForm2, partyForm, stmt2,
+  deletePartyAction, mergePartyModal, closeFinancialYearAction,
   txnForm, newExpForm, newTransferForm, moneyInForm, moneyOutForm, showLoan2, loanForm2, repayForm2,
   editLoanModal, deleteLoanAction, exportLoanCsv,
   jvForm2, quickAddModal, showCsvModal, showBackupModal, showRestoreModal
@@ -266,6 +269,13 @@ export async function render() {
       vEl.innerHTML = viewFn();
       bindViewEvents();
       enhanceMobile(vEl);
+
+      if (isFirstRunNeeded() && typeof document !== 'undefined') {
+        const dlg = $('#dlg');
+        if (!dlg || !dlg.open) {
+          showFirstRunWizard(render);
+        }
+      }
     } catch (err) {
       console.error('Error rendering ' + currentPage, err);
       vEl.innerHTML = `
@@ -886,6 +896,58 @@ function bindViewEvents() {
       }
     });
 
+    $('#changePasswordForm')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const cur = $('#curPwInput')?.value || '';
+      const newP = $('#newPwInput')?.value || '';
+      const confP = $('#confPwInput')?.value || '';
+      const statEl = $('#pwChangeStat');
+
+      if (!cur || !newP) {
+        if (statEl) statEl.innerHTML = '<span style="color:#dc2626">Both current and new password are required</span>';
+        return;
+      }
+      if (newP !== confP) {
+        if (statEl) statEl.innerHTML = '<span style="color:#dc2626">New password and confirmation do not match</span>';
+        return;
+      }
+      if (newP.length < 4) {
+        if (statEl) statEl.innerHTML = '<span style="color:#dc2626">New password must be at least 4 characters</span>';
+        return;
+      }
+
+      if (statEl) statEl.innerHTML = '<span style="color:#64748b">Updating password...</span>';
+
+      try {
+        const res = await fetch('/api/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currentPassword: cur, newPassword: newP })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          if (statEl) statEl.innerHTML = '<span style="color:#16a34a">✓ Password updated successfully</span>';
+          toast('Password updated successfully');
+          if (/^\d{4}$/.test(newP)) {
+            try {
+              const { hashPin } = await import('./views/login.js');
+              if (typeof hashPin === 'function') {
+                const h = await hashPin(newP);
+                if (h) localStorage.setItem('bufin_pin_hash', h);
+              }
+            } catch (err) {}
+          }
+          if ($('#curPwInput')) $('#curPwInput').value = '';
+          if ($('#newPwInput')) $('#newPwInput').value = '';
+          if ($('#confPwInput')) $('#confPwInput').value = '';
+        } else {
+          if (statEl) statEl.innerHTML = `<span style="color:#dc2626">⚠️ ${esc(data.error || 'Failed to update password')}</span>`;
+        }
+      } catch (err) {
+        if (statEl) statEl.innerHTML = '<span style="color:#dc2626">⚠️ Server connection error</span>';
+      }
+    });
+
     const toggleBtn = $('#toggleApiSecret');
     const secretInput = $('#apiSecretInput');
     const eyeOpen = $('#eyeIconOpen');
@@ -1145,6 +1207,8 @@ const ACTIONS = {
     partyForm(null, preType);
   },
   editparty: i => partyForm(i),
+  delparty: i => deletePartyAction(i, render),
+  mergeparty: i => mergePartyModal(i, render),
   ptab: i => {
     partiesState.pt = i;
     render();
@@ -1464,21 +1528,73 @@ export async function performLogout(opts = {}) {
   showPinLogin(boot);
 }
 
+let idleTimer = null;
+let idleTrackingInitialized = false;
+
+export function resetIdleTimer() {
+  if (idleTimer) clearTimeout(idleTimer);
+  const minutes = (db && db.biz && typeof db.biz.autoLockMinutes === 'number')
+    ? db.biz.autoLockMinutes
+    : 5;
+  if (!minutes || minutes <= 0) return; // 0 or negative disables auto-lock
+
+  idleTimer = setTimeout(() => {
+    const pinScreen = document.getElementById('pinScreen');
+    if (pinScreen && pinScreen.style.display !== 'none') return; // already locked
+
+    // Close any open modals
+    const modal = document.getElementById('modal');
+    if (modal) modal.style.display = 'none';
+
+    showPinLogin(() => {
+      resetIdleTimer();
+      render();
+    }, {
+      title: 'App Locked',
+      sub: 'Locked due to inactivity. Enter PIN to resume.'
+    });
+  }, minutes * 60 * 1000);
+}
+
+export function initIdleTracking() {
+  if (idleTrackingInitialized || typeof window === 'undefined') return;
+  idleTrackingInitialized = true;
+
+  const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+  const handleActivity = () => {
+    const pinScreen = document.getElementById('pinScreen');
+    if (pinScreen && pinScreen.style.display !== 'none') return;
+    resetIdleTimer();
+  };
+
+  events.forEach(evt => {
+    window.addEventListener(evt, handleActivity, { passive: true });
+  });
+
+  resetIdleTimer();
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('bufin-auth-required', e => {
     const resumePush = e.detail && e.detail.resumePush;
     showPinLogin(() => {
+      resetIdleTimer();
       if (resumePush && dirty) {
         push();
       } else {
         boot();
       }
+    }, {
+      title: 'Session Expired',
+      sub: 'Session expired – log in again, your unsaved changes are kept'
     });
   });
 }
 
 export async function boot(opts = {}) {
   initPinKeypad();
+  initIdleTracking();
+  resetIdleTimer();
 
   // If fast-unlocked via instant local PIN verification, render immediately without blocking!
   if (opts && opts.fastUnlock) {
@@ -1506,7 +1622,10 @@ export async function boot(opts = {}) {
       // 401 Unauthorized: Session required
       if (r.status === 401) {
         hideSyncBanner();
-        showPinLogin(boot);
+        showPinLogin(boot, {
+          title: 'Session Expired',
+          sub: 'Session expired – log in again, your unsaved changes are kept'
+        });
         return;
       }
 

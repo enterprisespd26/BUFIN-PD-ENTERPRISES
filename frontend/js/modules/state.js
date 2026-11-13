@@ -49,12 +49,21 @@ export const PT = {
 
 export const partyTypeLabel = p => {
   if (!p) return '';
-  if (p.type === 'lender') return 'Lender';
-  if (p.type === 'expense') return 'Expense Vendor';
-  if (p.type === 'supplier') return 'Supplier';
-  if (p.type === 'customer') return 'Customer';
-  if (p.type === 'both') return 'Customer & Supplier';
+  if (Array.isArray(p.roles) && p.roles.length > 1) {
+    const roleLabels = {
+      customer: 'Customer',
+      supplier: 'Supplier',
+      lender: 'Lender',
+      expense: 'Expense Vendor'
+    };
+    return p.roles.map(r => roleLabels[r] || r).join(' & ');
+  }
   if (p.type === 'other') return 'Other';
+  if (p.type === 'lender' || (p.roles && p.roles.length === 1 && p.roles[0] === 'lender')) return 'Lender';
+  if (p.type === 'expense' || (p.roles && p.roles.length === 1 && p.roles[0] === 'expense')) return 'Expense Vendor';
+  if (p.type === 'supplier' || (p.roles && p.roles.length === 1 && p.roles[0] === 'supplier')) return 'Supplier';
+  if (p.type === 'customer' || (p.roles && p.roles.length === 1 && p.roles[0] === 'customer')) return 'Customer';
+  if (p.type === 'both') return 'Customer & Supplier';
   return (PT[p.type] || p.type || 'Other').split(' (')[0];
 };
 
@@ -91,36 +100,57 @@ export function syncPartyClassifications(targetDb) {
     const hasTradeBills = tradeSupplierIds.has(p.id);
     const hasTradeSales = tradeCustomerIds.has(p.id);
 
+    // Initialize roles if missing
+    if (!Array.isArray(p.roles) || p.roles.length === 0) {
+      if (p.type === 'both') p.roles = ['customer', 'supplier'];
+      else if (p.type === 'customer') p.roles = ['customer'];
+      else if (p.type === 'supplier') p.roles = ['supplier'];
+      else if (p.type === 'lender') p.roles = ['lender'];
+      else if (p.type === 'expense') p.roles = ['expense'];
+      else p.roles = ['customer'];
+      modified = true;
+    }
+
+    // Never override user-chosen classification silently
+    if (p.userChosen) continue;
+
     // 1. Loans / lenders
     if (isLoanParty && !hasTradeBills) {
+      if (p.type === 'supplier') {
+        p.roles = p.roles.filter(r => r !== 'supplier');
+      }
+      if (!p.roles.includes('lender')) {
+        p.roles.push('lender');
+        modified = true;
+      }
       if (p.type !== 'lender') {
         p.type = 'lender';
         modified = true;
       }
-    } else if (p.type === 'lender' && !isLoanParty) {
-      // Recompute party type after loan removal - do not leave party typed 'lender'
-      if (hasTradeSales && hasTradeBills) p.type = 'both';
-      else if (hasTradeSales) p.type = 'customer';
-      else if (hasTradeBills) p.type = 'supplier';
-      else p.type = 'other';
-      modified = true;
+    } else if (!isLoanParty) {
+      if (p.roles.includes('lender')) {
+        p.roles = p.roles.filter(r => r !== 'lender');
+        modified = true;
+      }
+      if (p.type === 'lender') {
+        if (hasTradeSales && hasTradeBills) { p.type = 'both'; p.roles = ['customer', 'supplier']; }
+        else if (hasTradeSales) { p.type = 'customer'; p.roles = ['customer']; }
+        else if (hasTradeBills) { p.type = 'supplier'; p.roles = ['supplier']; }
+        else { p.type = 'other'; p.roles = ['customer']; }
+        modified = true;
+      }
     }
-    // 2. Service / license / expense entities without commercial purchase bills
-    else if (!hasTradeBills && !hasTradeSales) {
-      const isExpensePayee = (
-        nameLower.includes('rinku toppo') ||
-        nameLower.includes('registration') ||
-        nameLower.includes('legal services') ||
-        p.id === 'p_rinku_toppo' ||
-        p.id === 'p_registration_legal' ||
-        (targetDb.entries || []).some(e =>
-          (e.meta?.cat && parseInt(e.meta.cat, 10) >= 5100) &&
-          (e.meta?.party === p.id || (e.lines || []).some(l => l.p === p.id))
-        )
+    // 2. Pure expense payees identified strictly by transaction account (no hardcoded names)
+    if (!hasTradeBills && !hasTradeSales && !isLoanParty) {
+      const isExpensePayee = (targetDb.entries || []).some(e =>
+        (e.meta?.cat && parseInt(e.meta.cat, 10) >= 5100) &&
+        (e.meta?.party === p.id || (e.lines || []).some(l => l.p === p.id))
       );
 
       if (isExpensePayee && p.type === 'supplier') {
         p.type = 'other';
+        p.roles = p.roles.filter(r => r !== 'supplier');
+        if (!p.roles.includes('expense')) p.roles = ['expense'];
         modified = true;
       }
     }
@@ -237,7 +267,9 @@ export let db = initialDb || {
     bank: '',
     upi: '',
     terms: '',
-    lock: ''
+    lock: '',
+    fyStart: '04-01',
+    autoLockMinutes: 5
   },
   accounts: AC.map(a => ({ code: a[0], name: a[1], t: a[2], cash: !!a[3] })),
   parties: [],
@@ -951,8 +983,120 @@ export const out = d => (d.total || 0) - paid(d);
 export const dstat = d => d.cancelled ? ['Cancelled', 'rd'] : out(d) <= 0 ? ['Paid', 'ok'] : d.due && d.due < today() ? ['Overdue', 'rd'] : paid(d) > 0 ? ['Partial', 'wn'] : ['Open', ''];
 
 export const cashAcc = () => db.accounts.filter(a => a.cash);
-export const isC = p => !!(p && (p.type === 'customer' || p.type === 'both'));
-export const isS = p => !!(p && (p.type === 'supplier' || p.type === 'both'));
+export const isC = p => !!(p && (p.roles ? p.roles.includes('customer') : (p.type === 'customer' || p.type === 'both')));
+export const isS = p => !!(p && (p.roles ? p.roles.includes('supplier') : (p.type === 'supplier' || p.type === 'both')));
+export const isL = p => !!(p && (p.roles ? p.roles.includes('lender') : p.type === 'lender'));
+export const isX = p => !!(p && (p.roles ? p.roles.includes('expense') : (p.type === 'expense' || p.type === 'other')));
+
+export const INDIAN_STATES = [
+  { code: '01', name: 'Jammu and Kashmir' },
+  { code: '02', name: 'Himachal Pradesh' },
+  { code: '03', name: 'Punjab' },
+  { code: '04', name: 'Chandigarh' },
+  { code: '05', name: 'Uttarakhand' },
+  { code: '06', name: 'Haryana' },
+  { code: '07', name: 'Delhi' },
+  { code: '08', name: 'Rajasthan' },
+  { code: '09', name: 'Uttar Pradesh' },
+  { code: '10', name: 'Bihar' },
+  { code: '11', name: 'Sikkim' },
+  { code: '12', name: 'Arunachal Pradesh' },
+  { code: '13', name: 'Nagaland' },
+  { code: '14', name: 'Manipur' },
+  { code: '15', name: 'Mizoram' },
+  { code: '16', name: 'Tripura' },
+  { code: '17', name: 'Meghalaya' },
+  { code: '18', name: 'Assam' },
+  { code: '19', name: 'West Bengal' },
+  { code: '20', name: 'Jharkhand' },
+  { code: '21', name: 'Odisha' },
+  { code: '22', name: 'Chhattisgarh' },
+  { code: '23', name: 'Madhya Pradesh' },
+  { code: '24', name: 'Gujarat' },
+  { code: '26', name: 'Dadra and Nagar Haveli and Daman and Diu' },
+  { code: '27', name: 'Maharashtra' },
+  { code: '29', name: 'Karnataka' },
+  { code: '30', name: 'Goa' },
+  { code: '31', name: 'Lakshadweep' },
+  { code: '32', name: 'Kerala' },
+  { code: '33', name: 'Tamil Nadu' },
+  { code: '34', name: 'Puducherry' },
+  { code: '35', name: 'Andaman and Nicobar Islands' },
+  { code: '36', name: 'Telangana' },
+  { code: '37', name: 'Andhra Pradesh' },
+  { code: '38', name: 'Ladakh' },
+  { code: '97', name: 'Other Territory' }
+];
+
+export function getStateByCode(code) {
+  if (!code) return null;
+  const c = String(code).trim().padStart(2, '0');
+  return INDIAN_STATES.find(s => s.code === c) || null;
+}
+
+export function getStateByName(name) {
+  if (!name) return null;
+  const n = String(name).trim().toLowerCase();
+  return INDIAN_STATES.find(s => s.name.toLowerCase() === n) || null;
+}
+
+export function getFiscalYear(dateStr, fyStartStr) {
+  const dStr = dateStr || today();
+  const fyStart = fyStartStr || db.biz?.fyStart || '04-01';
+  const parts = String(fyStart).split('-').map(Number);
+  const startMonth = parts[0] || 4;
+  const startDay = parts[1] || 1;
+
+  const dParts = String(dStr).split('-').map(Number);
+  const curYear = dParts[0];
+  const curMonth = dParts[1];
+  const curDay = dParts[2];
+
+  let startYear, endYear;
+  if (curMonth > startMonth || (curMonth === startMonth && curDay >= startDay)) {
+    startYear = curYear;
+    endYear = curYear + 1;
+  } else {
+    startYear = curYear - 1;
+    endYear = curYear;
+  }
+
+  const token = (startYear % 100).toString().padStart(2, '0') + (endYear % 100).toString().padStart(2, '0');
+  const label = `FY ${startYear}-${(endYear % 100).toString().padStart(2, '0')}`;
+  const startDate = `${startYear}-${String(startMonth).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
+  
+  // Calculate end date (one day before next start date)
+  const nextStartDt = new Date(endYear, startMonth - 1, startDay);
+  const endDt = new Date(nextStartDt.getTime() - 864e5);
+  const endDate = `${endDt.getFullYear()}-${String(endDt.getMonth() + 1).padStart(2, '0')}-${String(endDt.getDate()).padStart(2, '0')}`;
+  
+  const nextStartDate = `${endYear}-${String(startMonth).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
+  const nextToken = (endYear % 100).toString().padStart(2, '0') + ((endYear + 1) % 100).toString().padStart(2, '0');
+  const nextLabel = `FY ${endYear}-${((endYear + 1) % 100).toString().padStart(2, '0')}`;
+
+  return {
+    startYear,
+    endYear,
+    token,
+    label,
+    startDate,
+    endDate,
+    nextStartDate,
+    nextToken,
+    nextLabel
+  };
+}
+
+export function formatPrefix(template, dateStr) {
+  const tpl = template || db.biz?.prefix || 'PD/{FY}/';
+  if (!tpl.includes('{FY}')) return tpl;
+  const fy = getFiscalYear(dateStr);
+  return tpl.replace(/\{FY\}/g, fy.token);
+}
+
+export function isFirstRunNeeded() {
+  return (!db.biz?.name || !db.biz?.state || !db.biz?.prefix) && (!db.entries || db.entries.length === 0);
+}
 
 export const lstat = l => l.principal - l.repaid <= 0 ? ['Closed', ''] : l.due && l.due < today() ? ['Overdue', 'rd'] : ['Active', 'ok'];
 export const lacr = l => Math.round((l.principal - l.repaid) * l.rate / 100 * Math.max(0, Math.round((new Date(today()) - new Date(l.last)) / 864e5)) / 365);

@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "npm run test:all",
-    "test:all": "node --test tests/payment_path_and_returns.test.mjs && node --test tests/attachment_sync.test.mjs && node --test tests/accounting_integrity.test.mjs && node --test tests/sync_engine.test.mjs && node tests/audit_test_suite.mjs && npm --prefix backend test"
+    "test:all": "node --test tests/party_ops_and_wizard.test.mjs && node --test tests/payment_path_and_returns.test.mjs && node --test tests/attachment_sync.test.mjs && node --test tests/accounting_integrity.test.mjs && node --test tests/sync_engine.test.mjs && node tests/audit_test_suite.mjs && npm --prefix backend test"
   }
 }

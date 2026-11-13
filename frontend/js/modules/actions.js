@@ -1,5 +1,5 @@
 import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid, downloadCSV, downloadJSON, downloadZIP, readZipFile } from './utils.js';
-import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries, getOrCreateExpenseAccount, syncPartyClassifications, setVer, setBaseVer, ensureAdvanceAccounts, getPartyAdvanceBalance } from './state.js';
+import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, isL, isX, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries, getOrCreateExpenseAccount, syncPartyClassifications, setVer, setBaseVer, ensureAdvanceAccounts, getPartyAdvanceBalance, getStateByName, getStateByCode, INDIAN_STATES, getFiscalYear } from './state.js';
 import { modal, closeM, form, fld, sel, opts, accOpts, partyOpts } from './components.js';
 
 import { getTxnRowData } from '../views/money.js';
@@ -15,24 +15,25 @@ export function isIntraState(party) {
   const pGstin = String(party.gstin || party.g || '').trim().toUpperCase();
   const pState = String(party.state || party.s || '').trim().toLowerCase();
 
-  const bizGstin = String(db.biz.gstin || '21IFNPD3153M1ZC').trim().toUpperCase();
-  const bizCode = bizGstin.length >= 2 ? bizGstin.slice(0, 2) : '21';
-  const bizState = String(db.biz.state || 'Odisha').trim().toLowerCase();
+  const bizGstin = String(db.biz.gstin || '').trim().toUpperCase();
+  const bizCode = bizGstin.length >= 2 ? bizGstin.slice(0, 2) : (getStateByName(db.biz.state)?.code || '');
+  const bizState = String(db.biz.state || '').trim().toLowerCase();
 
   // 1. If party has a GSTIN, match the 2-digit state code
-  if (pGstin.length >= 2 && /^\d{2}/.test(pGstin)) {
+  if (pGstin.length >= 2 && /^\d{2}/.test(pGstin) && bizCode) {
     return pGstin.slice(0, 2) === bizCode;
   }
 
   // 2. If party state is numeric code e.g. "21"
-  if (/^\d{2}$/.test(pState)) {
+  if (/^\d{2}$/.test(pState) && bizCode) {
     return pState === bizCode;
   }
 
-  // 3. Match state name against business state or Odisha (code 21)
-  if (pState) {
+  // 3. Match state name against business state
+  if (pState && bizState) {
     if (sameSt(pState, bizState)) return true;
-    if ((pState === 'odisha' || pState === 'orissa') && (bizState === 'odisha' || bizState === 'orissa' || bizCode === '21')) return true;
+    const pCode = getStateByName(pState)?.code;
+    if (pCode && bizCode && pCode === bizCode) return true;
     return false;
   }
 
@@ -464,7 +465,7 @@ export function showDoc(id) {
       <div style="font-weight:700;font-size:15px;color:var(--tx)">${esc(b.name || '')}</div>
       ${b.addr ? `<div style="color:var(--t2)">${esc(b.addr).replace(/\n/g, ', ')}</div>` : ''}
       <div style="color:var(--t2)">${b.phone ? 'Mob: ' + esc(b.phone) : ''}${b.email ? (b.phone ? ' | ' : '') + 'Email: ' + esc(b.email) : ''}</div>
-      <div><b>GSTIN:</b> <code>${esc(b.gstin || '')}</code> · <b>State:</b> ${esc(b.state || 'Odisha')} (Code: 21)</div>
+      <div><b>GSTIN:</b> <code>${esc(b.gstin || '')}</code> · <b>State:</b> ${esc(b.state || '')}${b.state ? ' (Code: ' + esc(b.gstin?.slice(0, 2) || getStateByName(b.state)?.code || '') + ')' : ''}</div>
     </div>
     <p><b>${s ? 'Bill to' : 'Supplier'}:</b> ${esc(p.name || d.sup || '')} ${p.gstin || d.gstin ? '· <b>GSTIN:</b> ' + esc(p.gstin || d.gstin) : ''}<br>
     <b>Date:</b> ${esc(d.date)}${d.due ? ' · <b>Due:</b> ' + esc(d.due) : ''}</p>
@@ -1131,35 +1132,332 @@ export async function docForm2(ty, preParty) {
 
 export function partyForm(id, preType, onSaved) {
   const p = db.parties.find(x => x.id === id) || {};
+  const currentRoles = Array.isArray(p.roles) && p.roles.length
+    ? p.roles
+    : (p.type === 'both' ? ['customer', 'supplier'] : [p.type || preType || 'customer']);
   const currentType = p.type || preType || 'customer';
+
   form(id ? 'Edit party' : 'Add party',
     `<div class="two">
       ${fld('name', 'Name', 'text', p.name, 1)}
-      ${sel('type', 'Type', opts(Object.entries(PT), currentType))}
+      ${sel('type', 'Primary Type', opts(Object.entries(PT), currentType))}
       ${fld('phone', 'Phone', 'text', p.phone)}
       ${fld('email', 'Email', 'text', p.email)}
       ${fld('gstin', 'GSTIN', 'text', p.gstin)}
-      ${fld('state', 'State', 'text', p.state || db.biz.state || 'Odisha')}
+      ${fld('state', 'State', 'text', p.state || db.biz.state || '')}
       ${fld('terms', 'Credit terms (days)', 'number', p.terms || '0')}
       ${fld('addr', 'Address', 'text', p.addr)}
     </div>
+    <div style="margin: 8px 0 12px; padding: 10px 12px; background: #f8fafc; border: 1px solid var(--bd, #e2e8f0); border-radius: 8px;">
+      <div style="font-weight:600; font-size:13px; margin-bottom:6px; color:var(--tx,#0f172a)">Party Roles (select all that apply):</div>
+      <div style="display:flex; flex-wrap:wrap; gap:12px; font-size:13px;">
+        <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
+          <input type="checkbox" id="role_customer" name="role_customer" value="customer" ${currentRoles.includes('customer') ? 'checked' : ''}> Customer
+        </label>
+        <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
+          <input type="checkbox" id="role_supplier" name="role_supplier" value="supplier" ${currentRoles.includes('supplier') ? 'checked' : ''}> Supplier
+        </label>
+        <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
+          <input type="checkbox" id="role_lender" name="role_lender" value="lender" ${currentRoles.includes('lender') ? 'checked' : ''}> Lender
+        </label>
+        <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
+          <input type="checkbox" id="role_expense" name="role_expense" value="expense" ${currentRoles.includes('expense') ? 'checked' : ''}> Expense Vendor
+        </label>
+      </div>
+    </div>
     ${fld('notes', 'Notes', 'text', p.notes)}
-    <small>Customers appear on invoices and Money In. Suppliers appear on purchase bills and trade payables. Lenders / Others include loan providers, expense vendors, employees and miscellaneous parties.</small>`,
+    <small>A party can have multiple roles (e.g. both Customer and Lender). Customers appear on invoices; Suppliers appear on bills; Lenders on loan schedules.</small>`,
     v => {
-      if (v.gstin && !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/i.test(v.gstin)) throw Error('GSTIN format looks invalid');
-      if (db.parties.some(x => x.id !== id && x.name.trim().toLowerCase() === v.name.trim().toLowerCase())) throw Error('A party with this name already exists');
+      const nameTrim = (v.name || '').trim().toLowerCase();
+      if (!nameTrim) throw Error('Party name is required');
+      if (db.parties.some(x => x.id !== id && (x.name || '').trim().toLowerCase() === nameTrim)) {
+        throw Error(`A party with the name "${v.name}" already exists`);
+      }
+
+      if (v.gstin) {
+        const cleanGst = v.gstin.trim().toUpperCase();
+        if (!/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/i.test(cleanGst)) {
+          throw Error('GSTIN format looks invalid (e.g. 21ABCDE1234F1Z5)');
+        }
+        if (db.parties.some(x => x.id !== id && (x.gstin || '').trim().toUpperCase() === cleanGst)) {
+          throw Error(`A party with GSTIN "${v.gstin}" already exists`);
+        }
+        v.gstin = cleanGst;
+      }
+
+      if (v.phone) {
+        const cleanPhone = String(v.phone).replace(/\D/g, '');
+        if (cleanPhone.length >= 10) {
+          if (db.parties.some(x => x.id !== id && String(x.phone || '').replace(/\D/g, '') === cleanPhone)) {
+            throw Error(`A party with phone number "${v.phone}" already exists`);
+          }
+        }
+      }
+
+      // Collect roles from checkboxes
+      const chkCust = $('#role_customer')?.checked;
+      const chkSupp = $('#role_supplier')?.checked;
+      const chkLend = $('#role_lender')?.checked;
+      const chkExp = $('#role_expense')?.checked;
+      let roles = [];
+      if (chkCust) roles.push('customer');
+      if (chkSupp) roles.push('supplier');
+      if (chkLend) roles.push('lender');
+      if (chkExp) roles.push('expense');
+
+      // If no checkboxes checked, sync with v.type
+      if (roles.length === 0) {
+        if (v.type === 'both') roles = ['customer', 'supplier'];
+        else if (v.type === 'supplier') roles = ['supplier'];
+        else if (v.type === 'lender') roles = ['lender'];
+        else if (v.type === 'expense') roles = ['expense'];
+        else roles = ['customer'];
+      }
+
+      v.roles = roles;
+      v.userChosen = true;
+      if (roles.includes('customer') && roles.includes('supplier')) v.type = 'both';
+      else if (roles.includes('customer') && v.type === 'customer') v.type = 'customer';
+      else if (roles.includes('supplier') && v.type === 'supplier') v.type = 'supplier';
+      else if (roles.includes('lender') && v.type === 'lender') v.type = 'lender';
+      else if (roles.includes('expense') && v.type === 'expense') v.type = 'expense';
+      else v.type = roles[0] || v.type || 'customer';
+
       let target;
       if (id) {
+        const oldName = p.name;
         Object.assign(p, v);
         target = p;
+
+        // Propagate rename to all stored snapshots
+        if (oldName && oldName !== v.name) {
+          (db.docs || []).forEach(d => {
+            if (d.party === id || (d.c && d.c.n === oldName) || (d.sup && d.sup === oldName)) {
+              if (d.c) d.c.n = v.name;
+              if (d.sup) d.sup = v.name;
+              d.party = id;
+            }
+          });
+          (db.entries || []).forEach(e => {
+            if (e.meta && (e.meta.party === id || e.meta.partyName === oldName)) {
+              e.meta.partyName = v.name;
+            }
+          });
+          (db.loans || []).forEach(l => {
+            if (l.party === id || l.partyName === oldName) {
+              l.partyName = v.name;
+            }
+          });
+        }
       } else {
         target = { id: uid(), ...v };
         db.parties.push(target);
       }
       log('party', v.name);
+      save();
       if (onSaved) onSaved(target);
     }
   );
+}
+
+export function canDeleteParty(partyId) {
+  const p = db.parties.find(x => x.id === partyId);
+  if (!p) return { can: false, reason: 'Party not found' };
+  const pNameLower = String(p.name || '').trim().toLowerCase();
+  const partyMatch = v => {
+    if (!v) return false;
+    const s = String(v).trim().toLowerCase();
+    return s === String(partyId).trim().toLowerCase() || (pNameLower && s === pNameLower);
+  };
+
+  const docs = (db.docs || []).filter(d => partyMatch(d.party));
+  const loans = (db.loans || []).filter(l => partyMatch(l.party) || partyMatch(l.partyName));
+  const entries = (db.entries || []).filter(e =>
+    partyMatch(e.meta?.party) ||
+    (e.lines || []).some(line => partyMatch(line.p))
+  );
+
+  if (docs.length > 0 || loans.length > 0 || entries.length > 0) {
+    const reasons = [];
+    if (docs.length) reasons.push(`${docs.length} document(s)`);
+    if (loans.length) reasons.push(`${loans.length} loan(s)`);
+    if (entries.length) reasons.push(`${entries.length} journal entry/entries`);
+    return {
+      can: false,
+      reason: `Cannot delete party with existing transactions: ${reasons.join(', ')}. Please merge with another party or cancel/remove the transactions first.`,
+      docsCount: docs.length,
+      loansCount: loans.length,
+      entriesCount: entries.length
+    };
+  }
+  return { can: true };
+}
+
+export function executeDeleteParty(partyId, onDeleted) {
+  const p = db.parties.find(x => x.id === partyId);
+  if (!p) return { success: false, reason: 'Party not found' };
+  const check = canDeleteParty(partyId);
+  if (!check.can) return { success: false, reason: check.reason };
+
+  db.parties = db.parties.filter(x => x.id !== partyId);
+  log('party_del', p.name);
+  save();
+  toast(`Party "${p.name}" deleted`);
+  if (onDeleted) onDeleted();
+  else if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('bufin-render'));
+  return { success: true };
+}
+
+export function deletePartyAction(partyId, onDeleted) {
+  const p = db.parties.find(x => x.id === partyId);
+  if (!p) return;
+  const check = canDeleteParty(partyId);
+  if (!check.can) {
+    modal(`<h3>Cannot Delete Party</h3>
+      <p style="color:var(--rd,#dc2626); margin-top:8px; line-height:1.5;">${esc(check.reason)}</p>
+      <div class="row" style="margin-top:16px;">
+        <button id="delBlockCloseBtn" class="p">Understood</button>
+      </div>`);
+    $('#delBlockCloseBtn').onclick = closeM;
+    return;
+  }
+
+  modal(`<h3>Delete Party: ${esc(p.name)}</h3>
+    <p>Are you sure you want to delete <b>${esc(p.name)}</b>? This party has no transactions and will be removed permanently.</p>
+    <div class="row" style="margin-top:16px;">
+      <button id="confirmDelPartyBtn" class="p" style="background:var(--rd,#dc2626);border-color:var(--rd,#dc2626);color:#fff">Delete Party</button>
+      <button id="cancelDelPartyBtn">Cancel</button>
+    </div>`);
+  $('#confirmDelPartyBtn').onclick = () => {
+    executeDeleteParty(partyId, onDeleted);
+    closeM();
+  };
+  $('#cancelDelPartyBtn').onclick = closeM;
+}
+
+export function executeMergeParty(sourcePartyId, targetPartyId, onMerged) {
+  const source = db.parties.find(x => x.id === sourcePartyId);
+  if (!source) return { success: false, reason: 'Source party not found' };
+  const target = db.parties.find(x => x.id === targetPartyId);
+  if (!target) return { success: false, reason: 'Target party not found' };
+
+  const pNameLower = String(source.name || '').trim().toLowerCase();
+  const partyMatch = v => {
+    if (!v) return false;
+    const s = String(v).trim().toLowerCase();
+    return s === String(sourcePartyId).trim().toLowerCase() || (pNameLower && s === pNameLower);
+  };
+
+  const docs = (db.docs || []).filter(d => partyMatch(d.party));
+  const loans = (db.loans || []).filter(l => partyMatch(l.party) || partyMatch(l.partyName));
+  const entries = (db.entries || []).filter(e =>
+    partyMatch(e.meta?.party) ||
+    (e.lines || []).some(line => partyMatch(line.p))
+  );
+
+  // 1. Move docs
+  (db.docs || []).forEach(d => {
+    if (partyMatch(d.party)) {
+      d.party = target.id;
+      if (d.type === 'sale' && d.c) {
+        d.c.id = target.id;
+        d.c.n = target.name;
+      }
+      if (d.type === 'bill') d.sup = target.name;
+    }
+  });
+
+  // 2. Move loans
+  (db.loans || []).forEach(l => {
+    if (partyMatch(l.party) || partyMatch(l.partyName)) {
+      l.party = target.id;
+      l.partyName = target.name;
+    }
+  });
+
+  // 3. Move entries
+  (db.entries || []).forEach(e => {
+    if (partyMatch(e.meta?.party)) {
+      e.meta.party = target.id;
+      e.meta.partyName = target.name;
+    }
+    (e.lines || []).forEach(l => {
+      if (partyMatch(l.p)) l.p = target.id;
+    });
+  });
+
+  // 4. Combine roles
+  const sourceRoles = Array.isArray(source.roles) && source.roles.length ? source.roles : [source.type || 'customer'];
+  const targetRoles = Array.isArray(target.roles) && target.roles.length ? target.roles : [target.type || 'customer'];
+  const combinedRoles = Array.from(new Set([...targetRoles, ...sourceRoles])).filter(Boolean);
+  target.roles = combinedRoles;
+  if (combinedRoles.includes('customer') && combinedRoles.includes('supplier')) target.type = 'both';
+  else target.type = combinedRoles[0] || target.type || 'customer';
+  target.userChosen = true;
+
+  // 5. Remove source party
+  db.parties = db.parties.filter(x => x.id !== sourcePartyId);
+
+  log('party_merge', `${source.name} into ${target.name} (${docs.length} docs, ${loans.length} loans, ${entries.length} entries)`);
+  save();
+  toast(`Merged "${source.name}" into "${target.name}"`);
+  if (onMerged) onMerged();
+  else if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('bufin-render'));
+  return { success: true, docsCount: docs.length, loansCount: loans.length, entriesCount: entries.length };
+}
+
+export function mergePartyModal(sourcePartyId, onMerged) {
+  const source = db.parties.find(x => x.id === sourcePartyId);
+  if (!source) return;
+  const pNameLower = String(source.name || '').trim().toLowerCase();
+  const partyMatch = v => {
+    if (!v) return false;
+    const s = String(v).trim().toLowerCase();
+    return s === String(sourcePartyId).trim().toLowerCase() || (pNameLower && s === pNameLower);
+  };
+
+  const docs = (db.docs || []).filter(d => partyMatch(d.party));
+  const loans = (db.loans || []).filter(l => partyMatch(l.party) || partyMatch(l.partyName));
+  const entries = (db.entries || []).filter(e =>
+    partyMatch(e.meta?.party) ||
+    (e.lines || []).some(line => partyMatch(line.p))
+  );
+
+  const candidates = db.parties.filter(x => x.id !== sourcePartyId);
+  if (candidates.length === 0) {
+    return toast('No other parties available to merge into');
+  }
+
+  modal(`<h3>Merge Party: ${esc(source.name)}</h3>
+    <p style="color:var(--t2); font-size:13px; margin-bottom:12px;">
+      Merging will reassign all records from <b>${esc(source.name)}</b> to another party, combine their roles, and remove ${esc(source.name)}.
+    </p>
+    <div style="padding:10px 12px; background:#f8fafc; border:1px solid var(--bd,#e2e8f0); border-radius:8px; margin-bottom:14px; font-size:13px;">
+      <b>Records to be transferred:</b>
+      <ul style="margin:4px 0 0 16px; padding:0;">
+        <li><b>${docs.length}</b> document(s) (sales invoices, purchase bills, returns)</li>
+        <li><b>${loans.length}</b> loan record(s)</li>
+        <li><b>${entries.length}</b> journal transaction(s)</li>
+      </ul>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px;">Merge into (Target Party) *</label>
+      <select id="mergeTargetPartySelect" style="width:100%; min-height:40px; padding:8px 12px; border-radius:6px; border:1px solid var(--bd,#cbd5e1); font-size:14px;">
+        ${candidates.map(c => `<option value="${esc(c.id)}">${esc(c.name)} (${esc(partyTypeLabel(c))})</option>`).join('')}
+      </select>
+    </div>
+    <div class="row" style="margin-top:16px;">
+      <button id="confirmMergeBtn" class="p">Confirm Merge</button>
+      <button id="cancelMergeBtn">Cancel</button>
+    </div>`);
+
+  $('#confirmMergeBtn').onclick = () => {
+    const targetId = $('#mergeTargetPartySelect')?.value;
+    const res = executeMergeParty(sourcePartyId, targetId, onMerged);
+    if (!res.success) return toast(res.reason);
+    closeM();
+  };
+  $('#cancelMergeBtn').onclick = closeM;
 }
 
 export function stmt2(i) {
@@ -1175,7 +1473,7 @@ export function stmt2(i) {
     if (!l) return false;
     return partyMatch(l.party) || partyMatch(l.partyName);
   };
-  const isLoan = p.type === 'lender' || (db.loans || []).some(isLoanMatch);
+  const isLoan = p.type === 'lender' || (p.roles && p.roles.includes('lender')) || (db.loans || []).some(isLoanMatch);
   const hasCustAdv = (db.entries || []).some(e => e.status !== 'reversed' && (e.lines || []).some(l => l.a === '2300' && partyMatch(l.p)));
   const hasSuppAdv = (db.entries || []).some(e => e.status !== 'reversed' && (e.lines || []).some(l => l.a === '1450' && partyMatch(l.p)));
 
@@ -1226,13 +1524,15 @@ export function stmt2(i) {
   const ln = (db.loans || []).filter(isLoanMatch).map(l => `<li>${l.ref}: ${fmt(l.principal - l.repaid)} outstanding</li>`).join('');
 
   modal(`<h3>${esc(p.name)}</h3>
-    <p><small>${(PT[p.type] || p.type).split(' (')[0]}${p.phone ? ' · ' + esc(p.phone) : ''}${p.gstin ? ' · GSTIN ' + esc(p.gstin) : ''}${p.state ? ' · ' + esc(p.state) : ''}${p.terms ? ' · ' + p.terms + ' day terms' : ''}</small></p>
+    <p><small>${esc(partyTypeLabel(p))}${p.phone ? ' · ' + esc(p.phone) : ''}${p.gstin ? ' · GSTIN ' + esc(p.gstin) : ''}${p.state ? ' · ' + esc(p.state) : ''}${p.terms ? ' · ' + p.terms + ' day terms' : ''}</small></p>
     ${blocks}
     ${extraRows}
     ${ln ? '<h4>Loans</h4><ul>' + ln + '</ul>' : ''}
-    <div class="row" style="flex-wrap:wrap">
+    <div class="row" style="flex-wrap:wrap; gap:8px;">
       <button onclick="window.print()">Print</button>
       <button data-a="editparty" data-i="${i}">Edit</button>
+      <button data-a="mergeparty" data-i="${i}">Merge</button>
+      <button data-a="delparty" data-i="${i}" style="color:var(--rd,#dc2626)">Delete</button>
       ${isC(p) ? `<button data-a="psale" data-i="${i}">New invoice</button>${rec > 0 ? `<button class="p" data-a="recv" data-i="${i}">Receive payment</button>` : ''}` : ''}
       ${isS(p) ? `<button data-a="pbill" data-i="${i}">New bill</button>${pay > 0 ? `<button class="p" data-a="payp" data-i="${i}">Pay supplier</button>` : ''}` : ''}
       <button id="closeStmtBtn">Close</button>
@@ -1272,7 +1572,7 @@ export async function moneyInForm(existingEntry = null) {
   const existingPartyId = existingEntry?.meta?.party || creditLine?.p || debitLine?.p || '';
   const existingPartyName = existingEntry?.meta?.partyName || existingEntry?.meta?.contributor || existingEntry?.meta?.payer || '';
   const existingCapitalType = existingEntry?.meta?.capitalType || 'Additional Capital';
-  const existingContributor = existingEntry?.meta?.contributor || existingPartyName || (db.biz?.owner || 'PD ENTERPRISES');
+  const existingContributor = existingEntry?.meta?.contributor || existingPartyName || (db.biz?.owner || db.biz?.name || 'Proprietor');
   const existingPayer = existingEntry?.meta?.payer || existingPartyName || '';
   const existingSource = existingEntry?.meta?.sourceDesc || '';
   const existingMethod = existingEntry?.meta?.method || (existingAcct === '1000' ? 'Cash' : 'Bank Transfer / NEFT / RTGS');
@@ -1398,7 +1698,7 @@ export async function moneyInForm(existingEntry = null) {
 
       if (cat === '3000') {
         // Capital Introduced (Owner's Capital)
-        const contributor = (v.proprietor_name || '').trim() || (db.biz?.owner || "PD ENTERPRISES");
+        const contributor = (v.proprietor_name || '').trim() || (db.biz?.owner || db.biz?.name || 'Proprietor');
         const capitalType = v.capital_type || 'Additional Capital';
         const narr = userDesc
           ? `${contributor} - ${userDesc}`
@@ -1445,7 +1745,7 @@ export async function moneyInForm(existingEntry = null) {
               type: 'customer',
               phone: '',
               gstin: '',
-              state: db.biz.state || 'Odisha',
+              state: db.biz.state || '',
               terms: '0'
             };
             db.parties.push(newParty);
@@ -1970,7 +2270,7 @@ export async function moneyOutForm(existingEntry = null) {
               type: 'other',
               phone: '',
               gstin: '',
-              state: db.biz.state || 'Odisha',
+              state: db.biz.state || '',
               terms: '0'
             };
             db.parties.push(existingP);
@@ -2033,7 +2333,7 @@ export async function moneyOutForm(existingEntry = null) {
             supplierId = existing.id;
             supplierName = existing.name;
           } else {
-            const newP = { id: uid(), name: customName, type: 'supplier', phone: '', gstin: '', state: db.biz.state || 'Odisha', terms: '0' };
+            const newP = { id: uid(), name: customName, type: 'supplier', phone: '', gstin: '', state: db.biz.state || '', terms: '0' };
             db.parties.push(newP);
             supplierId = newP.id;
             supplierName = newP.name;
@@ -2108,7 +2408,7 @@ export async function moneyOutForm(existingEntry = null) {
           if (!lenderName) throw Error('Please enter Lender Name');
           let existingP = db.parties.find(p => p.name.trim().toLowerCase() === lenderName.toLowerCase());
           if (!existingP) {
-            existingP = { id: uid(), name: lenderName, type: 'lender', phone: '', gstin: '', state: db.biz.state || 'Odisha', terms: '0' };
+            existingP = { id: uid(), name: lenderName, type: 'lender', phone: '', gstin: '', state: db.biz.state || '', terms: '0' };
             db.parties.push(existingP);
           }
           partyId = existingP.id;
@@ -2183,7 +2483,7 @@ export async function moneyOutForm(existingEntry = null) {
               type: 'other',
               phone: '',
               gstin: '',
-              state: db.biz.state || 'Odisha',
+              state: db.biz.state || '',
               terms: '0'
             };
             db.parties.push(existingP);
@@ -2975,7 +3275,7 @@ export function loanForm2() {
             type: 'lender',
             phone: '',
             gstin: '',
-            state: db.biz.state || 'Odisha',
+            state: db.biz.state || '',
             terms: '0'
           };
           db.parties.push(existing);
@@ -3972,7 +4272,7 @@ export function showBackupModal() {
   };
 
   $('#btnDownloadBackup').onclick = () => {
-    downloadJSON(db, `bufin_backup_${(db.biz.name || 'PD_ENTERPRISES').replace(/[^a-zA-Z0-9_-]/g, '_')}`);
+    downloadJSON(db, `bufin_backup_${(db.biz.name || 'BUFIN_LEDGER').replace(/[^a-zA-Z0-9_-]/g, '_')}`);
     toast('System JSON backup downloaded');
   };
 
@@ -4247,4 +4547,302 @@ export function showRestoreModal() {
       toast('Restore failed: ' + (e.message || e));
     }
   };
+}
+
+export function executeCloseFinancialYear(onSuccess) {
+  const fy = getFiscalYear(today());
+
+  // 1. Trial Balance Equilibrium Check
+  let totalDebits = 0;
+  let totalCredits = 0;
+  const postedEntries = (db.entries || []).filter(e => e.status !== 'reversed' && (e.date || '') <= fy.endDate);
+
+  for (const e of postedEntries) {
+    for (const l of (e.lines || [])) {
+      totalDebits += Number(l.d) || 0;
+      totalCredits += Number(l.c) || 0;
+    }
+  }
+
+  if (totalDebits !== totalCredits) {
+    return {
+      success: false,
+      reason: `Trial balance is not in equilibrium! Debits (${fmt(totalDebits)}) and Credits (${fmt(totalCredits)}) differ by ${fmt(Math.abs(totalDebits - totalCredits))}.`
+    };
+  }
+
+  // 2. Compute Account Balances as of fy.endDate
+  const acctBalances = {};
+  for (const a of (db.accounts || [])) {
+    acctBalances[a.code] = { code: a.code, name: a.name, t: a.t, d: 0, c: 0 };
+  }
+
+  for (const e of postedEntries) {
+    for (const l of (e.lines || [])) {
+      if (!acctBalances[l.a]) {
+        const found = acc(l.a);
+        acctBalances[l.a] = { code: l.a, name: found ? found.name : l.a, t: found ? found.t : 'A', d: 0, c: 0 };
+      }
+      acctBalances[l.a].d += Number(l.d) || 0;
+      acctBalances[l.a].c += Number(l.c) || 0;
+    }
+  }
+
+  // Calculate Net Income from P&L accounts (4xxx / Income and 5xxx / Expense)
+  let totalIncome = 0;
+  let totalExpense = 0;
+  for (const code in acctBalances) {
+    const ab = acctBalances[code];
+    const isIncome = ab.t === 'I' || code.startsWith('4');
+    const isExpense = ab.t === 'X' || code.startsWith('5');
+    if (isIncome) totalIncome += (ab.c - ab.d);
+    if (isExpense) totalExpense += (ab.d - ab.c);
+  }
+  const netIncome = totalIncome - totalExpense;
+
+  // Build carry-forward lines for Balance Sheet accounts (Asset, Liability, Equity)
+  const carryLines = [];
+  let cfDebits = 0;
+  let cfCredits = 0;
+
+  for (const code in acctBalances) {
+    const ab = acctBalances[code];
+    const isPL = ab.t === 'I' || ab.t === 'X' || code.startsWith('4') || code.startsWith('5');
+    if (isPL) continue;
+
+    // Assets: normal balance Debit
+    if (ab.t === 'A' || code.startsWith('1')) {
+      const netDebit = ab.d - ab.c;
+      if (netDebit > 0) {
+        carryLines.push({ a: code, d: netDebit, c: 0 });
+        cfDebits += netDebit;
+      } else if (netDebit < 0) {
+        carryLines.push({ a: code, d: 0, c: -netDebit });
+        cfCredits += (-netDebit);
+      }
+    }
+    // Liabilities: normal balance Credit
+    else if (ab.t === 'L' || code.startsWith('2')) {
+      const netCredit = ab.c - ab.d;
+      if (netCredit > 0) {
+        carryLines.push({ a: code, d: 0, c: netCredit });
+        cfCredits += netCredit;
+      } else if (netCredit < 0) {
+        carryLines.push({ a: code, d: -netCredit, c: 0 });
+        cfDebits += (-netCredit);
+      }
+    }
+    // Equity (excluding Retained Earnings / 3200 for a moment): normal balance Credit
+    else if ((ab.t === 'E' || code.startsWith('3')) && code !== '3200') {
+      const netCredit = ab.c - ab.d;
+      if (netCredit > 0) {
+        carryLines.push({ a: code, d: 0, c: netCredit });
+        cfCredits += netCredit;
+      } else if (netCredit < 0) {
+        carryLines.push({ a: code, d: -netCredit, c: 0 });
+        cfDebits += (-netCredit);
+      }
+    }
+  }
+
+  // Account 3200 (Opening Balance Equity / Retained Earnings) absorbs existing 3200 + netIncome
+  const priorRetained = acctBalances['3200'] ? (acctBalances['3200'].c - acctBalances['3200'].d) : 0;
+  const newRetained = priorRetained + netIncome;
+
+  if (newRetained > 0) {
+    carryLines.push({ a: '3200', d: 0, c: newRetained });
+    cfCredits += newRetained;
+  } else if (newRetained < 0) {
+    carryLines.push({ a: '3200', d: -newRetained, c: 0 });
+    cfDebits += (-newRetained);
+  }
+
+  // Equilibrium adjustment if any rounding discrepancy exists
+  if (cfDebits !== cfCredits) {
+    const diff = cfDebits - cfCredits;
+    const existing3200 = carryLines.find(l => l.a === '3200');
+    if (existing3200) {
+      if (diff > 0) existing3200.c += diff;
+      else existing3200.d += (-diff);
+    } else {
+      carryLines.push(diff > 0 ? { a: '3200', d: 0, c: diff } : { a: '3200', d: -diff, c: 0 });
+    }
+  }
+
+  db.biz.lock = fy.endDate;
+
+  if (!acc('3200')) db.accounts.push({ code: '3200', name: 'Opening Balance Equity', t: 'E' });
+
+  const openEntry = post({
+    date: fy.nextStartDate,
+    narr: `Opening balance carry-forward for ${fy.nextLabel}`,
+    src: 'open',
+    lines: carryLines
+  });
+  if (openEntry) {
+    openEntry.at = fy.nextStartDate + 'T00:00:00.000Z';
+  }
+
+  log('close_fy', `${fy.label} -> lock ${fy.endDate}, carry-forward ${fy.nextLabel}`);
+  save();
+  toast(`Financial year ${fy.label} closed successfully!`);
+  if (onSuccess) onSuccess(`Financial year ${fy.label} closed successfully!`);
+  else if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('bufin-render'));
+
+  return { success: true, openEntry, fy, netIncome, totalIncome, totalExpense, carryLines };
+}
+
+export function closeFinancialYearAction(onSuccess) {
+  const fy = getFiscalYear(today());
+
+  // 1. Trial Balance Equilibrium Check
+  let totalDebits = 0;
+  let totalCredits = 0;
+  const postedEntries = (db.entries || []).filter(e => e.status !== 'reversed' && (e.date || '') <= fy.endDate);
+
+  for (const e of postedEntries) {
+    for (const l of (e.lines || [])) {
+      totalDebits += Number(l.d) || 0;
+      totalCredits += Number(l.c) || 0;
+    }
+  }
+
+  if (totalDebits !== totalCredits) {
+    modal(`<h3>Cannot Close Financial Year</h3>
+      <p style="color:var(--rd,#dc2626); margin-top:8px; line-height:1.5;">
+        Trial balance is not in equilibrium! Debits (${fmt(totalDebits)}) and Credits (${fmt(totalCredits)}) differ by ${fmt(Math.abs(totalDebits - totalCredits))}.
+        Please resolve ledger discrepancies before closing the financial year.
+      </p>
+      <div class="row" style="margin-top:16px;">
+        <button id="closeFyDiscrepancyBtn" class="p">Understood</button>
+      </div>`);
+    $('#closeFyDiscrepancyBtn').onclick = closeM;
+    return;
+  }
+
+  // 2. Compute Account Balances as of fy.endDate
+  const acctBalances = {};
+  for (const a of (db.accounts || [])) {
+    acctBalances[a.code] = { code: a.code, name: a.name, t: a.t, d: 0, c: 0 };
+  }
+
+  for (const e of postedEntries) {
+    for (const l of (e.lines || [])) {
+      if (!acctBalances[l.a]) {
+        const found = acc(l.a);
+        acctBalances[l.a] = { code: l.a, name: found ? found.name : l.a, t: found ? found.t : 'A', d: 0, c: 0 };
+      }
+      acctBalances[l.a].d += Number(l.d) || 0;
+      acctBalances[l.a].c += Number(l.c) || 0;
+    }
+  }
+
+  // Calculate Net Income from P&L accounts (4xxx / Income and 5xxx / Expense)
+  let totalIncome = 0;
+  let totalExpense = 0;
+  for (const code in acctBalances) {
+    const ab = acctBalances[code];
+    const isIncome = ab.t === 'I' || code.startsWith('4');
+    const isExpense = ab.t === 'X' || code.startsWith('5');
+    if (isIncome) totalIncome += (ab.c - ab.d);
+    if (isExpense) totalExpense += (ab.d - ab.c);
+  }
+  const netIncome = totalIncome - totalExpense;
+
+  // Build carry-forward lines for Balance Sheet accounts (Asset, Liability, Equity)
+  const carryLines = [];
+  let cfDebits = 0;
+  let cfCredits = 0;
+
+  for (const code in acctBalances) {
+    const ab = acctBalances[code];
+    const isPL = ab.t === 'I' || ab.t === 'X' || code.startsWith('4') || code.startsWith('5');
+    if (isPL) continue;
+
+    // Assets: normal balance Debit
+    if (ab.t === 'A' || code.startsWith('1')) {
+      const netDebit = ab.d - ab.c;
+      if (netDebit > 0) {
+        carryLines.push({ a: code, d: netDebit, c: 0 });
+        cfDebits += netDebit;
+      } else if (netDebit < 0) {
+        carryLines.push({ a: code, d: 0, c: -netDebit });
+        cfCredits += (-netDebit);
+      }
+    }
+    // Liabilities: normal balance Credit
+    else if (ab.t === 'L' || code.startsWith('2')) {
+      const netCredit = ab.c - ab.d;
+      if (netCredit > 0) {
+        carryLines.push({ a: code, d: 0, c: netCredit });
+        cfCredits += netCredit;
+      } else if (netCredit < 0) {
+        carryLines.push({ a: code, d: -netCredit, c: 0 });
+        cfDebits += (-netCredit);
+      }
+    }
+    // Equity (excluding Retained Earnings / 3200 for a moment): normal balance Credit
+    else if ((ab.t === 'E' || code.startsWith('3')) && code !== '3200') {
+      const netCredit = ab.c - ab.d;
+      if (netCredit > 0) {
+        carryLines.push({ a: code, d: 0, c: netCredit });
+        cfCredits += netCredit;
+      } else if (netCredit < 0) {
+        carryLines.push({ a: code, d: -netCredit, c: 0 });
+        cfDebits += (-netCredit);
+      }
+    }
+  }
+
+  // Account 3200 (Opening Balance Equity / Retained Earnings) absorbs existing 3200 + netIncome
+  const priorRetained = acctBalances['3200'] ? (acctBalances['3200'].c - acctBalances['3200'].d) : 0;
+  const newRetained = priorRetained + netIncome;
+
+  if (newRetained > 0) {
+    carryLines.push({ a: '3200', d: 0, c: newRetained });
+    cfCredits += newRetained;
+  } else if (newRetained < 0) {
+    carryLines.push({ a: '3200', d: -newRetained, c: 0 });
+    cfDebits += (-newRetained);
+  }
+
+  // Equilibrium adjustment if any rounding discrepancy exists
+  if (cfDebits !== cfCredits) {
+    const diff = cfDebits - cfCredits;
+    const existing3200 = carryLines.find(l => l.a === '3200');
+    if (existing3200) {
+      if (diff > 0) existing3200.c += diff;
+      else existing3200.d += (-diff);
+    } else {
+      carryLines.push(diff > 0 ? { a: '3200', d: 0, c: diff } : { a: '3200', d: -diff, c: 0 });
+    }
+  }
+
+  modal(`<h3>Close Financial Year (${fy.label})</h3>
+    <div style="font-size:13px; line-height:1.5; color:var(--tx); margin:10px 0;">
+      <p><b>Summary for period ending ${fy.endDate}:</b></p>
+      <ul style="margin:4px 0 10px 16px; padding:0; color:var(--t2);">
+        <li>Total Revenue / Income: <b>${fmt(totalIncome)}</b></li>
+        <li>Total Expenses &amp; COGS: <b>${fmt(totalExpense)}</b></li>
+        <li>Net Profit / Loss: <b style="color:${netIncome >= 0 ? 'var(--ok,#16a34a)' : 'var(--rd,#dc2626)'}">${fmt(netIncome)}</b></li>
+        <li>Carried Forward Accounts: <b>${carryLines.length}</b></li>
+      </ul>
+      <p style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; font-size:12px; color:#1e40af;">
+        <b>Non-destructive action:</b> All past transactions and documents remain preserved.<br>
+        1. Lock period will be set to <b>${fy.endDate}</b>.<br>
+        2. Opening carry-forward entry (src: 'open') will be created on <b>${fy.nextStartDate}</b> for <b>${fy.nextLabel}</b>.<br>
+        3. P&L Net ${netIncome >= 0 ? 'Profit' : 'Loss'} will transfer to Retained Earnings (3200).
+      </p>
+    </div>
+    <div class="row" style="margin-top:16px;">
+      <button id="confirmCloseFyBtn" class="p">Confirm &amp; Close FY</button>
+      <button id="cancelCloseFyBtn">Cancel</button>
+    </div>`);
+
+  $('#confirmCloseFyBtn').onclick = () => {
+    executeCloseFinancialYear(onSuccess);
+    closeM();
+  };
+
+  $('#cancelCloseFyBtn').onclick = closeM;
 }

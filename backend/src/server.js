@@ -83,6 +83,23 @@ const eq = (a, b) => {
   return x.length === y.length && crypto.timingSafeEqual(x, y);
 };
 
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = crypto.scryptSync(password, salt, 64);
+  return `${salt}:${derived.toString('hex')}`;
+}
+
+function verifyPassword(supplied, storedHashOrEnv) {
+  if (!supplied || !storedHashOrEnv) return false;
+  if (storedHashOrEnv.includes(':')) {
+    const [salt, key] = storedHashOrEnv.split(':');
+    const derived = crypto.scryptSync(supplied, salt, 64);
+    const keyBuf = Buffer.from(key, 'hex');
+    return keyBuf.length === derived.length && crypto.timingSafeEqual(keyBuf, derived);
+  }
+  return eq(supplied, storedHashOrEnv);
+}
+
 // Server-side active sessions: sid -> expiresAt
 const activeSessions = new Map();
 
@@ -202,7 +219,12 @@ app.post('/api/login', async (q, s) => {
   }
 
   const supplied = String((q.body || {}).pin || (q.body || {}).password || '');
-  if (!eq(supplied, PW)) {
+  let storedAuth = null;
+  try {
+    storedAuth = await store.getAuth();
+  } catch (e) {}
+
+  if (!verifyPassword(supplied, storedAuth || PW)) {
     const current = tries.get(clientIp) || { count: 0, firstFail: now, lastFail: now, lockUntil: 0 };
     current.count += 1;
     current.lastFail = now;
@@ -350,7 +372,12 @@ app.post('/api/state/restore', async (q, s, n) => {
   try {
     const { password, pin, data } = q.body || {};
     const supplied = String(pin || password || '');
-    if (!eq(supplied, PW)) {
+    let storedAuth = null;
+    try {
+      storedAuth = await store.getAuth();
+    } catch (e) {}
+
+    if (!verifyPassword(supplied, storedAuth || PW)) {
       return s.status(401).json({ error: 'Wrong password or PIN code' });
     }
 
@@ -419,6 +446,37 @@ app.post('/api/state/restore', async (q, s, n) => {
   }
 });
 
+// Change Password endpoint: Authenticated, verifies old password, hashes new one and persists to database/store
+app.post('/api/change-password', async (q, s, n) => {
+  try {
+    const { currentPassword, newPassword } = q.body || {};
+    if (!currentPassword || !newPassword) {
+      return s.status(400).json({ error: 'Both current password and new password are required' });
+    }
+
+    let storedAuth = null;
+    try {
+      storedAuth = await store.getAuth();
+    } catch (e) {}
+
+    if (!verifyPassword(String(currentPassword), storedAuth || PW)) {
+      return s.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    const newPwStr = String(newPassword).trim();
+    if (newPwStr.length < 4) {
+      return s.status(400).json({ error: 'New password must be at least 4 characters long' });
+    }
+
+    const hashed = hashPassword(newPwStr);
+    await store.setAuth(hashed);
+
+    return s.json({ ok: true, message: 'Password updated successfully' });
+  } catch (e) {
+    n(e);
+  }
+});
+
 // Single Page Application routing
 app.get(['/', '/index.html'], (q, s) => {
   s.set({
@@ -451,5 +509,8 @@ if (require.main === module) {
     process.exit(1);
   });
 }
+
+app.hashPassword = hashPassword;
+app.verifyPassword = verifyPassword;
 
 module.exports = app;

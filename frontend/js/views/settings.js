@@ -1,8 +1,11 @@
 import { esc, head } from '../modules/utils.js';
-import { db } from '../modules/state.js';
-import { fld } from '../modules/components.js';
+import { db, INDIAN_STATES, getStateByName, getFiscalYear } from '../modules/state.js';
+import { fld, sel, opts } from '../modules/components.js';
 
 export function renderSettings() {
+  const fy = getFiscalYear();
+  const stateCode = db.biz.gstin ? db.biz.gstin.slice(0, 2) : (getStateByName(db.biz.state)?.code || '');
+
   return head('Settings') +
     `<div class="wrap" style="padding:18px;">
       <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd);padding-bottom:12px;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
@@ -25,26 +28,38 @@ export function renderSettings() {
           </div>
         </div>
         <span style="font-size:11.5px;font-weight:600;background:#f1f5f9;color:#475569;padding:4px 10px;border-radius:6px;">
-          GST Active: ${esc(db.biz.state || 'Odisha')}
+          GST Active: ${esc(db.biz.state ? (db.biz.state + (stateCode ? ' (' + stateCode + ')' : '')) : 'Not set')}
         </span>
       </div>
 
       <form id="bf">
         <div class="two">
-          ${fld('name', 'Business name', 'text', db.biz.name || '')}
-          ${fld('owner', 'Proprietor name', 'text', db.biz.owner || '')}
+          ${fld('name', 'Business name *', 'text', db.biz.name || '')}
+          ${fld('owner', 'Proprietor name *', 'text', db.biz.owner || '')}
         </div>
         <div class="two">
           ${fld('gstin', 'GSTIN', 'text', db.biz.gstin || '')}
-          ${fld('state', 'Home State (for CGST+SGST vs IGST)', 'text', db.biz.state || '')}
+          <label>Home State (for CGST+SGST vs IGST) *
+            <select name="state" required style="width:100%; min-height:40px; padding:8px 12px; border-radius:8px; border:1px solid var(--bd,#cbd5e1); font-size:14px; background:#fff; box-sizing:border-box;">
+              <option value="">Select State</option>
+              ${INDIAN_STATES.map(s => `<option value="${esc(s.name)}" ${s.name.toLowerCase() === (db.biz.state || '').toLowerCase() ? 'selected' : ''}>${esc(s.name)} (Code ${esc(s.code)})</option>`).join('')}
+            </select>
+          </label>
         </div>
         <div class="two">
           ${fld('phone', 'Mobile / Phone', 'text', db.biz.phone || '')}
           ${fld('email', 'Email', 'text', db.biz.email || '')}
         </div>
         <div class="two">
-          ${fld('prefix', 'Invoice Prefix', 'text', db.biz.prefix || '')}
+          <label>Invoice Prefix *
+            <input type="text" name="prefix" value="${esc(db.biz.prefix || 'PD/{FY}/')}" placeholder="e.g. PD/{FY}/" required style="width:100%; min-height:40px; padding:8px 12px; border-radius:8px; border:1px solid var(--bd,#cbd5e1); font-size:14px; box-sizing:border-box;">
+            <small style="font-size:11px; color:#64748b;">Token {FY} will be replaced with 4-digit fiscal year (e.g. 2627) and restart sequence</small>
+          </label>
           ${fld('upi', 'UPI ID', 'text', db.biz.upi || '')}
+        </div>
+        <div class="two">
+          ${fld('fyStart', 'Financial Year Start (MM-DD)', 'text', db.biz.fyStart || '04-01')}
+          ${fld('autoLockMinutes', 'Idle Auto-Lock Timeout (minutes)', 'number', db.biz.autoLockMinutes || '5')}
         </div>
 
         <div style="font-size:13px;font-weight:700;color:#1e293b;margin:14px 0 10px;padding-top:12px;border-top:1px dashed #e2e8f0;display:flex;align-items:center;gap:6px;">
@@ -88,6 +103,61 @@ export function renderSettings() {
           <span style="font-size:12px;color:#64748b;">Changes dynamically update company letterhead, tax invoices, and accounting locks.</span>
         </div>
       </form>
+    </div>
+
+    <h3>Financial Year Management</h3>
+    <div class="wrap" style="padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#0f172a;">Active Fiscal Year: <b>${esc(fy.label)}</b> (${esc(fy.startDate)} to ${esc(fy.endDate)})</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px;">
+            Lock status: ${db.biz.lock ? `<span style="color:#2563eb;font-weight:600;">Locked up to ${esc(db.biz.lock)}</span>` : '<span style="color:#64748b;">No active lock</span>'} · Next Opening: <b>${esc(fy.nextStartDate)} (${esc(fy.nextLabel)})</b>
+          </div>
+        </div>
+        <button type="button" class="p" data-a="closefy" style="display:inline-flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Close Financial Year</span>
+        </button>
+      </div>
+    </div>
+
+    <h3>Security &amp; Password Access</h3>
+    <div class="wrap" style="padding:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="width:36px;height:36px;border-radius:9px;background:#fef2f2;color:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#0f172a;">Change Application Password / PIN</div>
+          <div style="font-size:12px;color:#64748b;">Update your access credentials. Stored securely in database using cryptographic hash.</div>
+        </div>
+      </div>
+      <form id="changePasswordForm">
+        <div class="two" style="gap:12px;">
+          <label>Current Password / PIN *
+            <input type="password" id="curPwInput" required autocomplete="current-password" placeholder="Enter current password or PIN" style="width:100%; min-height:40px; padding:8px 12px; border:1px solid var(--bd,#cbd5e1); border-radius:8px; font-size:14px; box-sizing:border-box;">
+          </label>
+          <label>New Password / PIN (min 4 chars) *
+            <input type="password" id="newPwInput" required minlength="4" autocomplete="new-password" placeholder="Enter new password or PIN" style="width:100%; min-height:40px; padding:8px 12px; border:1px solid var(--bd,#cbd5e1); border-radius:8px; font-size:14px; box-sizing:border-box;">
+          </label>
+        </div>
+        <div class="two" style="gap:12px; margin-top:8px;">
+          <label>Confirm New Password / PIN *
+            <input type="password" id="confPwInput" required minlength="4" autocomplete="new-password" placeholder="Re-enter new password or PIN" style="width:100%; min-height:40px; padding:8px 12px; border:1px solid var(--bd,#cbd5e1); border-radius:8px; font-size:14px; box-sizing:border-box;">
+          </label>
+          <div style="display:flex; align-items:flex-end;">
+            <button type="submit" class="p" style="height:40px; padding:0 20px; font-weight:600;">Update Password</button>
+          </div>
+        </div>
+        <div id="pwChangeStat" style="margin-top:8px; font-size:12.5px; font-weight:600;"></div>
+      </form>
+    </div>
     </div>
     <h3>Cloud Storage &amp; Receipts (Cloudinary)</h3>
     <div class="wrap" style="padding:16px">

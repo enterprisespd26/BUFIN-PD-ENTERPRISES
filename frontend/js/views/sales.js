@@ -1,7 +1,7 @@
 import { $, $$, esc, fmt, head, toast, today, uid, P, convertRate, downloadCSV, debounce as _utilsDebounce } from '../modules/utils.js';
-import { db, setDb, save, post, reverse, out, dstat, pn, isC, isS, paid, next, log, ensureAdvanceAccounts, getPartyAdvanceBalance } from '../modules/state.js';
+import { db, setDb, save, post, reverse, out, dstat, pn, isC, isS, paid, next, log, ensureAdvanceAccounts, getPartyAdvanceBalance, formatPrefix, getFiscalYear, getStateByName, getStateByCode, INDIAN_STATES, isFirstRunNeeded } from '../modules/state.js';
 import { partyForm, markSalePaid } from '../modules/actions.js';
-import { showActionSheet, form } from '../modules/components.js';
+import { showActionSheet, form, modal, closeM } from '../modules/components.js';
 import { enhanceMobile } from '../modules/mobile.js';
 import { PD_LOGO } from '../modules/logo_data.js';
 import {
@@ -190,15 +190,16 @@ export function detectHsnCode(name) {
 function getMode(cs, modeVal, rateVal, cg) {
   if (modeVal && modeVal !== 'auto') return modeVal;
   if (+rateVal === 0) return 'none';
-  const bizGstin = String(db.biz.gstin || '21IFNPD3153M1ZC').trim().toUpperCase();
-  const bizCode = bizGstin.length >= 2 ? bizGstin.slice(0, 2) : '21';
-  const home = (db.biz.state || 'Odisha').trim().toLowerCase();
+  const bizGstin = String(db.biz.gstin || '').trim().toUpperCase();
+  const bizCode = bizGstin.length >= 2 ? bizGstin.slice(0, 2) : (getStateByName(db.biz.state)?.code || '');
+  const home = String(db.biz.state || '').trim().toLowerCase();
   const g = String(cg || '').trim().toUpperCase();
-  if (g.length >= 2 && /^\d{2}/.test(g)) {
+  if (g.length >= 2 && /^\d{2}/.test(g) && bizCode) {
     return g.slice(0, 2) === bizCode ? 'intra' : 'inter';
   }
   const s = String(cs || '').trim().toLowerCase();
-  if (s === '21' || s === home || s === 'odisha' || s === 'orissa') return 'intra';
+  if (s && ((bizCode && s === bizCode) || (home && s === home) || (bizCode && getStateByName(s)?.code === bizCode))) return 'intra';
+  if (!s && !g) return 'intra';
   return 'inter';
 }
 
@@ -256,12 +257,14 @@ function calcFigs(o) {
   };
 }
 
-export function nextInvNo() {
-  const prefix = db.biz.prefix || 'PD/2627/';
+export function nextInvNo(dateStr = today()) {
+  const template = db.biz.prefix || 'PD/{FY}/';
+  const prefix = formatPrefix(template, dateStr);
   let maxSeq = 0;
   for (const d of (db.docs || [])) {
-    if (d.type === 'sale' && d.no) {
-      const m = String(d.no).match(/(\d+)$/);
+    if (d.type === 'sale' && d.no && String(d.no).startsWith(prefix)) {
+      const remainder = String(d.no).slice(prefix.length);
+      const m = remainder.match(/^(\d+)/);
       if (m) {
         const num = parseInt(m[1], 10);
         if (!isNaN(num) && num > maxSeq) maxSeq = num;
@@ -334,14 +337,14 @@ export function renderSheet(o) {
           ${esc(o.c?.a || '')}<br>
           ${o.c?.p ? 'Mob: ' + esc(o.c.p) + '<br>' : ''}
           ${o.c?.g ? 'GSTIN: ' + esc(o.c.g) + '<br>' : ''}
-          State: ${esc(o.c?.s || s.state || 'Odisha')}
+          State: ${esc(o.c?.s || s.state || '')}
         </div>
         <div class="box">
           Invoice no: <b>${esc(o.no)}</b><br>
           Date: <b>${o.date ? o.date.split('-').reverse().join('/') : ''}</b><br>
           ${o.veh ? 'Vehicle no: <b>' + esc(o.veh) + '</b><br>' : ''}
           Payment: ${esc(o.pm || 'Cash')}<br>
-          Place of supply: ${esc(o.c?.s || s.state || 'Odisha')}
+          Place of supply: ${esc(o.c?.s || s.state || '')}
         </div>
       </div>
       <div class="tbl-scroll"><table class="pd-sheet-table">
@@ -470,7 +473,7 @@ export function mkPdf(o) {
       ...p.splitTextToSize(o.c?.a || '', bw - 4),
       (o.c?.p ? 'Mob: ' + o.c.p : ''),
       (o.c?.g ? 'GSTIN: ' + o.c.g : ''),
-      'State: ' + (o.c?.s || s.state || 'Odisha')
+      'State: ' + (o.c?.s || s.state || '')
     ].filter((v, i) => i < 2 || v);
 
     const rl = [
@@ -478,7 +481,7 @@ export function mkPdf(o) {
       'Date: ' + (o.date ? o.date.split('-').reverse().join('/') : ''),
       ...(o.veh ? ['Vehicle no: ' + o.veh] : []),
       'Payment: ' + (o.pm || 'Cash'),
-      'Place of supply: ' + (o.c?.s || s.state || 'Odisha')
+      'Place of supply: ' + (o.c?.s || s.state || '')
     ];
     const bh = Math.max(bl.length, rl.length) * 4.3 + 3;
     p.setDrawColor(150).setLineWidth(0.2).rect(M, y, bw, bh).rect(M + bw + 4, y, bw, bh);
@@ -645,7 +648,7 @@ export function showInvoicePreviewModal(doc) {
       n: party ? party.name : (doc.desc || 'Customer'),
       p: party?.phone || '',
       g: party?.gstin || '',
-      s: party?.state || db.biz.state || 'Odisha',
+      s: party?.state || db.biz.state || '',
       a: party?.addr || ''
     };
   }
@@ -1174,7 +1177,7 @@ export function renderSales() {
   const custName = activeParty ? activeParty.name : (activeInv ? (activeInv.c?.n || pn(activeInv.party) || '') : '');
   const custPhone = activeParty ? (activeParty.phone || '') : (activeInv ? (activeInv.c?.p || '') : '');
   const custGstin = activeParty ? (activeParty.gstin || '') : (activeInv ? (activeInv.c?.g || '') : '');
-  const custState = activeParty ? (activeParty.state || db.biz.state || 'Odisha') : (activeInv ? (activeInv.c?.s || db.biz.state || 'Odisha') : (db.biz.state || 'Odisha'));
+  const custState = activeParty ? (activeParty.state || db.biz.state || '') : (activeInv ? (activeInv.c?.s || db.biz.state || '') : (db.biz.state || ''));
   const custAddr = activeParty ? (activeParty.addr || '') : (activeInv ? (activeInv.c?.a || '') : '');
   const invDisc = activeInv ? (activeInv.disc || 0) : 0;
   const invRate = activeInv ? (activeInv.rate !== undefined ? activeInv.rate : 18) : 18;
@@ -1307,7 +1310,7 @@ export function renderSales() {
             <input type="text" id="pd_cg" style="text-transform:uppercase" value="${esc(custGstin)}" placeholder="e.g. 21AAAAA0000A1Z5">
           </label>
           <label class="pd-label">State
-            <input type="text" id="pd_cs" value="${esc(custState)}" placeholder="State (e.g. Odisha)">
+            <input type="text" id="pd_cs" value="${esc(custState)}" placeholder="State">
           </label>
           <label class="pd-label" style="grid-column:1/-1">Address
             <input type="text" id="pd_ca" value="${esc(custAddr)}" placeholder="Customer billing address">
@@ -1757,7 +1760,7 @@ export function bindSalesEvents() {
     });
     salesState.lines = lines;
 
-    const custState = $('#pd_cs')?.value || db.biz.state || 'Odisha';
+    const custState = $('#pd_cs')?.value || db.biz.state || '';
     const invMode = $('#pd_mode')?.value || 'auto';
     const invRate = parseFloat($('#pd_rate')?.value) || 0;
     const payReceived = Boolean($('#pd_pay_received')?.checked);
@@ -1943,7 +1946,7 @@ export function bindSalesEvents() {
         if ($('#pd_cn')) $('#pd_cn').value = p.name;
         if ($('#pd_cp')) $('#pd_cp').value = p.phone || '';
         if ($('#pd_cg')) $('#pd_cg').value = p.gstin || '';
-        if ($('#pd_cs')) $('#pd_cs').value = p.state || db.biz.state || 'Odisha';
+        if ($('#pd_cs')) $('#pd_cs').value = p.state || db.biz.state || '';
         if ($('#pd_ca')) $('#pd_ca').value = p.addr || '';
         recalculateForm();
       }
@@ -1974,7 +1977,7 @@ export function bindSalesEvents() {
         if ($('#pd_sel_customer')) $('#pd_sel_customer').value = p.id;
         if ($('#pd_cp')) $('#pd_cp').value = p.phone || '';
         if ($('#pd_cg')) $('#pd_cg').value = p.gstin || '';
-        if ($('#pd_cs')) $('#pd_cs').value = p.state || db.biz.state || 'Odisha';
+        if ($('#pd_cs')) $('#pd_cs').value = p.state || db.biz.state || '';
         if ($('#pd_ca')) $('#pd_ca').value = p.addr || '';
         recalculateForm();
       }
@@ -1986,10 +1989,9 @@ export function bindSalesEvents() {
     cgInput.oninput = () => {
       const val = cgInput.value.trim().toUpperCase();
       if (val.length >= 2 && /^\d{2}/.test(val)) {
-        if (val.startsWith('21')) {
-          if ($('#pd_cs') && (!$('#pd_cs').value || $('#pd_cs').value.trim() !== 'Odisha')) {
-            $('#pd_cs').value = 'Odisha';
-          }
+        const stateObj = getStateByCode(val.slice(0, 2));
+        if (stateObj && $('#pd_cs')) {
+          $('#pd_cs').value = stateObj.name;
         }
       }
       recalculateForm();
@@ -2044,7 +2046,7 @@ export function bindSalesEvents() {
       }
       if (paidInput) {
         paidInput.dataset.autoSync = '1';
-        const custState = $('#pd_cs')?.value || db.biz.state || 'Odisha';
+        const custState = $('#pd_cs')?.value || db.biz.state || '';
         const invMode = $('#pd_mode')?.value || 'auto';
         const invRate = parseFloat($('#pd_rate')?.value) || 0;
         const invDisc = parseFloat($('#pd_disc')?.value) || 0;
@@ -2213,17 +2215,24 @@ export function bindSalesEvents() {
 
   // Save & Preview / Update Invoice
   const handleSaveInvoice = async () => {
+    if (!db.biz?.name || !db.biz?.state || !db.biz?.prefix) {
+      toast('Business setup incomplete. Configure Business Name, State, and Prefix before creating invoices');
+      if (typeof window !== 'undefined') window.location.hash = '#/settings';
+      return;
+    }
+
     const no = ($('#pd_no')?.value || '').trim();
     const date = $('#pd_dt')?.value || today();
     const veh = ($('#pd_veh')?.value || '').trim();
     const cName = ($('#pd_cn')?.value || '').trim();
     const cPhone = ($('#pd_cp')?.value || '').trim();
     const cGstin = ($('#pd_cg')?.value || '').trim().toUpperCase();
-    const cState = ($('#pd_cs')?.value || db.biz.state || 'Odisha').trim();
+    const cState = ($('#pd_cs')?.value || db.biz.state || '').trim();
     const cAddr = ($('#pd_ca')?.value || '').trim();
 
     if (!no) return toast('Invoice number is required');
     if (!cName) return toast('Customer name is required');
+    if (!cState) return toast('State is required for GST calculation');
     if (cGstin && !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/.test(cGstin)) {
       return toast('Customer GSTIN format looks wrong');
     }

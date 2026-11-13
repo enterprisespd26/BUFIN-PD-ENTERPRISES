@@ -220,10 +220,25 @@ export function unlockApp() {
   if (tab) tab.style.display = '';
 }
 
-export function showPinLogin(onSuccess) {
+export function showPinLogin(onSuccess, msgOpts = null) {
   activeCallback = onSuccess;
   pin = '';
   updateDots();
+
+  const titleEl = $('#loginPinTitle');
+  const subEl = $('#loginPinSub');
+  if (titleEl && subEl) {
+    if (typeof msgOpts === 'string') {
+      titleEl.textContent = 'App Locked';
+      subEl.textContent = msgOpts;
+    } else if (msgOpts && typeof msgOpts === 'object') {
+      titleEl.textContent = msgOpts.title || 'Enter 4-Digit PIN';
+      subEl.textContent = msgOpts.sub || 'Access business ledger & financials';
+    } else {
+      titleEl.textContent = 'Enter 4-Digit PIN';
+      subEl.textContent = 'Access business ledger & financials';
+    }
+  }
 
   const errEl = $('#pinError');
   if (errEl) errEl.textContent = '';

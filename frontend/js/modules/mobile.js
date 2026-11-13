@@ -876,7 +876,8 @@ const CSS = String.raw`
   /* Chart of Accounts Mobile Card Optimization: Edit button top-right aligned with card name */
   table.mcard.coa-table tr,
   table.coa-table.mcard tr,
-  table.coa-table tr.coa-row {
+  table.coa-table tr.coa-row,
+  .wrap:not(.no-cards) table.coa-table tbody tr {
     position: relative !important;
     padding-top: 12px !important;
     padding-bottom: 8px !important;
@@ -884,7 +885,9 @@ const CSS = String.raw`
 
   table.mcard.coa-table td.mc-title,
   table.coa-table.mcard td.mc-title,
-  table.coa-table td.coa-title-td {
+  table.coa-table td.coa-title-td,
+  table.coa-table tbody tr td:first-child,
+  .wrap:not(.no-cards) table.coa-table tbody tr td:first-child {
     padding-right: 95px !important;
     min-height: 44px !important;
     display: flex !important;
@@ -898,7 +901,9 @@ const CSS = String.raw`
 
   table.mcard.coa-table td.mc-title > *,
   table.coa-table.mcard td.mc-title > *,
-  table.coa-table td.coa-title-td > * {
+  table.coa-table td.coa-title-td > *,
+  table.coa-table tbody tr td:first-child > *,
+  .wrap:not(.no-cards) table.coa-table tbody tr td:first-child > * {
     text-align: left !important;
     max-width: 100% !important;
   }

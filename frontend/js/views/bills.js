@@ -459,7 +459,7 @@ export function renderBills() {
   const supName = activeSupplier ? activeSupplier.name : (activeBill ? (activeBill.sup || pn(activeBill.party) || '') : '');
   const supPhone = activeSupplier ? (activeSupplier.phone || '') : (activeBill ? (activeBill.phone || '') : '');
   const supGstin = activeSupplier ? (activeSupplier.gstin || '') : (activeBill ? (activeBill.gstin || '') : '');
-  const supState = activeSupplier ? (activeSupplier.state || db.biz.state || 'Odisha') : (activeBill ? (activeBill.state || db.biz.state || 'Odisha') : (db.biz.state || 'Odisha'));
+  const supState = activeSupplier ? (activeSupplier.state || db.biz.state || '') : (activeBill ? (activeBill.state || db.biz.state || '') : (db.biz.state || ''));
   const supAddr = activeSupplier ? (activeSupplier.addr || '') : (activeBill ? (activeBill.addr || '') : '');
   const billNo = activeBill ? (activeBill.sno || activeBill.no || '') : '';
   const billDate = activeBill ? activeBill.date : today();
@@ -1140,7 +1140,7 @@ export function bindBillsEvents() {
         if (U('sup')) U('sup').value = p.name;
         if (U('phone')) U('phone').value = p.phone || '';
         if (U('gstin')) U('gstin').value = p.gstin || '';
-        if (U('state')) U('state').value = p.state || db.biz.state || 'Odisha';
+        if (U('state')) U('state').value = p.state || db.biz.state || '';
         if (U('addr')) U('addr').value = p.addr || '';
       }
     };
@@ -1171,7 +1171,7 @@ export function bindBillsEvents() {
         if (U('sel_supplier')) U('sel_supplier').value = p.id;
         if (U('phone')) U('phone').value = p.phone || '';
         if (U('gstin')) U('gstin').value = p.gstin || '';
-        if (U('state')) U('state').value = p.state || db.biz.state || 'Odisha';
+        if (U('state')) U('state').value = p.state || db.biz.state || '';
         if (U('addr')) U('addr').value = p.addr || '';
       }
     };
@@ -1405,7 +1405,7 @@ export function bindBillsEvents() {
     const supName = (U('sup')?.value || '').trim();
     const supPhone = (U('phone')?.value || '').trim();
     const supGstin = (U('gstin')?.value || '').trim().toUpperCase();
-    const supState = (U('state')?.value || db.biz.state || 'Odisha').trim();
+    const supState = (U('state')?.value || db.biz.state || '').trim();
     const supAddr = (U('addr')?.value || '').trim();
     const billNo = (U('no')?.value || '').trim();
     const date = U('dt')?.value || today();
