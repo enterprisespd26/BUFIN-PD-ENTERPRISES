@@ -77,8 +77,8 @@ export function renderOverview() {
       ${kpi('Revenue this month', fmt(inc))}
       ${kpi('Expenses this month', fmt(exp))}
       ${kpi('Net profit this month', fmt(inc - exp))}
-      ${kpi('Receivables', fmt(rec))}
-      ${kpi('Payables', fmt(pay))}
+      ${kpi('Receivables (trade only)', fmt(rec))}
+      ${kpi('Payables (trade only)', fmt(pay))}
       ${kpi('Loans taken outstanding', fmt(ln))}
       ${kpi('Loans given outstanding', fmt(lg))}
       ${kpi('Overdue documents', od.length)}

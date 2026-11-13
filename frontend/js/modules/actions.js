@@ -1,5 +1,5 @@
 import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid, downloadCSV, downloadJSON, downloadZIP, readZipFile } from './utils.js';
-import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries, getOrCreateExpenseAccount } from './state.js';
+import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries, getOrCreateExpenseAccount, syncPartyClassifications, setVer, setBaseVer } from './state.js';
 import { modal, closeM, form, fld, sel, opts, accOpts, partyOpts } from './components.js';
 
 import { getTxnRowData } from '../views/money.js';
@@ -3054,20 +3054,32 @@ export function deleteLoanAction(id) {
     return;
   }
 
-  // Reverse all journal entries associated with this loan
-  const entries = db.entries.filter(e => e.meta && e.meta.loan === id);
-  entries.forEach(e => {
-    if (e.status === 'posted') {
-      try { reverse(e.id); } catch (err) { console.warn('Could not reverse entry:', err); }
-    }
-  });
+  // Snapshot before attempting mutation: abort without deleting if any reversal fails
+  const snapshot = JSON.parse(JSON.stringify(db));
 
-  // Remove loan
-  db.loans = db.loans.filter(x => x.id !== id);
-  save();
-  toast(`Loan ${l.name || l.ref} deleted`);
-  window.location.hash = '#/loans';
-  window.dispatchEvent(new CustomEvent('bufin-render'));
+  try {
+    // Reverse all journal entries associated with this loan
+    const entries = db.entries.filter(e => e.meta && e.meta.loan === id);
+    for (const e of entries) {
+      if (e.status === 'posted') {
+        reverse(e.id);
+      }
+    }
+
+    // Remove loan
+    db.loans = db.loans.filter(x => x.id !== id);
+
+    // Recompute party type after removal - do not leave party typed 'lender'
+    syncPartyClassifications(db);
+
+    save();
+    toast(`Loan ${l.name || l.ref} deleted`);
+    window.location.hash = '#/loans';
+    window.dispatchEvent(new CustomEvent('bufin-render'));
+  } catch (err) {
+    setDb(snapshot);
+    toast('Cannot delete loan: ' + (err.message || err));
+  }
 }
 
 export function exportLoanCsv(id) {
@@ -3793,13 +3805,18 @@ export function showRestoreModal() {
         <textarea id="restoreTextarea" rows="4" placeholder="Paste BUFIN JSON backup text here..." style="width:100%;font-size:12px;box-sizing:border-box;margin-top:6px;"></textarea>
       </details>
 
-      <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:8px 12px;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+      <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:8px 12px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
           <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
           <line x1="12" y1="9" x2="12" y2="13"></line>
           <line x1="12" y1="17" x2="12.01" y2="17"></line>
         </svg>
-        <span style="font-size:11.5px;color:#92400e;line-height:1.35;">Restoring will completely overwrite the active ledger in this browser and sync with the database.</span>
+        <span style="font-size:11.5px;color:#92400e;line-height:1.35;">Restoring will completely overwrite the active ledger. A safety backup of your current data will be automatically downloaded before applying.</span>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label for="restorePasswordInput" style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:5px;">Enter PIN or Password to authorize restore:</label>
+        <input type="password" id="restorePasswordInput" placeholder="Enter 4-digit PIN or master password" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:13px;border:1px solid #cbd5e1;border-radius:8px;" autocomplete="current-password">
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:10px;">
@@ -3813,17 +3830,48 @@ export function showRestoreModal() {
 
   const validateAndShow = (rawText) => {
     try {
-      const o = JSON.parse(rawText);
-      if (!o || !o.accounts || !o.entries) {
-        throw new Error('Invalid file: Missing BUFIN accounts or journal entries structure.');
+      const o = typeof rawText === 'object' && rawText !== null ? rawText : JSON.parse(rawText);
+      if (!o || typeof o !== 'object') throw new Error('Invalid file: expected JSON object.');
+      if (!Array.isArray(o.accounts)) throw new Error('Invalid backup: "accounts" array is missing.');
+      if (!Array.isArray(o.entries)) throw new Error('Invalid backup: "entries" array is missing.');
+      if (!Array.isArray(o.parties)) throw new Error('Invalid backup: "parties" array is missing.');
+      if (!Array.isArray(o.docs)) throw new Error('Invalid backup: "docs" array is missing.');
+      if (!Array.isArray(o.loans)) throw new Error('Invalid backup: "loans" array is missing.');
+      if (!Array.isArray(o.seq) && (typeof o.seq !== 'object' || o.seq === null)) throw new Error('Invalid backup: "seq" structure is missing.');
+      if (o.audit !== undefined && o.audit !== null && !Array.isArray(o.audit)) throw new Error('Invalid backup: "audit" must be an array.');
+
+      // Validate every entry balanced & unique refs
+      const refs = new Set();
+      const codes = new Set(o.accounts.map(a => a.code));
+      for (const e of o.entries) {
+        if (!e.ref) throw new Error('Journal entry missing reference (ref).');
+        if (refs.has(e.ref)) throw new Error('Duplicate journal reference in backup: ' + e.ref);
+        refs.add(e.ref);
+        if (!Array.isArray(e.lines) || e.lines.length < 2) {
+          throw new Error(`Entry ${e.ref} must have at least 2 lines.`);
+        }
+        let d = 0, c = 0;
+        for (const l of e.lines) {
+          if (!codes.has(l.a)) throw new Error(`Entry ${e.ref} references unknown account "${l.a}".`);
+          if (!Number.isInteger(l.d) || !Number.isInteger(l.c) || l.d < 0 || l.c < 0 || (l.d && l.c)) {
+            throw new Error(`Entry ${e.ref} contains invalid line amounts.`);
+          }
+          d += l.d; c += l.c;
+        }
+        if (d !== c) {
+          throw new Error(`Entry ${e.ref} is unbalanced: Debits (${d}) != Credits (${c}).`);
+        }
       }
+
       parsedData = o;
       $('#restoreError').style.display = 'none';
       $('#restoreStats').innerHTML = `
         <b>Business:</b> ${esc(o.biz?.name || 'BUFIN')} | 
         <b>Accounts:</b> ${o.accounts.length} | 
         <b>Entries:</b> ${o.entries.length} | 
-        <b>Parties:</b> ${(o.parties || []).length}
+        <b>Parties:</b> ${(o.parties || []).length} |
+        <b>Docs:</b> ${(o.docs || []).length} |
+        <b>Loans:</b> ${(o.loans || []).length}
       `;
       $('#restorePreview').style.display = 'block';
       const btn = $('#btnConfirmRestore');
@@ -3916,16 +3964,62 @@ export function showRestoreModal() {
   };
 
   $('#btnCancelRestore').onclick = closeM;
-  $('#btnConfirmRestore').onclick = () => {
+  $('#btnConfirmRestore').onclick = async () => {
     if (!parsedData) return;
+    const pwdInput = $('#restorePasswordInput');
+    const password = (pwdInput?.value || '').trim();
+    if (!password) {
+      if (pwdInput) pwdInput.focus();
+      return toast('Please enter your password or PIN to authorize restore');
+    }
+
+    const btn = $('#btnConfirmRestore');
+    btn.disabled = true;
+    btn.textContent = 'Restoring...';
+
     try {
-      setDb(parsedData);
-      save();
+      // 1. Auto-download pre-restore backup before applying
+      try {
+        const preBackup = JSON.stringify(db, null, 2);
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const blob = new Blob([preBackup], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `bufin-pre-restore-backup-${stamp}.json`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 1000);
+      } catch (downErr) {
+        console.warn('Auto-download pre-restore backup warning:', downErr);
+      }
+
+      // 2. Call backend restore endpoint (bypasses "cannot delete posted entry" and records audit)
+      const res = await fetch('/api/state/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, data: parsedData })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Restore failed with status ' + res.status);
+      }
+
+      // 3. Reload state from server and update local state
+      const stateRes = await fetch('/api/state');
+      if (!stateRes.ok) throw new Error('Could not reload restored state from server');
+      const stateJson = await stateRes.json();
+      setDb(stateJson.data);
+      setVer(stateJson.version);
+      setBaseVer(stateJson.version);
+
       closeM();
       window.dispatchEvent(new Event('bufin-render'));
       toast('Ledger successfully restored from backup!');
     } catch (e) {
-      toast('Restore failed: ' + e.message);
+      btn.disabled = false;
+      btn.textContent = 'Restore Ledger Now';
+      toast('Restore failed: ' + (e.message || e));
     }
   };
 }

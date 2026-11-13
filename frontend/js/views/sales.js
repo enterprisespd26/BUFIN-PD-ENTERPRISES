@@ -236,11 +236,19 @@ function calcFigs(o) {
   };
 }
 
-function nextInvNo() {
+export function nextInvNo() {
   const prefix = db.biz.prefix || 'PD/2627/';
-  const sales = db.docs.filter(d => d.type === 'sale');
-  const nextSeq = sales.length + 1;
-  return prefix + String(nextSeq).padStart(4, '0');
+  let maxSeq = 0;
+  for (const d of (db.docs || [])) {
+    if (d.type === 'sale' && d.no) {
+      const m = String(d.no).match(/(\d+)$/);
+      if (m) {
+        const num = parseInt(m[1], 10);
+        if (!isNaN(num) && num > maxSeq) maxSeq = num;
+      }
+    }
+  }
+  return prefix + String(maxSeq + 1).padStart(4, '0');
 }
 
 /* ================= HTML SHEET PREVIEW ================= */
@@ -1309,17 +1317,21 @@ export function renderSales() {
                       <button type="button" class="sales-icon-btn sales-btn-view" data-action="view" data-no="${esc(d.no)}" title="View Invoice" aria-label="View Invoice">
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                       </button>
-                      <button type="button" class="sales-icon-btn sales-btn-edit" data-action="edit" data-no="${esc(d.no)}" title="Edit Invoice" aria-label="Edit Invoice">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                      </button>
-                      ${!isPaid && !d.cancelled ? `
-                        <button type="button" class="sales-icon-btn sales-btn-pay" data-action="pay" data-no="${esc(d.no)}" title="Mark as Paid" aria-label="Mark as Paid">
-                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                      ${d.cancelled ? `
+                        <span style="font-size:11px;font-weight:600;color:#94a3b8;font-style:italic;">Cancelled</span>
+                      ` : `
+                        <button type="button" class="sales-icon-btn sales-btn-edit" data-action="edit" data-no="${esc(d.no)}" title="Edit Invoice" aria-label="Edit Invoice">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                         </button>
-                      ` : ''}
-                      <button type="button" class="sales-icon-btn sales-btn-del" data-action="del" data-no="${esc(d.no)}" title="Delete Invoice" aria-label="Delete Invoice">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                      </button>
+                        ${!isPaid ? `
+                          <button type="button" class="sales-icon-btn sales-btn-pay" data-action="pay" data-no="${esc(d.no)}" title="Mark as Paid" aria-label="Mark as Paid">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                          </button>
+                        ` : ''}
+                        <button type="button" class="sales-icon-btn sales-btn-del" data-action="cancel" data-no="${esc(d.no)}" title="Cancel Invoice" aria-label="Cancel Invoice">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                        </button>
+                      `}
                     </div>
                     <button type="button" class="pd-more-btn" data-action="more" data-no="${esc(d.no)}" data-id="${esc(d.id)}" title="Actions" aria-label="Actions">⋮</button>
                   </td>
@@ -1885,17 +1897,20 @@ export function bindSalesEvents() {
     if (!lines.length) return toast('Add at least one item with valid quantity and rate');
 
     const isEditMode = Boolean(salesState.editNo);
-    let existingDoc = isEditMode ? db.docs.find(d => d.no === salesState.editNo && d.type === 'sale') : null;
-    if (!existingDoc && !isEditMode) {
-      existingDoc = db.docs.find(d => d.no === no && d.type === 'sale');
-    }
+    const existingDoc = isEditMode ? db.docs.find(d => d.no === salesState.editNo && d.type === 'sale') : null;
 
     if (existingDoc && existingDoc.cancelled) {
       return toast('Cancelled invoices cannot be edited');
     }
 
-    if (!existingDoc && db.docs.some(d => d.no === no && d.type === 'sale')) {
-      return toast('Invoice number ' + no + ' is already used');
+    // Reject manual numbers that already exist across ALL sale docs (including cancelled)
+    const isDuplicate = db.docs.some(d =>
+      d.type === 'sale' &&
+      (!isEditMode || d.id !== existingDoc?.id) &&
+      (d.no || '').trim().toLowerCase() === no.toLowerCase()
+    );
+    if (isDuplicate) {
+      return toast(`Invoice number "${no}" already exists`);
     }
 
     const disc = parseFloat($('#pd_disc')?.value) || 0;
@@ -2215,8 +2230,10 @@ export function bindSalesEvents() {
             variant: 'view',
             icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
             onClick: () => showInvoicePreviewModal(doc)
-          },
-          {
+          }
+        ];
+        if (!doc.cancelled) {
+          sheetItems.push({
             label: 'Edit Invoice',
             variant: 'edit',
             icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`,
@@ -2228,8 +2245,8 @@ export function bindSalesEvents() {
               container.innerHTML = renderSales();
               bindSalesEvents();
             }
-          }
-        ];
+          });
+        }
         if (!isPaid && !doc.cancelled) {
           sheetItems.push({
             label: 'Mark as Paid',
@@ -2243,30 +2260,32 @@ export function bindSalesEvents() {
             }
           });
         }
-        sheetItems.push({
-          label: 'Delete Invoice',
-          variant: 'delete',
-          danger: true,
-          icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
-          onClick: () => {
-            if (confirm(`Are you sure you want to delete invoice ${no}?`)) {
-              if (doc.je) {
-                try { reverse(doc.je); } catch (e) { console.warn('Could not reverse je:', e); }
+        if (!doc.cancelled) {
+          sheetItems.push({
+            label: 'Cancel Invoice',
+            variant: 'cancel',
+            danger: true,
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
+            onClick: () => {
+              if (confirm(`Are you sure you want to cancel invoice ${no}? This will reverse accounting entries and mark the invoice as cancelled.`)) {
+                if (doc.je) {
+                  try { reverse(doc.je); } catch (e) { console.warn('Could not reverse je:', e); }
+                }
+                if (doc.pays && doc.pays.length) {
+                  doc.pays.forEach(p => {
+                    try { reverse(p.je); } catch (e) { }
+                  });
+                }
+                doc.cancelled = true;
+                // Document is kept in db.docs - never deleted
+                save();
+                toast('Invoice ' + no + ' cancelled');
+                container.innerHTML = renderSales();
+                bindSalesEvents();
               }
-              if (doc.pays && doc.pays.length) {
-                doc.pays.forEach(p => {
-                  try { reverse(p.je); } catch (e) { }
-                });
-              }
-              doc.cancelled = true;
-              db.docs = db.docs.filter(d => d !== doc);
-              save();
-              toast('Invoice ' + no + ' deleted');
-              container.innerHTML = renderSales();
-              bindSalesEvents();
             }
-          }
-        });
+          });
+        }
         showActionSheet(`Invoice #${doc.no}`, `${esc(doc.c?.n || pn(doc.party))} • ${fmt(doc.total)}`, sheetItems);
         return;
       } else if (action === 'view') {
@@ -2284,9 +2303,11 @@ export function bindSalesEvents() {
           container.innerHTML = renderSales();
           bindSalesEvents();
         });
-      } else if (action === 'del') {
-        if (btn.dataset.confirmed) {
-          // Cancel doc and reverse journal entry
+      } else if (action === 'cancel' || action === 'del') {
+        if (doc.cancelled) {
+          return toast('Invoice ' + no + ' is already cancelled');
+        }
+        if (confirm(`Are you sure you want to cancel invoice ${no}? This will reverse accounting entries and mark the invoice cancelled.`)) {
           if (doc.je) {
             try { reverse(doc.je); } catch (e) { console.warn('Could not reverse je:', e); }
           }
@@ -2296,18 +2317,11 @@ export function bindSalesEvents() {
             });
           }
           doc.cancelled = true;
-          db.docs = db.docs.filter(d => d !== doc);
+          // Document is NEVER deleted; kept in db.docs
           save();
-          toast('Invoice ' + no + ' deleted');
+          toast('Invoice ' + no + ' cancelled');
           container.innerHTML = renderSales();
           bindSalesEvents();
-        } else {
-          btn.dataset.confirmed = '1';
-          btn.textContent = 'Confirm?';
-          setTimeout(() => {
-            btn.textContent = 'Delete';
-            delete btn.dataset.confirmed;
-          }, 3000);
         }
       }
     };

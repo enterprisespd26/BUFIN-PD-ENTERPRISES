@@ -22,7 +22,8 @@ if (process.env.DATABASE_URL) {
       if (row && row.data) migrateSchema(row.data);
       return row;
     },
-    put: async (v, d) => { const r = await pool.query("insert into app_state(id,version,data) values('main',1,$1) on conflict(id) do update set version=app_state.version+1, data=$1, updated_at=now() where app_state.version=$2 returning version", [JSON.stringify(d), v]); return r.rows[0] ? r.rows[0].version : null }
+    put: async (v, d) => { const r = await pool.query("insert into app_state(id,version,data) values('main',1,$1) on conflict(id) do update set version=app_state.version+1, data=$1, updated_at=now() where app_state.version=$2 returning version", [JSON.stringify(d), v]); return r.rows[0] ? r.rows[0].version : null },
+    restore: async (d) => { const r = await pool.query("insert into app_state(id,version,data) values('main',1,$1) on conflict(id) do update set version=app_state.version+1, data=$1, updated_at=now() returning version", [JSON.stringify(d)]); return r.rows[0] ? r.rows[0].version : null }
   };
 } else {
   const f = process.env.DATA_FILE || path.join(__dirname, '..', 'data', 'state.json');
@@ -38,6 +39,14 @@ if (process.env.DATABASE_URL) {
     put: async (v, d) => {
       const c = read();
       if (c && c.version !== v) return null;
+      const n = (c ? c.version : 0) + 1;
+      const tmp = `${f}.${process.pid}.${Date.now()}.${crypto.randomBytes(4).toString('hex')}.tmp`;
+      fs.writeFileSync(tmp, JSON.stringify({ version: n, data: d }));
+      fs.renameSync(tmp, f);
+      return n;
+    },
+    restore: async (d) => {
+      const c = read();
       const n = (c ? c.version : 0) + 1;
       const tmp = `${f}.${process.pid}.${Date.now()}.${crypto.randomBytes(4).toString('hex')}.tmp`;
       fs.writeFileSync(tmp, JSON.stringify({ version: n, data: d }));

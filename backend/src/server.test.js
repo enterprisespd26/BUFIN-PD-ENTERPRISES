@@ -338,3 +338,118 @@ test('10. Security headers and Content-Security-Policy', async () => {
   assert.equal(res.headers.get('x-frame-options'), 'DENY');
   assert.equal(res.headers.get('referrer-policy'), 'no-referrer');
 });
+
+test('11. POST /api/state/restore validates authorization, entry balance, updates version, and persists audit', async () => {
+  // Login to get session cookie
+  const loginRes = await fetch(`${baseUrl}/api/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin: '1234' })
+  });
+  const cookie = loginRes.headers.get('set-cookie');
+
+  // 1. Unauthenticated request returns 401
+  const unauthRes = await fetch(`${baseUrl}/api/state/restore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin: '1234', data: {} })
+  });
+  assert.equal(unauthRes.status, 401, 'Unauthenticated /api/state/restore must return 401');
+
+  // 2. Wrong PIN/password returns 401
+  const wrongPwRes = await fetch(`${baseUrl}/api/state/restore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({ pin: '9999', data: {} })
+  });
+  assert.equal(wrongPwRes.status, 401, 'Wrong password must return 401');
+
+  // 3. Invalid shape (missing accounts or entries) returns 422
+  const badShapeRes = await fetch(`${baseUrl}/api/state/restore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({ pin: '1234', data: { accounts: 'not-an-array' } })
+  });
+  assert.equal(badShapeRes.status, 422, 'Invalid shape must return 422');
+
+  // 4. Unbalanced entries return 422
+  const unbalancedData = {
+    biz: { name: 'PD ENTERPRISES' },
+    accounts: [
+      { code: '1000', name: 'Cash', t: 'A' },
+      { code: '3000', name: 'Capital', t: 'Q' }
+    ],
+    entries: [
+      {
+        id: 'e_unbalanced',
+        ref: 'JV-0001',
+        date: '2026-11-01',
+        lines: [
+          { a: '1000', d: 10000, c: 0 },
+          { a: '3000', d: 0, c: 8000 } // Unbalanced!
+        ]
+      }
+    ],
+    parties: [],
+    docs: [],
+    loans: [],
+    seq: { jv: 1 }
+  };
+  const unbalancedRes = await fetch(`${baseUrl}/api/state/restore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({ pin: '1234', data: unbalancedData })
+  });
+  assert.equal(unbalancedRes.status, 422, 'Unbalanced entry in restore backup must return 422');
+
+  // 5. Valid restore backup replaces stored state and persists
+  const validBackupData = {
+    biz: { name: 'PD RESTORED ENTERPRISES' },
+    accounts: [
+      { code: '1000', name: 'Cash in Hand', t: 'A', cash: true },
+      { code: '3000', name: "Owner's Capital", t: 'Q' }
+    ],
+    entries: [
+      {
+        id: 'e_restored_01',
+        ref: 'JV-0001',
+        date: '2026-11-01',
+        status: 'posted',
+        lines: [
+          { a: '1000', d: 50000, c: 0 },
+          { a: '3000', d: 0, c: 50000 }
+        ]
+      }
+    ],
+    parties: [],
+    docs: [],
+    loans: [],
+    seq: { jv: 1 },
+    audit: []
+  };
+
+  const validRestoreRes = await fetch(`${baseUrl}/api/state/restore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({ pin: '1234', data: validBackupData })
+  });
+  assert.equal(validRestoreRes.status, 200, 'Valid restore must return 200');
+  const restoreJson = await validRestoreRes.json();
+  assert.equal(restoreJson.ok, true);
+  assert.ok(restoreJson.version > 0);
+  assert.equal(restoreJson.audit.action, 'restore');
+  assert.equal(restoreJson.audit.entriesAfter, 1);
+
+  // 6. Verify subsequent GET /api/state returns the restored state and audit record
+  const getStateRes = await fetch(`${baseUrl}/api/state`, {
+    headers: { Cookie: cookie }
+  });
+  assert.equal(getStateRes.status, 200);
+  const stateJson = await getStateRes.json();
+  assert.equal(stateJson.data.biz.name, 'PD RESTORED ENTERPRISES');
+  assert.equal(stateJson.data.entries.length, 1);
+  assert.equal(stateJson.data.entries[0].ref, 'JV-0001');
+  const restoreAudit = stateJson.data.audit.find(a => a.action === 'restore');
+  assert.ok(restoreAudit, 'Audit trail must contain restore record');
+  assert.equal(restoreAudit.entriesAfter, 1);
+});

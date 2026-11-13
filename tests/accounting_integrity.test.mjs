@@ -27,6 +27,8 @@ if (!globalThis.navigator) {
   globalThis.navigator = {};
 }
 Object.defineProperty(globalThis.navigator, 'onLine', { value: true, configurable: true, writable: true });
+global.confirm = () => true;
+global.prompt = () => '';
 
 const mockElements = new Map();
 global.document = {
@@ -45,7 +47,9 @@ global.document = {
         classList: { add() {}, remove() {}, toggle() {} },
         setAttribute() {},
         removeAttribute() {},
-        focus() {}
+        focus() {},
+        querySelector() { return null; },
+        querySelectorAll() { return []; }
       });
     }
     return mockElements.get(id);
@@ -346,4 +350,117 @@ test('Step 7: Transaction safety snapshot rollback on error restores original st
 
   assert.strictEqual(state.db.entries.length, originalEntryCount);
   assert.strictEqual(state.db.docs.length, originalDocCount);
+});
+
+test('TC-DOC-NUMBERING-01: Cancelling invoice #3 of 5 leaves nextInvNo as 0006', async () => {
+  resetTestDb();
+  const { nextInvNo } = await import('../frontend/js/views/sales.js');
+
+  state.db.docs = [
+    { id: 'inv1', type: 'sale', no: 'PD/2627/0001', total: 100000, date: '2026-11-01' },
+    { id: 'inv2', type: 'sale', no: 'PD/2627/0002', total: 100000, date: '2026-11-02' },
+    { id: 'inv3', type: 'sale', no: 'PD/2627/0003', total: 100000, date: '2026-11-03', cancelled: true },
+    { id: 'inv4', type: 'sale', no: 'PD/2627/0004', total: 100000, date: '2026-11-04' },
+    { id: 'inv5', type: 'sale', no: 'PD/2627/0005', total: 100000, date: '2026-11-05' }
+  ];
+
+  // With invoice #3 cancelled, next number must still be 0006
+  const nextNo = nextInvNo();
+  assert.strictEqual(nextNo, 'PD/2627/0006', 'nextInvNo() must be 0006 after cancelling #3 of 5');
+
+  // Even if invoice #3 is missing from the list, highest suffix 5 + 1 is 0006
+  state.db.docs = state.db.docs.filter(d => d.id !== 'inv3');
+  assert.strictEqual(nextInvNo(), 'PD/2627/0006', 'nextInvNo() must remain 0006 even if older invoice was deleted');
+});
+
+test('TC-DOC-NUMBERING-02: Cancelling bill #3 of 5 leaves nextBillNo as BILL-0006', async () => {
+  resetTestDb();
+  const { nextBillNo } = await import('../frontend/js/views/bills.js');
+
+  state.db.docs = [
+    { id: 'b1', type: 'bill', no: 'BILL-0001', sno: 'SUP-01', total: 100000, date: '2026-11-01' },
+    { id: 'b2', type: 'bill', no: 'BILL-0002', sno: 'SUP-02', total: 100000, date: '2026-11-02' },
+    { id: 'b3', type: 'bill', no: 'BILL-0003', sno: 'SUP-03', total: 100000, date: '2026-11-03', cancelled: true },
+    { id: 'b4', type: 'bill', no: 'BILL-0004', sno: 'SUP-04', total: 100000, date: '2026-11-04' },
+    { id: 'b5', type: 'bill', no: 'BILL-0005', sno: 'SUP-05', total: 100000, date: '2026-11-05' }
+  ];
+
+  const nextNo = nextBillNo();
+  assert.strictEqual(nextNo, 'BILL-0006', 'nextBillNo() must be BILL-0006 after cancelling bill #3 of 5');
+});
+
+test('TC-DOC-DUPLICATE-CHECK-01: Duplicate invoice number is rejected across ALL sale docs including cancelled', () => {
+  resetTestDb();
+  state.db.docs = [
+    { id: 'inv1', type: 'sale', no: 'PD/2627/0001', cancelled: true },
+    { id: 'inv2', type: 'sale', no: 'PD/2627/0002' }
+  ];
+
+  const checkDuplicate = (no, editId = null) => {
+    return state.db.docs.some(d =>
+      d.type === 'sale' &&
+      (!editId || d.id !== editId) &&
+      (d.no || '').trim().toLowerCase() === no.trim().toLowerCase()
+    );
+  };
+
+  assert.strictEqual(checkDuplicate('PD/2627/0001'), true, 'Cancelled invoice number must be rejected as duplicate');
+  assert.strictEqual(checkDuplicate('pd/2627/0002'), true, 'Case-insensitive active invoice number must be rejected');
+  assert.strictEqual(checkDuplicate('PD/2627/0003'), false, 'Unused invoice number must be allowed');
+  assert.strictEqual(checkDuplicate('PD/2627/0002', 'inv2'), false, 'Editing self without changing number must be allowed');
+});
+
+test('TC-LOAN-DELETE-ROLLBACK-01: deleteLoanAction aborts with rollback on reversal failure, recomputes party type on success', async () => {
+  resetTestDb('2099-12-31'); // Period locked up to 2099-12-31
+  const { deleteLoanAction } = await import('../frontend/js/modules/actions.js');
+
+  const lenderParty = { id: 'p_lender_test', name: 'Test Lender', type: 'lender' };
+  state.db.parties.push(lenderParty);
+
+  // Journal entry inside locked period (2026-11-01 <= lock 2026-11-05)
+  // Trying to reverse a locked entry whose date <= lock throws "Cannot reverse entry from locked period"
+  const entry = {
+    id: 'e_loan_locked',
+    ref: 'JV-LOAN-01',
+    date: '2026-11-01',
+    status: 'posted',
+    meta: { loan: 'ln_test_01' },
+    lines: [
+      { a: '1010', d: 1000000, c: 0 },
+      { a: '2000', d: 0, c: 1000000 }
+    ]
+  };
+  state.db.entries.push(entry);
+
+  const loan = {
+    id: 'ln_test_01',
+    ref: 'LN-TEST-01',
+    name: 'Unsecured Loan Test',
+    dir: 'taken',
+    party: 'p_lender_test',
+    principal: 1000000,
+    repaid: 0,
+    date: '2026-11-01'
+  };
+  state.db.loans.push(loan);
+
+  // Attempt delete loan: should fail because entry is locked, so abort without deleting
+  deleteLoanAction('ln_test_01');
+
+  // Loan must still exist!
+  assert.strictEqual(state.db.loans.length, 1, 'Loan must not be deleted if reversal fails');
+  assert.strictEqual(state.db.loans[0].id, 'ln_test_01');
+  assert.strictEqual(state.db.entries[0].status, 'posted', 'Entry must remain posted on abort');
+
+  // Now unlock the period
+  state.db.biz.lock = '';
+
+  // Delete loan again: should succeed, reverse entry, remove loan, and reclassify party
+  deleteLoanAction('ln_test_01');
+
+  assert.strictEqual(state.db.loans.length, 0, 'Loan must be removed on success');
+  const reversedEntry = state.db.entries.find(e => e.id === 'e_loan_locked');
+  assert.strictEqual(reversedEntry.status, 'reversed', 'Loan journal entry must be reversed');
+  assert.notStrictEqual(state.db.parties[0].type, 'lender', 'Party must not be left typed lender after loan removal');
+  assert.strictEqual(state.db.parties[0].type, 'other', 'Party with no trade docs must become type other');
 });

@@ -3,7 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
 const store = require('./store');
-const { validate } = require('./ledger');
+const { validate, migrateSchema } = require('./ledger');
 const cloudinary = require('./cloudinary');
 
 const envPath = path.join(__dirname, '..', '.env');
@@ -338,6 +338,82 @@ app.put('/api/state', async (q, s, n) => {
     const v = await store.put(Number.isInteger(version) ? version : -1, data);
     if (v === null) return s.status(409).json({ error: 'Data changed on another device. Reload the page.' });
     s.json({ version: v });
+  } catch (e) {
+    n(e);
+  }
+});
+
+// Restore endpoint: Authenticated, requires re-entering password/PIN.
+// Replaces stored state with the backup and bumps the version,
+// bypassing the "cannot delete posted entry" rule and recording an audit record.
+app.post('/api/state/restore', async (q, s, n) => {
+  try {
+    const { password, pin, data } = q.body || {};
+    const supplied = String(pin || password || '');
+    if (!eq(supplied, PW)) {
+      return s.status(401).json({ error: 'Wrong password or PIN code' });
+    }
+
+    if (!data || typeof data !== 'object') {
+      return s.status(422).json({ error: 'Invalid state shape: expected JSON object' });
+    }
+
+    // Fully validate required arrays
+    if (!Array.isArray(data.accounts)) return s.status(422).json({ error: 'Invalid accounts: must be an array' });
+    if (!Array.isArray(data.entries)) return s.status(422).json({ error: 'Invalid entries: must be an array' });
+    if (!Array.isArray(data.parties)) return s.status(422).json({ error: 'Invalid parties: must be an array' });
+    if (!Array.isArray(data.docs)) return s.status(422).json({ error: 'Invalid docs: must be an array' });
+    if (!Array.isArray(data.loans)) return s.status(422).json({ error: 'Invalid loans: must be an array' });
+    if (!Array.isArray(data.audit)) {
+      if (data.audit === undefined || data.audit === null) data.audit = [];
+      else return s.status(422).json({ error: 'Invalid audit: must be an array' });
+    }
+    if (!Array.isArray(data.seq) && (typeof data.seq !== 'object' || data.seq === null)) {
+      return s.status(422).json({ error: 'Invalid seq: must be an array or object' });
+    }
+
+    // Every entry balanced & unique refs
+    const refs = new Set();
+    const codes = new Set(data.accounts.map(a => a.code));
+    for (const e of data.entries) {
+      if (!e.ref) return s.status(422).json({ error: 'Entry missing journal reference (ref)' });
+      if (refs.has(e.ref)) return s.status(422).json({ error: 'Duplicate journal reference: ' + e.ref });
+      refs.add(e.ref);
+
+      if (!Array.isArray(e.lines) || e.lines.length < 2) {
+        return s.status(422).json({ error: e.ref + ': needs at least two lines' });
+      }
+      let d = 0, c = 0;
+      for (const l of e.lines) {
+        if (!codes.has(l.a)) return s.status(422).json({ error: `${e.ref}: unknown account ${l.a}` });
+        if (!Number.isInteger(l.d) || !Number.isInteger(l.c) || l.d < 0 || l.c < 0 || (l.d && l.c)) {
+          return s.status(422).json({ error: `${e.ref}: invalid line amounts` });
+        }
+        d += l.d; c += l.c;
+      }
+      if (d !== c) {
+        return s.status(422).json({ error: `${e.ref}: debits (${d}) and credits (${c}) differ` });
+      }
+    }
+
+    const cur = await store.get();
+    const prevVersion = cur ? cur.version : 0;
+    const entriesBefore = (cur && cur.data && Array.isArray(cur.data.entries)) ? cur.data.entries.length : 0;
+    const entriesAfter = data.entries.length;
+
+    migrateSchema(data);
+
+    const auditRecord = {
+      at: new Date().toISOString(),
+      action: 'restore',
+      prevVersion,
+      entriesBefore,
+      entriesAfter
+    };
+    data.audit.push(auditRecord);
+
+    const v = await store.restore(data);
+    return s.json({ ok: true, version: v, audit: auditRecord });
   } catch (e) {
     n(e);
   }

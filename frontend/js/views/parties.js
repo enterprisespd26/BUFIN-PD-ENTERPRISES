@@ -42,8 +42,8 @@ export function renderParties() {
     `<div class="grid">
       ${kpi('Customers', db.parties.filter(isC).length)}
       ${kpi('Suppliers', db.parties.filter(isS).length)}
-      ${kpi('Customers owe you', fmt(db.parties.filter(isC).reduce((s, p) => s + tradeR(p), 0)))}
-      ${kpi('You owe suppliers', fmt(db.parties.filter(isS).reduce((s, p) => s + tradeY(p), 0)))}
+      ${kpi('Customers owe you (trade only)', fmt(db.parties.filter(isC).reduce((s, p) => s + tradeR(p), 0)))}
+      ${kpi('You owe suppliers (trade only)', fmt(db.parties.filter(isS).reduce((s, p) => s + tradeY(p), 0)))}
     </div>
     <div class="filters parties-filter-bar">
       <div class="parties-segment-track" role="tablist" aria-label="Filter parties by type">

@@ -97,6 +97,13 @@ export function syncPartyClassifications(targetDb) {
         p.type = 'lender';
         modified = true;
       }
+    } else if (p.type === 'lender' && !isLoanParty) {
+      // Recompute party type after loan removal - do not leave party typed 'lender'
+      if (hasTradeSales && hasTradeBills) p.type = 'both';
+      else if (hasTradeSales) p.type = 'customer';
+      else if (hasTradeBills) p.type = 'supplier';
+      else p.type = 'other';
+      modified = true;
     }
     // 2. Service / license / expense entities without commercial purchase bills
     else if (!hasTradeBills && !hasTradeSales) {
