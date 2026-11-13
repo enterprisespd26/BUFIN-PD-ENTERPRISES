@@ -2006,9 +2006,9 @@ test('TC-PRELOADER-PERF-01: Instant PWA splash screen transition, clean white ma
   assert.match(indexHtml, /name="theme-color"\s+content="#FFFFFF"/i, 'index.html must define #FFFFFF theme color');
   assert.match(indexHtml, /rel="preconnect"\s+href="https:\/\/fonts\.googleapis\.com"/, 'index.html must preconnect to fonts');
 
-  // 3. Verify service worker instant cache-first / stale-while-revalidate resolution
+  // 3. Verify service worker instant cache fallback and network-first resolution
   const swCode = fs.readFileSync('frontend/sw.js', 'utf8');
-  assert.match(swCode, /caches\.match\(req\)\.then\(cached/, 'sw.js must resolve cached assets before waiting on network');
+  assert.match(swCode, /caches\.match\(req\)/, 'sw.js must resolve cached assets when offline');
   assert.match(swCode, /'\/icons\/maskable-icon-512x512\.png'/, 'sw.js must precache maskable icon');
   assert.match(swCode, /'\/icons\/android-chrome-512x512\.png'/, 'sw.js must precache android-chrome-512 icon');
 

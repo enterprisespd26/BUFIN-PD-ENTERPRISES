@@ -71,6 +71,12 @@ test('2. Unauthenticated requests to /api/upload, /api/cloudinary/config, and /a
   const jsonState = await resState.json();
   assert.match(jsonState.error, /login required/i);
 
+  // GET /api/state/version
+  const resStateVer = await fetch(`${baseUrl}/api/state/version`);
+  assert.equal(resStateVer.status, 401, 'GET /api/state/version must require authentication');
+  const jsonStateVer = await resStateVer.json();
+  assert.match(jsonStateVer.error, /login required/i);
+
   // PUT /api/state
   const resStatePut = await fetch(`${baseUrl}/api/state`, {
     method: 'PUT',
@@ -175,6 +181,14 @@ test('6. Logout truly invalidates the session cookie on the server', async () =>
     headers: { Cookie: cookie }
   });
   assert.equal(stateRes1.status, 200, 'State access must succeed while session is active');
+
+  // Authenticated state version endpoint succeeds and returns { version }
+  const stateVerRes1 = await fetch(`${baseUrl}/api/state/version`, {
+    headers: { Cookie: cookie }
+  });
+  assert.equal(stateVerRes1.status, 200);
+  const stateVerJson = await stateVerRes1.json();
+  assert.equal(typeof stateVerJson.version, 'number');
 
   // Perform logout
   const logoutRes = await fetch(`${baseUrl}/api/logout`, {

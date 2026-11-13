@@ -91,11 +91,20 @@ async function submitPin() {
           if (sRes.ok) {
             const j = await sRes.json();
             if (j.data) {
-              const { setVer, setDb } = await import('../modules/state.js');
-              setVer(j.version);
-              setDb(j.data);
-              if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('bufin-render'));
+              const { setVer, setBaseVer, setDb, isDirty, getVer, push: pushSync, showConflictModal } = await import('../modules/state.js');
+              if (isDirty()) {
+                if (j.version !== getVer()) {
+                  showConflictModal(j);
+                } else {
+                  pushSync();
+                }
+              } else {
+                setVer(j.version);
+                setBaseVer(j.version);
+                setDb(j.data);
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('bufin-render'));
+                }
               }
             }
           }
@@ -143,9 +152,18 @@ async function submitPin() {
           if (sRes.ok) {
             const sj = await sRes.json();
             if (sj.data) {
-              const { setVer, setDb } = await import('../modules/state.js');
-              setVer(sj.version);
-              setDb(sj.data);
+              const { setVer, setBaseVer, setDb, isDirty, getVer, push: pushSync, showConflictModal } = await import('../modules/state.js');
+              if (isDirty()) {
+                if (sj.version !== getVer()) {
+                  showConflictModal(sj);
+                } else {
+                  pushSync();
+                }
+              } else {
+                setVer(sj.version);
+                setBaseVer(sj.version);
+                setDb(sj.data);
+              }
             }
           }
         } catch (e) {

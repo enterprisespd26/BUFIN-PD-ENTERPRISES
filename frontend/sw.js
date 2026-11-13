@@ -1,5 +1,5 @@
 // BUFIN Service Worker - Offline Caching & App Shell Acceleration
-const CACHE_NAME = 'bufin-v15.0-cache';
+const CACHE_NAME = 'bufin-v16.0-cache';
 
 const PRECACHE_ASSETS = [
   '/',
@@ -49,59 +49,63 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: Instant Stale-While-Revalidate for static assets, Network-First for state API
+// Message handler: e.g. PURGE_API_CACHE
+self.addEventListener('message', event => {
+  if (event.data === 'PURGE_API_CACHE' || (event.data && event.data.type === 'PURGE_API_CACHE')) {
+    event.waitUntil((async () => {
+      const cacheNames = await caches.keys();
+      for (const name of cacheNames) {
+        const cache = await caches.open(name);
+        const keys = await cache.keys();
+        for (const request of keys) {
+          const u = new URL(request.url);
+          if (u.pathname.startsWith('/api/')) {
+            await cache.delete(request);
+          }
+        }
+      }
+    })());
+  }
+});
+
+// Fetch: Never cache /api/* responses (return 503 on offline), Network-First for JS/HTML assets
 self.addEventListener('fetch', event => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Skip non-GET requests and external analytics
+  // Skip non-GET requests
   if (req.method !== 'GET') return;
 
-  // 1. API state requests: Network-First with Cache fallback
+  // 1. API state requests (/api/state and /api/*): Direct network ONLY. Never cache. Return 503 JSON on offline/network failure.
   if (url.pathname.startsWith('/api/')) {
-    if (url.pathname.startsWith('/api/state')) {
-      event.respondWith(
-        fetch(req)
-          .then(res => {
-            if (res.ok) {
-              const clone = res.clone();
-              caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
-            }
-            return res;
-          })
-          .catch(async () => {
-            const cached = await caches.match(req);
-            if (cached) return cached;
-            return new Response(JSON.stringify({ version: 0, data: null, offline: true }), {
-              headers: { 'Content-Type': 'application/json' }
-            });
-          })
-      );
-    }
+    event.respondWith(
+      fetch(req).catch(() => {
+        return new Response(JSON.stringify({ error: 'Service Unavailable (Offline)', offline: true }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
     return;
   }
 
-  // 2. Static Assets (HTML, CSS, JS, Fonts, Images, SVG): Instant Stale-While-Revalidate (0ms Cache, background refresh)
-  event.respondWith(
-    caches.match(req).then(cached => {
-      const networkUpdate = fetch(req)
-        .then(networkRes => {
-          if (networkRes && networkRes.status === 200) {
-            const resClone = networkRes.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(req, resClone));
-          }
-          return networkRes;
-        })
-        .catch(() => null);
-
+  // 2. Static Assets (HTML, CSS, JS, Fonts, Images, SVG): Network-First with Cache Fallback
+  event.respondWith((async () => {
+    try {
+      const networkRes = await fetch(req);
+      if (networkRes && (networkRes.status === 200 || networkRes.type === 'opaque')) {
+        const resClone = networkRes.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, resClone));
+      }
+      return networkRes;
+    } catch (err) {
+      const cached = await caches.match(req);
       if (cached) return cached;
-
-      return networkUpdate.then(res => {
-        if (res) return res;
-        if (req.mode === 'navigate') {
-          return caches.match('/index.html') || caches.match('/');
-        }
-      });
-    })
-  );
+      if (req.mode === 'navigate') {
+        const htmlCached = (await caches.match('/index.html')) || (await caches.match('/'));
+        if (htmlCached) return htmlCached;
+      }
+      throw err;
+    }
+  })());
 });

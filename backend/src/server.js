@@ -312,6 +312,15 @@ app.post('/api/upload', async (q, s) => {
 });
 
 // Protected state endpoints
+app.get('/api/state/version', async (q, s, n) => {
+  try {
+    const r = await store.get();
+    s.json({ version: r ? r.version : 0 });
+  } catch (e) {
+    n(e);
+  }
+});
+
 app.get('/api/state', async (q, s, n) => {
   try {
     const r = await store.get();

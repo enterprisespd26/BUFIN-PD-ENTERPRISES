@@ -1,4 +1,4 @@
-import { toast, uid, today, fmt, P } from './utils.js';
+import { toast, uid, today, fmt, P, esc } from './utils.js';
 import { cacheCoreRef, saveFullSnapshot } from './offline_store.js';
 
 export const K = 'bufin-v1';
@@ -167,6 +167,215 @@ export let db = initialDb || {
   audit: []
 };
 
+let initialVer = 0;
+let initialBaseVer = 0;
+let initialDirty = false;
+let initialUnsynced = 0;
+
+try {
+  const storedVer = typeof localStorage !== 'undefined' ? localStorage.getItem(K + '_ver') : null;
+  if (storedVer !== null) {
+    initialVer = parseInt(storedVer, 10) || 0;
+    initialBaseVer = initialVer;
+  }
+  const storedBv = typeof localStorage !== 'undefined' ? localStorage.getItem(K + '_baseVer') : null;
+  if (storedBv !== null) {
+    initialBaseVer = parseInt(storedBv, 10) || initialVer;
+  }
+  if (typeof localStorage !== 'undefined') {
+    initialDirty = localStorage.getItem(K + '_dirty') === 'true';
+    initialUnsynced = parseInt(localStorage.getItem(K + '_unsyncedCount'), 10) || (initialDirty ? 1 : 0);
+  }
+} catch (e) {}
+
+export let ver = initialVer;
+export let baseVer = initialBaseVer;
+export let dirty = initialDirty;
+export let unsyncedCount = initialUnsynced;
+
+export function setVer(v) {
+  ver = typeof v === 'number' ? v : (parseInt(v, 10) || 0);
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(K + '_ver', String(ver));
+    saveFullSnapshot(db, ver);
+  } catch (e) {}
+}
+
+export function setBaseVer(v) {
+  baseVer = typeof v === 'number' ? v : (parseInt(v, 10) || 0);
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(K + '_baseVer', String(baseVer));
+  } catch (e) {}
+}
+
+export function setDirty(isDirty, count = null) {
+  dirty = !!isDirty;
+  if (!dirty) {
+    unsyncedCount = 0;
+  } else if (count !== null) {
+    unsyncedCount = count;
+  } else if (unsyncedCount === 0) {
+    unsyncedCount = 1;
+  }
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(K + '_dirty', String(dirty));
+      localStorage.setItem(K + '_unsyncedCount', String(unsyncedCount));
+    }
+  } catch (e) {}
+  updateSyncPill();
+}
+
+export function isDirty() {
+  return dirty;
+}
+export function getVer() {
+  return ver;
+}
+export function getBaseVer() {
+  return baseVer;
+}
+export function getUnsyncedCount() {
+  return unsyncedCount;
+}
+export function getDb() {
+  return db;
+}
+
+export function updateSyncPill(stateOverride) {
+  if (typeof document === 'undefined') return;
+  const pill = document.getElementById('syncPill');
+  if (!pill) return;
+
+  const textEl = pill.querySelector('.sync-text');
+  let mode = 'saved';
+  let label = 'Saved';
+
+  const isOffline = (typeof navigator !== 'undefined' && !navigator.onLine);
+
+  if (stateOverride === 'attention') {
+    mode = 'attention';
+    label = 'Needs attention';
+  } else if (stateOverride === 'saving' || pushInFlight) {
+    mode = 'saving';
+    label = 'Saving…';
+  } else if (stateOverride === 'offline' || isOffline) {
+    mode = 'offline';
+    label = dirty && unsyncedCount > 0 ? `Offline – ${unsyncedCount} unsynced change${unsyncedCount > 1 ? 's' : ''}` : 'Offline';
+  } else if (dirty) {
+    mode = 'offline';
+    label = `Offline – ${unsyncedCount || 1} unsynced change${(unsyncedCount || 1) > 1 ? 's' : ''}`;
+  } else {
+    mode = 'saved';
+    label = 'Saved';
+  }
+
+  pill.className = `sync-status-pill ${mode}`;
+  if (textEl) textEl.textContent = label;
+}
+
+export function showSyncBanner(msg, type = 'error') {
+  if (typeof document === 'undefined') return;
+  const banner = document.getElementById('syncBanner');
+  if (!banner) return;
+
+  banner.className = `sync-banner ${type === 'warn' ? 'banner-warn' : (type === 'info' ? 'banner-info' : '')}`;
+  banner.innerHTML = `
+    <span class="sync-banner-text">${esc(msg)}</span>
+    <button type="button" class="sync-banner-close" aria-label="Dismiss">&times;</button>
+  `;
+  banner.style.display = 'flex';
+  const closeBtn = banner.querySelector('.sync-banner-close');
+  if (closeBtn) {
+    closeBtn.onclick = () => { banner.style.display = 'none'; };
+  }
+}
+
+export function hideSyncBanner() {
+  if (typeof document === 'undefined') return;
+  const banner = document.getElementById('syncBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+export function showConflictModal(remote) {
+  if (typeof document === 'undefined') return;
+  const dlg = document.getElementById('dlg');
+  if (!dlg) return;
+
+  dlg.innerHTML = `
+    <div class="conflict-modal-card">
+      <div class="conflict-modal-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span>Another device changed the data</span>
+      </div>
+      <p class="conflict-modal-desc">
+        The server contains newer ledger changes recorded from another device or session that conflict with your unsynced local entries.
+        To ensure complete double-entry integrity, choose how to proceed:
+      </p>
+      <div class="conflict-actions-stack">
+        <button type="button" class="btn p" id="btnReloadServer" style="width:100%;font-weight:600;">
+          Reload server copy
+        </button>
+        <button type="button" class="btn" id="btnDownloadUnsynced" style="width:100%;">
+          Download my unsynced changes (JSON)
+        </button>
+      </div>
+    </div>
+  `;
+
+  const btnReload = dlg.querySelector('#btnReloadServer');
+  const btnDownload = dlg.querySelector('#btnDownloadUnsynced');
+
+  if (btnReload) {
+    btnReload.onclick = () => {
+      if (remote && remote.data) {
+        setDb(remote.data);
+      }
+      setVer(remote ? remote.version : ver);
+      setBaseVer(remote ? remote.version : ver);
+      setDirty(false, 0);
+      hideSyncBanner();
+      updateSyncPill('saved');
+      if (typeof dlg.close === 'function') dlg.close();
+      dlg.innerHTML = '';
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('bufin-render'));
+      }
+      toast('Server copy reloaded');
+    };
+  }
+
+  if (btnDownload) {
+    btnDownload.onclick = () => {
+      try {
+        const jsonStr = JSON.stringify({ version: ver, baseVer, dirty, exportedAt: new Date().toISOString(), data: db }, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bufin-unsynced-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast('Unsynced changes downloaded as JSON');
+      } catch (err) {
+        toast('Download error: ' + (err.message || err));
+      }
+    };
+  }
+
+  if (typeof dlg.showModal === 'function') {
+    try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); }
+  } else {
+    dlg.setAttribute('open', '');
+  }
+}
+
 export function setDb(newDb) {
   db = newDb;
   if (db && Array.isArray(db.entries)) {
@@ -179,45 +388,278 @@ export function setDb(newDb) {
     syncPartyClassifications(db);
   }
   try {
-    localStorage.setItem(K, JSON.stringify(db));
+    if (typeof localStorage !== 'undefined') localStorage.setItem(K, JSON.stringify(db));
     cacheCoreRef(db);
     saveFullSnapshot(db, ver);
   } catch (e) {}
 }
 
-export let ver = 0;
-export function setVer(v) {
-  ver = v;
+export function getEmptyDb() {
+  return {
+    biz: {
+      name: '', owner: '', gstin: '', addr: '', phone: '', email: '', state: '', prefix: '',
+      bank_name: '', account_holder: '', account_no: '', account_type: '', account_desc: '',
+      ifsc: '', micr: '', bank_addr: '', bank: '', upi: '', terms: '', lock: ''
+    },
+    accounts: AC.map(a => ({ code: a[0], name: a[1], t: a[2], cash: !!a[3] })),
+    parties: [],
+    entries: [],
+    docs: [],
+    loans: [],
+    seq: {},
+    items: [],
+    audit: []
+  };
+}
+
+export function resetDb() {
+  db = getEmptyDb();
+  ver = 0;
+  baseVer = 0;
+  dirty = false;
+  unsyncedCount = 0;
+  updateSyncPill();
+}
+
+export function wipeStorage() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(K);
+      localStorage.removeItem(K + '_ver');
+      localStorage.removeItem(K + '_dirty');
+      localStorage.removeItem(K + '_baseVer');
+      localStorage.removeItem(K + '_unsyncedCount');
+    }
+  } catch (e) {}
+  resetDb();
 }
 
 let tm;
 export const save = () => {
+  setDirty(true, (unsyncedCount || 0) + 1);
   try {
-    localStorage.setItem(K, JSON.stringify(db));
+    if (typeof localStorage !== 'undefined') localStorage.setItem(K, JSON.stringify(db));
     cacheCoreRef(db);
     saveFullSnapshot(db, ver);
   } catch (e) {}
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('bufin-render'));
   }
+  updateSyncPill('saving');
   clearTimeout(tm);
   tm = setTimeout(push, 400);
 };
 
+let pushInFlight = false;
+let pushQueued = false;
+let retryConflictOnce = true;
+
 export async function push() {
+  if (pushInFlight) {
+    pushQueued = true;
+    return;
+  }
+  pushInFlight = true;
+  pushQueued = false;
+  updateSyncPill('saving');
+
   try {
-    const r = await fetch('/api/state', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ version: ver, data: db })
-    });
-    const j = await r.json();
-    if (r.ok) ver = j.version;
-    else toast(j.error || 'Sync failed');
-  } catch (e) {
-    toast('Offline: saved in this browser only');
+    while (true) {
+      if (!dirty && !pushQueued) {
+        break;
+      }
+      pushQueued = false;
+
+      const payloadVer = ver;
+      const payloadData = db;
+
+      let r;
+      try {
+        r = await fetch('/api/state', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ version: payloadVer, data: payloadData })
+        });
+      } catch (netErr) {
+        setDirty(true, unsyncedCount || 1);
+        updateSyncPill('offline');
+        break;
+      }
+
+      if (r.ok) {
+        const j = await r.json();
+        setVer(j.version);
+        setBaseVer(j.version);
+        retryConflictOnce = true;
+        hideSyncBanner();
+        if (!pushQueued) {
+          setDirty(false, 0);
+        }
+        continue;
+      }
+
+      if (r.status === 401) {
+        setDirty(true, unsyncedCount || 1);
+        updateSyncPill('attention');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('bufin-auth-required', { detail: { resumePush: true } }));
+        }
+        break;
+      }
+
+      if (r.status === 422) {
+        const j = await r.json().catch(() => ({}));
+        setDirty(true, unsyncedCount || 1);
+        showSyncBanner(j.error || 'Server validation error. Changes kept locally.', 'error');
+        updateSyncPill('attention');
+        break;
+      }
+
+      if (r.status === 409) {
+        try {
+          const getRes = await fetch('/api/state');
+          if (getRes.ok) {
+            const remote = await getRes.json();
+            const remoteDb = remote.data || {};
+            const localEntryIds = new Set((db.entries || []).map(e => e.id));
+            const localDocIds = new Set((db.docs || []).map(d => d.id));
+
+            const remoteHasNewEntries = (remoteDb.entries || []).some(e => !localEntryIds.has(e.id));
+            const remoteHasNewDocs = (remoteDb.docs || []).some(d => !localDocIds.has(d.id));
+
+            if (!remoteHasNewEntries && !remoteHasNewDocs && retryConflictOnce) {
+              retryConflictOnce = false;
+              setVer(remote.version);
+              setBaseVer(remote.version);
+              continue;
+            } else {
+              setDirty(true, unsyncedCount || 1);
+              showConflictModal(remote);
+              updateSyncPill('attention');
+              break;
+            }
+          } else {
+            setDirty(true, unsyncedCount || 1);
+            updateSyncPill('attention');
+            break;
+          }
+        } catch (e) {
+          setDirty(true, unsyncedCount || 1);
+          updateSyncPill('offline');
+          break;
+        }
+      }
+
+      // Any other non-2xx status
+      setDirty(true, unsyncedCount || 1);
+      updateSyncPill('attention');
+      break;
+    }
+  } finally {
+    pushInFlight = false;
+    updateSyncPill();
   }
 }
+
+export async function checkRemoteVersion() {
+  try {
+    const res = await fetch('/api/state/version');
+    if (res.status === 401) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('bufin-auth-required'));
+      }
+      return;
+    }
+    if (!res.ok) return;
+    const { version } = await res.json();
+    if (typeof version === 'number' && version > ver) {
+      if (!dirty) {
+        const stateRes = await fetch('/api/state');
+        if (stateRes.ok) {
+          const sj = await stateRes.json();
+          setVer(sj.version);
+          setBaseVer(sj.version);
+          if (sj.data) setDb(sj.data);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('bufin-render'));
+          }
+          toast('Ledger updated from server');
+        }
+      } else {
+        const stateRes = await fetch('/api/state');
+        if (stateRes.ok) {
+          const sj = await stateRes.json();
+          showConflictModal(sj);
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+if (typeof window !== 'undefined') {
+  // Visibility change listener: when tab becomes visible, poll /api/state/version
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        checkRemoteVersion();
+      }
+    });
+  }
+
+  // Online listener: check version and push dirty changes
+  window.addEventListener('online', () => {
+    updateSyncPill();
+    if (dirty) {
+      push();
+    } else {
+      checkRemoteVersion();
+    }
+  });
+
+  window.addEventListener('offline', () => {
+    updateSyncPill();
+  });
+
+  // 60-second periodic poll of GET /api/state/version
+  const pollTimer = setInterval(() => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible' && (!navigator || navigator.onLine)) {
+      checkRemoteVersion();
+    }
+  }, 60000);
+  if (pollTimer && typeof pollTimer.unref === 'function') {
+    pollTimer.unref();
+  }
+
+  // Multi-tab storage sync
+  window.addEventListener('storage', e => {
+    if (e.key === K && e.newValue) {
+      try {
+        const newDb = JSON.parse(e.newValue);
+        db = newDb;
+        syncPartyClassifications(db);
+        window.dispatchEvent(new CustomEvent('bufin-render'));
+      } catch (err) {}
+    }
+    if (e.key === K + '_ver' && e.newValue) {
+      const v = parseInt(e.newValue, 10);
+      if (!isNaN(v)) ver = v;
+    }
+    if (e.key === K + '_baseVer' && e.newValue) {
+      const bv = parseInt(e.newValue, 10);
+      if (!isNaN(bv)) baseVer = bv;
+    }
+    if (e.key === K + '_dirty' && e.newValue !== null) {
+      dirty = e.newValue === 'true';
+      updateSyncPill();
+    }
+    if (e.key === K + '_unsyncedCount' && e.newValue) {
+      const cnt = parseInt(e.newValue, 10);
+      if (!isNaN(cnt)) unsyncedCount = cnt;
+      updateSyncPill();
+    }
+  });
+}
+
 
 export const acc = c => db.accounts.find(a => a.code === c);
 export const an = c => acc(c) ? acc(c).name : c;

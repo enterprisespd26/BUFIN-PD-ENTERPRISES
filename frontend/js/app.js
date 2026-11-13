@@ -1,5 +1,9 @@
 import { $, $$, esc, fmt, P, toast, ic, today } from './modules/utils.js';
-import { db, setDb, setVer, ver, push, save, reverse, log, acc, an, SYS, TN, post } from './modules/state.js';
+import {
+  db, setDb, setVer, ver, baseVer, setBaseVer, dirty, setDirty,
+  push, save, reverse, log, acc, an, SYS, TN, post,
+  wipeStorage, resetDb, updateSyncPill, showSyncBanner, hideSyncBanner, showConflictModal
+} from './modules/state.js';
 import { modal, closeM, form, fld, sel, opts } from './modules/components.js';
 import './modules/mobile.js';
 
@@ -1348,13 +1352,7 @@ const ACTIONS = {
       location.reload();
     }
   },
-  logout: async () => {
-    try {
-      await fetch('/api/logout', { method: 'POST' });
-    } catch (e) {}
-    toast('Session locked');
-    showPinLogin(boot);
-  },
+  logout: () => performLogout({ msg: 'Session logged out' }),
   promptopen: () => showOpenConfirmModal(),
   saveopen: () => showOpenConfirmModal(),
   unlockopen: () => {
@@ -1424,6 +1422,35 @@ document.addEventListener('keydown', e => {
 window.addEventListener('hashchange', render);
 window.addEventListener('bufin-render', render);
 
+export async function performLogout(opts = {}) {
+  try {
+    await fetch('/api/logout', { method: 'POST' });
+  } catch (e) {}
+
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker && navigator.serviceWorker.controller) {
+    try {
+      navigator.serviceWorker.controller.postMessage('PURGE_API_CACHE');
+    } catch (e) {}
+  }
+
+  wipeStorage();
+  toast(opts.msg || 'Session logged out');
+  showPinLogin(boot);
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('bufin-auth-required', e => {
+    const resumePush = e.detail && e.detail.resumePush;
+    showPinLogin(() => {
+      if (resumePush && dirty) {
+        push();
+      } else {
+        boot();
+      }
+    });
+  });
+}
+
 export async function boot(opts = {}) {
   initPinKeypad();
 
@@ -1442,33 +1469,116 @@ export async function boot(opts = {}) {
     render();
   }
 
-  try {
-    let r = await fetch('/api/state');
-    if (r.status === 401) {
-      showPinLogin(boot);
-      return;
+  const startTime = Date.now();
+  let delay = 1000;
+  const timeoutMs = 60000;
+
+  while (Date.now() - startTime < timeoutMs) {
+    try {
+      const r = await fetch('/api/state');
+
+      // 401 Unauthorized: Session required
+      if (r.status === 401) {
+        hideSyncBanner();
+        showPinLogin(boot);
+        return;
+      }
+
+      // Check for Service Worker offline stub (503 with offline: true)
+      if (r.status === 503) {
+        let isOfflineStub = false;
+        try {
+          const stubJson = await r.clone().json();
+          if (stubJson && stubJson.offline) isOfflineStub = true;
+        } catch (e) {}
+
+        if (isOfflineStub || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+          hideSyncBanner();
+          if (db && db.biz) {
+            unlockApp();
+            updateSyncPill('offline');
+            if (!window.location.hash) window.location.hash = '#/overview';
+            else render();
+            return;
+          } else {
+            showPinLogin(boot);
+            return;
+          }
+        }
+      }
+
+      // 2xx Success: server truth loaded
+      if (r.ok) {
+        hideSyncBanner();
+        unlockApp();
+        const j = await r.json();
+        const remoteVersion = j.version;
+        const remoteData = j.data;
+
+        if (dirty) {
+          if (remoteVersion !== ver && remoteVersion > baseVer) {
+            showConflictModal(j);
+          } else {
+            push();
+          }
+        } else {
+          setVer(remoteVersion);
+          setBaseVer(remoteVersion);
+          if (remoteData) {
+            setDb(remoteData);
+          }
+          setDirty(false, 0);
+          updateSyncPill('saved');
+        }
+
+        if (!window.location.hash) {
+          window.location.hash = '#/overview';
+        } else {
+          render();
+        }
+        return;
+      }
+
+      // Non-2xx (Render cold start 502/503/504, etc.): do not call setDb with local data as server truth!
+      const elapsedSec = Math.round((Date.now() - startTime) / 1000);
+      showSyncBanner(`Server is waking up… (${elapsedSec}s) Connecting to backend service`, 'warn');
+      updateSyncPill('saving');
+
+    } catch (netErr) {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        hideSyncBanner();
+        if (db && db.biz) {
+          unlockApp();
+          updateSyncPill('offline');
+          if (!window.location.hash) window.location.hash = '#/overview';
+          else render();
+          return;
+        } else {
+          showPinLogin(boot);
+          return;
+        }
+      }
+
+      const elapsedSec = Math.round((Date.now() - startTime) / 1000);
+      showSyncBanner(`Server is waking up… (${elapsedSec}s) Connecting to backend service`, 'warn');
+      updateSyncPill('saving');
     }
-    if (r.ok) {
-      unlockApp();
-      const j = await r.json();
-      setVer(j.version);
-      if (j.data) setDb(j.data);
-      else if (db.entries.length) push();
-    }
-  } catch (e) {
-    // If offline or connection issue, allow offline access if database already loaded
-    if (db && db.biz) {
-      // offline session
-    } else {
-      showPinLogin(boot);
-      return;
-    }
+
+    // Exponential back-off wait (cap at 5s)
+    await new Promise(resolve => setTimeout(resolve, delay));
+    delay = Math.min(delay * 1.5, 5000);
   }
 
-  if (!window.location.hash) {
-    window.location.hash = '#/overview';
+  // 60s timeout expired
+  if (db && db.biz) {
+    showSyncBanner('Server connection timed out. Running with saved offline data.', 'warn');
+    unlockApp();
+    updateSyncPill('offline');
+    if (!window.location.hash) window.location.hash = '#/overview';
+    else render();
   } else {
-    render();
+    showSyncBanner('Server is currently unavailable. Please check your network and refresh.', 'error');
+    showPinLogin(boot);
   }
 }
 
