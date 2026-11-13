@@ -9,10 +9,23 @@ export const partiesState = {
 export function renderParties() {
   const f = partiesState.pt || 'all';
   const q = (partiesState.pq || '').toLowerCase();
-  const tradeR = p => db.docs.filter(d => d.party === p.id && d.type === 'sale' && !d.cancelled).reduce((s, d) => s + out(d), 0);
-  const tradeY = p => db.docs.filter(d => d.party === p.id && d.type === 'bill' && !d.cancelled).reduce((s, d) => s + out(d), 0);
+  const isPartyMatch = (partyRef, p) => {
+    if (!partyRef || !p) return false;
+    const ref = String(partyRef).trim();
+    return ref === String(p.id).trim() || (p.name && ref.toLowerCase() === String(p.name).trim().toLowerCase());
+  };
+  const tradeR = p => db.docs.filter(d => isPartyMatch(d.party, p) && (d.type === 'sale' || d.type === 'credit_note') && !d.cancelled).reduce((s, d) => s + (d.type === 'credit_note' ? -d.total : out(d)), 0);
+  const tradeY = p => db.docs.filter(d => isPartyMatch(d.party, p) && (d.type === 'bill' || d.type === 'debit_note') && !d.cancelled).reduce((s, d) => s + (d.type === 'debit_note' ? -d.total : out(d)), 0);
 
-  const isLoanForParty = (l, p) => l.party === p.id || (p.id && l.party === p.id) || (p.name && (l.party === p.name || l.partyName === p.name));
+  const isLoanForParty = (l, p) => {
+    if (!l || !p) return false;
+    const pId = String(p.id || '').trim();
+    const pName = String(p.name || '').trim().toLowerCase();
+    const lParty = String(l.party || '').trim();
+    const lPartyName = String(l.partyName || '').trim().toLowerCase();
+    return (pId && lParty === pId) ||
+           (pName && (lParty.toLowerCase() === pName || lPartyName === pName));
+  };
   const loanR = p => (db.loans || []).filter(l => isLoanForParty(l, p) && l.dir === 'given').reduce((s, l) => s + Math.max(0, (l.principal || 0) - (l.repaid || 0)), 0);
   const loanY = p => (db.loans || []).filter(l => isLoanForParty(l, p) && l.dir === 'taken').reduce((s, l) => s + Math.max(0, (l.principal || 0) - (l.repaid || 0)), 0);
 

@@ -1,7 +1,21 @@
 // Server-side ledger integrity checks. The client is never trusted.
 
 function migrateSchema(data) {
-  if (!data || !Array.isArray(data.docs)) return data;
+  if (!data) return data;
+  if (Array.isArray(data.entries)) {
+    for (const e of data.entries) {
+      if (e && e.src === 'pay') {
+        const cashLines = (e.lines || []).filter(l => {
+          const a = (data.accounts || []).find(x => x.code === l.a);
+          return a ? a.cash : (l.a === '1000' || l.a === '1010');
+        });
+        const hasCashDebit = cashLines.some(l => l.d > 0);
+        e.src = hasCashDebit ? 'in' : 'out';
+      }
+    }
+  }
+
+  if (!Array.isArray(data.docs)) return data;
   if (!data.schemaVer || data.schemaVer < 2) {
     for (const doc of data.docs) {
       if (!doc) continue;

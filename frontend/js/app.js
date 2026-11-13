@@ -1191,6 +1191,22 @@ const ACTIONS = {
     const el = $('[data-k="bkq"]');
     if (el) el.focus();
   },
+  'overview-newsale': () => {
+    salesState.tab = 'new';
+    salesState.editNo = null;
+    salesState.selectedPartyId = null;
+    salesState.lines = [];
+    salesState.files = [];
+    salesState.newNo = nextInvNo();
+    navigate('sales');
+  },
+  'overview-newbill': () => {
+    billsState.tab = 'new';
+    billsState.editId = null;
+    billsState.selectedPartyId = null;
+    billsState.files = [];
+    navigate('bills');
+  },
   psale: i => {
     salesState.tab = 'new';
     salesState.editNo = null;

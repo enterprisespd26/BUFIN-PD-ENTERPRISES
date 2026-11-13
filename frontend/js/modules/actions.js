@@ -1,5 +1,5 @@
 import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid, downloadCSV, downloadJSON, downloadZIP, readZipFile } from './utils.js';
-import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries, getOrCreateExpenseAccount, syncPartyClassifications, setVer, setBaseVer } from './state.js';
+import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries, getOrCreateExpenseAccount, syncPartyClassifications, setVer, setBaseVer, ensureAdvanceAccounts, getPartyAdvanceBalance } from './state.js';
 import { modal, closeM, form, fld, sel, opts, accOpts, partyOpts } from './components.js';
 
 import { getTxnRowData } from '../views/money.js';
@@ -341,7 +341,7 @@ export function showEnt(id) {
         </div>
         <div style="font-size:11.5px;color:var(--t2);line-height:1.4;">
           Posted journal entries follow strict double-entry standards and are immutable.
-          ${e.src === 'sale' || e.src === 'bill' || e.src === 'pay' || e.src === 'loan' ? ' To cancel linked invoices or bills, use Cancel on their respective page.' : ' Correct by reversing if required.'}
+          ${e.src === 'sale' || e.src === 'bill' || e.src === 'loan' ? ' To cancel linked invoices or bills, use Cancel on their respective page.' : ' Correct by reversing if required.'}
         </div>
       </div>
     </details>
@@ -356,7 +356,7 @@ export function showEnt(id) {
 
     <!-- Action Buttons -->
     <div class="row modal-actions no-print" style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:16px;">
-      ${((e.src === 'in' || e.src === 'out' || e.src === 'exp' || e.src === 'pay' || e.src === 'xfer' || e.src === 'jv') && e.status === 'posted') ? `
+      ${((e.src === 'in' || e.src === 'out' || e.src === 'xfer' || e.src === 'jv') && e.status === 'posted') ? `
         <button type="button" class="btn p" data-a="edittxn" data-i="${esc(e.id)}" style="display:inline-flex;align-items:center;gap:6px;background:#2563eb;color:#ffffff;font-weight:600;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           <span>Edit Details</span>
@@ -475,14 +475,47 @@ export function showDoc(id) {
       <tr><td>Paid</td><td class="num">${fmt(paid(d))}</td></tr>
       <tr class="tot"><td>Outstanding</td><td class="num">${fmt(out(d))}</td></tr>
     </table></div>
-    ${d.pays.length ? '<small>Payments: ' + d.pays.map(x => esc(x.date) + ' ' + fmt(x.amt) + (x.void ? ' (void)' : '')).join(', ') + '</small>' : ''}
-    <div class="row">
+    ${d.pays && d.pays.length ? `
+      <div style="margin-top:10px;">
+        <div style="font-weight:700;font-size:12.5px;color:var(--tx);margin-bottom:6px;">Payment History:</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${d.pays.map(p => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#f8fafc;border:1px solid var(--bd);border-radius:6px;font-size:12px;">
+              <span><b>${fmtDate(p.date)}</b> · ${fmt(p.amt)} · <span class="method-tag">${esc(p.method || 'Cash')}</span> ${p.void ? '<span style="color:#dc2626;font-weight:700;">(Undone / Reversed)</span>' : ''}</span>
+              ${!p.void && p.je ? `
+                <button type="button" class="btn alt sm undo-doc-pay-btn" data-je="${esc(p.je)}" data-doc-id="${esc(d.id)}" style="color:#dc2626;padding:2px 8px;font-size:11px;min-height:unset;">Undo payment</button>
+              ` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
+    <div class="row" style="margin-top:14px;">
       <button onclick="window.print()">Print</button>
       ${!d.cancelled && out(d) > 0 ? `<button class="p" data-a="pay" data-i="${esc(d.id)}">${s ? 'Receive payment' : 'Pay bill'}</button>` : ''}
       ${!d.cancelled ? `<button class="d" data-a="cdoc" data-i="${esc(d.id)}">Cancel</button>` : ''}
       <button id="closeDocBtn">Close</button>
     </div>`);
   $('#closeDocBtn').onclick = closeM;
+
+  $$('.undo-doc-pay-btn').forEach(btn => {
+    btn.onclick = () => {
+      const jeId = btn.dataset.je;
+      const docId = btn.dataset.docId;
+      if (!jeId) return;
+      if (confirm('Are you sure you want to undo this payment? This will reverse the journal entry and restore the outstanding balance.')) {
+        try {
+          reverse(jeId);
+          save();
+          toast('Payment undone and reversed');
+          showDoc(docId);
+          window.dispatchEvent(new CustomEvent('bufin-render'));
+        } catch (err) {
+          toast('Error undoing payment: ' + err.message);
+        }
+      }
+    };
+  });
 }
 
 export function markBillPaid(docOrId, onComplete) {
@@ -832,98 +865,268 @@ export function partyPay(i, ty) {
   const s = ty === 'sale';
   const p = db.parties.find(x => x.id === i);
   if (!p) return;
-  const L = db.docs.filter(d => d.party === i && d.type === ty && !d.cancelled && out(d) > 0).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const L = db.docs.filter(d => d.party === i && (d.type === ty || (s ? d.type === 'credit_note' : d.type === 'debit_note')) && !d.cancelled && out(d) > 0)
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   const T = L.reduce((x, d) => x + out(d), 0);
-  form(s ? 'Receive payment from ' + p.name : 'Pay ' + p.name,
-    `<div class="two">
-      ${fld('date', 'Date', 'date', today(), 1)}
-      ${fld('amt', 'Amount (₹)', 'text', (T / 100).toFixed(2), 1)}
-      ${sel('acct', 'Account', accOpts(a => a.cash))}
-      ${fld('ref', 'Reference')}
+  const curAdv = getPartyAdvanceBalance(i, s);
+
+  const docCheckboxes = L.map((d) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--bd, #e2e8f0);font-size:12.5px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-weight:500;">
+        <input type="checkbox" name="pay_doc_${esc(d.id)}" value="${esc(d.id)}" class="pp-doc-cb" data-bal="${out(d)}" checked>
+        <span><b>${esc(d.sno || d.no)}</b> <small style="color:var(--t2)">(${esc(d.date || '')})</small></span>
+      </label>
+      <span style="font-weight:600;color:var(--tx)">${fmt(out(d))}</span>
     </div>
-    <small>Applied to the oldest open ${s ? 'invoices' : 'bills'} first. Open: ${fmt(T)} across ${L.length} document(s).</small>`,
+  `).join('');
+
+  const docSection = L.length ? `
+    <div style="margin-top:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:12.5px;font-weight:700;color:var(--tx)">Open Documents to Settle (${L.length}):</span>
+        <small style="color:var(--t2)">Default: oldest-first</small>
+      </div>
+      <div style="max-height:160px;overflow-y:auto;border:1px solid var(--bd);border-radius:6px;background:#fafafa;">
+        ${docCheckboxes}
+      </div>
+    </div>
+  ` : `<div style="font-size:12px;color:var(--t2);margin-top:8px;">No open documents. Entire amount will be recorded as ${s ? 'Customer Advance' : 'Supplier Advance'}.</div>`;
+
+  form(s ? 'Receive payment from ' + p.name : 'Pay supplier ' + p.name,
+    `<div style="background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;line-height:1.5;">
+      <div><b>Party:</b> ${esc(p.name)} <small>(${s ? 'Customer' : 'Supplier'})</small></div>
+      <div><b>Total Open Due:</b> <b style="color:${T > 0 ? (s ? '#15803d' : '#b91c1c') : 'var(--tx)'}">${fmt(T)}</b> across ${L.length} doc(s)</div>
+      ${curAdv > 0 ? `<div style="color:#0284c7;font-weight:600;margin-top:2px;">Existing Unallocated Advance: ${fmt(curAdv)}</div>` : ''}
+    </div>
+    <div class="two">
+      ${fld('date', 'Payment Date', 'date', today(), 1)}
+      ${fld('amt', 'Payment Amount (₹)', 'number', (T / 100).toFixed(2), 1, 'step="any" id="pp_amt" min="0.01"')}
+      <label>${s ? 'Deposit To Account *' : 'Paid From Account *'}
+        <select name="acct" id="pp_acct" required>
+          ${accOpts(a => a.cash)}
+        </select>
+        <div id="pp_cash_hint" style="font-size:12px;color:var(--t2);margin-top:3px;"></div>
+      </label>
+      <div id="pp_method_wrap">
+        <label>Payment Method
+          <select name="method" id="pp_method">
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="UPI">UPI</option>
+            <option value="Cheque">Cheque</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+      </div>
+      <div id="pp_cash_warn" style="grid-column: 1 / -1; display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; font-size:12.5px; color:#991b1b; line-height:1.4;">
+        <b>⚠️ Insufficient Cash in Hand Balance:</b> Available cash is less than this payment. Physical cash cannot be negative.
+      </div>
+      ${fld('ref', 'Reference / UTR / Cheque (optional)')}
+      <label style="grid-column: 1 / -1;">Description / Notes
+        <textarea name="desc" id="pp_desc" rows="2" placeholder="Payment notes, transaction remarks..."></textarea>
+      </label>
+    </div>
+    ${docSection}
+    <div id="pp_summary" style="margin-top:10px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:12.5px;color:#166534;display:none;"></div>`,
     v => {
-      let r = P(v.amt);
-      if (!r || r > T) throw Error('Amount must be above zero and within the open ' + fmt(T));
+      const totPaisa = P(v.amt);
+      if (!totPaisa || totPaisa <= 0) throw Error('Amount must be above zero');
       if (db.biz.lock && v.date <= db.biz.lock) throw Error('Period is locked up to ' + db.biz.lock);
-      for (const d of L) {
-        if (r <= 0) break;
-        const a = Math.min(r, out(d));
+
+      const isCash = v.acct === '1000' || (acc(v.acct)?.name || '').toLowerCase().includes('cash');
+      if (!s && isCash) {
+        const check = checkCashLiquidity('1000', totPaisa);
+        if (!check.ok) throw Error(check.error);
+      }
+
+      const finalMethod = isCash ? 'Cash' : (v.method || 'Bank Transfer');
+      const userRef = (v.ref || '').trim();
+      const userDesc = (v.desc || '').trim();
+
+      // Gather checked documents in chronological order
+      const checkedDocIds = new Set(
+        $$('.pp-doc-cb:checked').map(cb => cb.value)
+      );
+      const targetDocs = L.filter(d => checkedDocIds.has(d.id));
+
+      let remPaisa = totPaisa;
+      for (const d of targetDocs) {
+        if (remPaisa <= 0) break;
+        const curBal = out(d);
+        if (curBal <= 0) continue;
+        const applied = Math.min(remPaisa, curBal);
+        const docRef = d.sno || d.no || 'Doc';
+        const narr = userDesc
+          ? `${p.name} - ${userDesc}`
+          : (s ? `${p.name} - Receipt for ${docRef}` : `${p.name} - Payment for ${docRef}`);
+
         const e = post({
           date: v.date,
-          src: 'pay',
-          narr: (s ? 'Receipt for ' : 'Payment for ') + d.no,
-          meta: { ref: v.ref },
-          lines: s ? [{ a: v.acct, d: a, c: 0, p: i }, { a: '1100', d: 0, c: a, p: i }] : [{ a: '2000', d: a, c: 0, p: i }, { a: v.acct, d: 0, c: a, p: i }]
+          src: s ? 'in' : 'out',
+          narr,
+          meta: {
+            party: i,
+            partyName: p.name,
+            acct: v.acct,
+            method: finalMethod,
+            ref: userRef || docRef,
+            docNo: docRef,
+            ...(s ? { invoiceId: d.id } : { billId: d.id }),
+            desc: userDesc
+          },
+          lines: s ? [
+            { a: v.acct, d: applied, c: 0, p: i },
+            { a: '1100', d: 0, c: applied, p: i }
+          ] : [
+            { a: '2000', d: applied, c: 0, p: i },
+            { a: v.acct, d: 0, c: applied, p: i }
+          ]
         });
-        d.pays.push({ je: e.id, amt: a, date: v.date });
-        r -= a;
+
+        if (!d.pays) d.pays = [];
+        d.pays.push({
+          je: e.id,
+          amt: applied,
+          date: v.date,
+          method: finalMethod,
+          acct: v.acct
+        });
+        d.paid = paid(d);
+        remPaisa -= applied;
       }
+
+      // If amount exceeds settled docs, post surplus to advance
+      if (remPaisa > 0) {
+        ensureAdvanceAccounts();
+        if (s) {
+          post({
+            date: v.date,
+            src: 'in',
+            narr: userDesc ? `${p.name} - ${userDesc} (Advance)` : `${p.name} - Customer Advance`,
+            meta: {
+              party: i,
+              partyName: p.name,
+              acct: v.acct,
+              method: finalMethod,
+              ref: userRef || 'ADVANCE',
+              docNo: 'ADVANCE',
+              desc: userDesc || 'Customer Advance Receipt'
+            },
+            lines: [
+              { a: v.acct, d: remPaisa, c: 0, p: i },
+              { a: '2300', d: 0, c: remPaisa, p: i }
+            ]
+          });
+        } else {
+          post({
+            date: v.date,
+            src: 'out',
+            narr: userDesc ? `${p.name} - ${userDesc} (Advance)` : `${p.name} - Supplier Advance`,
+            meta: {
+              party: i,
+              partyName: p.name,
+              acct: v.acct,
+              method: finalMethod,
+              ref: userRef || 'ADVANCE',
+              docNo: 'ADVANCE',
+              desc: userDesc || 'Supplier Advance Payment'
+            },
+            lines: [
+              { a: '1450', d: remPaisa, c: 0, p: i },
+              { a: v.acct, d: 0, c: remPaisa, p: i }
+            ]
+          });
+        }
+      }
+
+      save();
+      toast(s ? `Recorded receipt of ${fmt(totPaisa)} from ${p.name}` : `Recorded payment of ${fmt(totPaisa)} to ${p.name}`);
+      window.dispatchEvent(new CustomEvent('bufin-render'));
+    },
+    s ? 'Confirm Payment Received' : 'Confirm Payment Out',
+    () => {
+      const acctEl = $('#pp_acct');
+      const methWrap = $('#pp_method_wrap');
+      const methSel = $('#pp_method');
+      const amtEl = $('#pp_amt');
+      const hintEl = $('#pp_cash_hint');
+      const warnEl = $('#pp_cash_warn');
+      const sumEl = $('#pp_summary');
+      const bankMethods = ['Bank Transfer', 'UPI', 'Cheque', 'Debit Card', 'Other'];
+
+      function sync() {
+        if (!acctEl || !methWrap || !methSel) return;
+        const code = acctEl.value;
+        const isCash = code === '1000' || (acc(code)?.name || '').toLowerCase().includes('cash');
+        if (hintEl) {
+          if (isCash) {
+            hintEl.innerHTML = `Available Cash in Hand: <b>${fmt(net('1000'))}</b>`;
+          } else {
+            hintEl.innerHTML = `Available Bank Balance: <b>${fmt(net('1010'))}</b>`;
+          }
+        }
+        if (isCash) {
+          methWrap.style.display = 'none';
+          methSel.innerHTML = '<option value="Cash" selected>Cash</option>';
+        } else {
+          methWrap.style.display = '';
+          const cur = methSel.value && methSel.value !== 'Cash' ? methSel.value : 'Bank Transfer';
+          methSel.innerHTML = bankMethods.map(m => `<option value="${m}"${m === cur ? ' selected' : ''}>${m}</option>`).join('');
+        }
+        if (!s && isCash && warnEl && amtEl) {
+          let pVal = 0;
+          try { pVal = P(amtEl.value); } catch (e) {}
+          const curCash = net('1000');
+          warnEl.style.display = (pVal > curCash) ? 'block' : 'none';
+        } else if (warnEl) {
+          warnEl.style.display = 'none';
+        }
+
+        // Live calculation of doc settlement vs advance surplus
+        if (sumEl && amtEl) {
+          let pVal = 0;
+          try { pVal = P(amtEl.value); } catch (e) {}
+          if (pVal > 0) {
+            let selectedTotal = 0;
+            $$('.pp-doc-cb:checked').forEach(cb => {
+              selectedTotal += (parseInt(cb.dataset.bal, 10) || 0);
+            });
+            const settled = Math.min(pVal, selectedTotal);
+            const surplus = Math.max(0, pVal - selectedTotal);
+            sumEl.style.display = 'block';
+            sumEl.innerHTML = `<b>Allocation:</b> Settle documents: ${fmt(settled)}` +
+              (surplus > 0 ? ` · <b style="color:#0284c7">Surplus as Advance: ${fmt(surplus)}</b>` : '');
+          } else {
+            sumEl.style.display = 'none';
+          }
+        }
+      }
+
+      acctEl?.addEventListener('change', sync);
+      amtEl?.addEventListener('input', sync);
+      $$('.pp-doc-cb').forEach(cb => cb.addEventListener('change', sync));
+      sync();
     }
   );
 }
 
-export function docForm2(ty, preParty) {
-  const s = ty === 'sale';
-  const ok = db.parties.some(s ? isC : isS);
-
-  const calc = () => {
-    const f = $('#f');
-    if (!f || !f.amt) return;
-    const v = Object.fromEntries(new FormData(f));
-    let b = 0;
-    try { b = P(v.amt || '0'); } catch (e) {}
-    const g = Math.round(b * (parseFloat(v.gst || 0) || 0) / 100);
-    const p = db.parties.find(x => x.id === v.party);
-    const t = taxSplit(g, p);
-    if (p && p.terms && v.date && f.due && !f.due.dataset.u) f.due.value = addD(v.date, +p.terms);
-    const sp = !g ? 'no GST' : t.ig ? 'IGST ' + fmt(t.ig) : t.cg !== undefined ? 'CGST ' + fmt(t.cg) + ' + SGST ' + fmt(t.sg) : 'GST ' + fmt(g) + ' (set states for the split)';
-    const pv = $('#pv');
-    if (pv) pv.innerHTML = 'Taxable ' + fmt(b) + ' · ' + sp + ' · <b>Total ' + fmt(b + g) + '</b>';
-  };
-
-  form(s ? 'New sales invoice' : 'New purchase bill',
-    `${ok ? '' : '<div class="warn">No ' + (s ? 'customers' : 'suppliers') + ' yet. Add one under Parties first.</div>'}
-    <div class="two">
-      ${fld('date', 'Date', 'date', today(), 1, 'id="docDate"')}
-      ${fld('due', 'Due date (auto from party terms)', 'date', '', 0, 'id="docDue"')}
-      ${sel('party', s ? 'Customer (we sell to)' : 'Supplier (we buy from)', partyOpts(s ? isC : isS, preParty), 'id="docParty"')}
-      ${fld('sno', s ? 'Reference' : 'Supplier invoice no.')}
-      ${sel('acct', s ? 'Revenue account' : 'Debit account (expense, inventory, asset)', accOpts(a => s ? a.t === 'I' : ['X', 'A'].includes(a.t) && !a.cash && !['1100', '1300', '1400'].includes(a.code), s ? '4000' : '5000'))}
-      ${fld('amt', 'Taxable amount (₹)', 'text', '', 1, 'id="docAmt"')}
-      ${fld('gst', 'GST rate %', 'number', '0', 0, 'id="docGst"')}
-      ${fld('desc', 'Description / items')}
-    </div>
-    <div class="warn" id="pv"></div>`,
-    v => {
-      const p = db.parties.find(x => x.id === v.party);
-      if (!p || !(s ? isC(p) : isS(p))) throw Error('Choose a ' + (s ? 'customer' : 'supplier') + '. Add one under Parties if needed.');
-      const base = P(v.amt);
-      const rate = parseFloat(v.gst || 0) || 0;
-      const g = Math.round(base * rate / 100);
-      const tot = base + g;
-      if (!base) throw Error('Amount must be above zero');
-      if (!s && v.sno && db.docs.some(d => d.type === 'bill' && d.party === v.party && d.sno === v.sno && !d.cancelled)) {
-        throw Error('Duplicate: this supplier invoice number already exists');
-      }
-      const no = next(ty, s ? 'INV-' : 'BILL-');
-      const due = v.due || (p.terms ? addD(v.date, +p.terms) : '');
-      const L = s
-        ? [{ a: '1100', d: tot, c: 0, p: v.party }, { a: v.acct, d: 0, c: base, p: v.party }].concat(g ? [{ a: '2200', d: 0, c: g }] : [])
-        : [{ a: v.acct, d: base, c: 0, p: v.party }].concat(g ? [{ a: '1300', d: g, c: 0 }] : [], [{ a: '2000', d: 0, c: tot, p: v.party }]);
-      const e = post({ date: v.date, src: ty, narr: no + ' ' + (v.desc || ''), lines: L });
-      db.docs.push({ id: uid(), type: ty, no, date: v.date, due, party: v.party, sno: v.sno, desc: v.desc, base, gst: g, rate, tax: taxSplit(g, p), total: tot, je: e.id, pays: [] });
-    },
-    'Save',
-    () => {
-      $('#docDate')?.addEventListener('input', calc);
-      $('#docParty')?.addEventListener('change', calc);
-      $('#docAmt')?.addEventListener('input', calc);
-      $('#docGst')?.addEventListener('input', calc);
-      $('#docDue')?.addEventListener('input', e => e.target.dataset.u = '1');
-      calc();
-    }
-  );
+export async function docForm2(ty, preParty) {
+  closeM();
+  if (ty === 'sale') {
+    const { salesState } = await import('../views/sales.js');
+    salesState.tab = 'new';
+    salesState.editNo = null;
+    salesState.selectedPartyId = preParty || null;
+    location.hash = '#/sales';
+    window.dispatchEvent(new CustomEvent('bufin-render'));
+  } else {
+    const { billsState } = await import('../views/bills.js');
+    billsState.tab = 'new';
+    billsState.editId = null;
+    billsState.selectedPartyId = preParty || null;
+    location.hash = '#/bills';
+    window.dispatchEvent(new CustomEvent('bufin-render'));
+  }
 }
 
 export function partyForm(id, preType, onSaved) {
@@ -962,11 +1165,25 @@ export function partyForm(id, preType, onSaved) {
 export function stmt2(i) {
   const p = db.parties.find(x => x.id === i);
   if (!p) return;
-  const isLoanMatch = l => l.party === i || (p.name && (l.party === p.name || l.partyName === p.name));
+  const pNameLower = String(p.name || '').trim().toLowerCase();
+  const partyMatch = partyVal => {
+    if (!partyVal) return false;
+    const val = String(partyVal).trim().toLowerCase();
+    return val === String(i).trim().toLowerCase() || (pNameLower && val === pNameLower);
+  };
+  const isLoanMatch = l => {
+    if (!l) return false;
+    return partyMatch(l.party) || partyMatch(l.partyName);
+  };
   const isLoan = p.type === 'lender' || (db.loans || []).some(isLoanMatch);
+  const hasCustAdv = (db.entries || []).some(e => e.status !== 'reversed' && (e.lines || []).some(l => l.a === '2300' && partyMatch(l.p)));
+  const hasSuppAdv = (db.entries || []).some(e => e.status !== 'reversed' && (e.lines || []).some(l => l.a === '1450' && partyMatch(l.p)));
+
   const codes = [
     isC(p) ? '1100' : '',
+    hasCustAdv ? '2300' : '',
     isS(p) ? '2000' : '',
+    hasSuppAdv ? '1450' : '',
     isLoan ? '2100' : ''
   ].filter(Boolean);
   const ents = db.entries.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.at || '').localeCompare(b.at || ''));
@@ -974,12 +1191,18 @@ export function stmt2(i) {
 
   const blocks = codes.map(c => {
     let run = 0;
-    const rows = ents.flatMap(e => (e.lines || []).filter(l => l.a === c && (l.p === i || (p.name && l.p === p.name))).map(l => {
-      run += (c === '1100' ? (l.d - l.c) : (l.c - l.d));
+    const rows = ents.flatMap(e => (e.lines || []).filter(l => l.a === c && partyMatch(l.p)).map(l => {
+      run += (c === '1100' || c === '1450' ? (l.d - l.c) : (l.c - l.d));
       return `<tr><td>${e.date}</td><td>${esc(e.narr)}</td><td class="num">${l.d ? fmt(l.d) : ''}</td><td class="num">${l.c ? fmt(l.c) : ''}</td><td class="num">${fmt(run)}</td></tr>`;
     }));
-    c === '1100' ? rec = run : pay = run;
-    return `<h4>${c === '1100' ? 'Receivable: they owe us ' + fmt(run) : c === '2100' ? 'Loan Payable: we owe them ' + fmt(run) : 'Payable: we owe them ' + fmt(run)}</h4>
+    if (c === '1100') rec = run;
+    else if (c === '2000') pay = run;
+    const heading = c === '1100' ? 'Receivable: they owe us ' + fmt(run)
+      : c === '2100' ? 'Loan Payable: we owe them ' + fmt(run)
+      : c === '2300' ? 'Customer Advances: unallocated balance ' + fmt(run)
+      : c === '1450' ? 'Supplier Advances: unallocated balance ' + fmt(run)
+      : 'Payable: we owe them ' + fmt(run);
+    return `<h4>${heading}</h4>
       <div class="wrap"><table><tr><th>Date</th><th>Details</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr>${rows.join('') || '<tr><td colspan="5" class="empty">No transactions yet.</td></tr>'}</table></div>`;
   }).join('');
 
@@ -1491,7 +1714,7 @@ export async function moneyOutForm(existingEntry = null) {
   const existingMethod = existingEntry?.meta?.method || (existingAcct === '1000' ? 'Cash' : 'Bank Transfer / NEFT / RTGS');
 
   let detectedCat = 'operating';
-  if (existingEntry?.meta?.cat === 'supplier' || existingEntry?.src === 'pay' || existingEntry?.lines?.some(l => l.a === '2000')) {
+  if (existingEntry?.meta?.cat === 'supplier' || existingEntry?.lines?.some(l => l.a === '2000')) {
     detectedCat = 'supplier';
   } else if (existingEntry?.meta?.cat === 'loan' || existingEntry?.lines?.some(l => l.a === '2100' || l.a === '5500')) {
     detectedCat = 'loan';
@@ -3520,8 +3743,9 @@ export function buildAllBackupFiles() {
     const cat = e.src === 'sale' ? 'Sales Invoice'
       : e.src === 'bill' ? 'Purchase Bill'
       : e.src === 'open' ? 'Opening Balance'
-      : e.src === 'pay' ? 'Payment'
-      : e.src === 'trf' ? 'Transfer'
+      : e.src === 'in' ? 'Money In'
+      : e.src === 'out' ? 'Money Out'
+      : e.src === 'xfer' || e.src === 'trf' ? 'Transfer'
       : 'Journal Entry';
     for (const l of (e.lines || [])) {
       masterRows.push([

@@ -129,10 +129,53 @@ export function syncPartyClassifications(targetDb) {
   return modified;
 }
 
-export const SYS = ['1000','1010','1100','1300','1400','2000','2100','2200','3200','4200','4300','5000','5500','5600'];
+export const SYS = ['1000','1010','1100','1300','1400','1450','2000','2100','2200','2300','3200','4200','4300','5000','5500','5600'];
+
+export function ensureAdvanceAccounts() {
+  if (!db || !Array.isArray(db.accounts)) return;
+  if (!db.accounts.some(a => a.code === '2300')) {
+    db.accounts.push({ code: '2300', name: 'Customer Advances', t: 'L' });
+  }
+  if (!db.accounts.some(a => a.code === '1450')) {
+    db.accounts.push({ code: '1450', name: 'Supplier Advances', t: 'A' });
+  }
+}
+
+export function getPartyAdvanceBalance(partyId, isCustomer) {
+  if (!partyId || !db || !Array.isArray(db.entries)) return 0;
+  const acctCode = isCustomer ? '2300' : '1450';
+  let bal = 0;
+  for (const e of db.entries) {
+    if (e.status === 'reversed') continue;
+    for (const l of (e.lines || [])) {
+      if (l.a === acctCode && l.p === partyId) {
+        if (isCustomer) {
+          bal += (l.c || 0) - (l.d || 0);
+        } else {
+          bal += (l.d || 0) - (l.c || 0);
+        }
+      }
+    }
+  }
+  return Math.max(0, bal);
+}
 
 export function migrateSchema(targetDb) {
-  if (!targetDb || !Array.isArray(targetDb.docs)) return;
+  if (!targetDb) return;
+  if (Array.isArray(targetDb.entries)) {
+    for (const e of targetDb.entries) {
+      if (e && e.src === 'pay') {
+        const cashLines = (e.lines || []).filter(l => {
+          const a = (targetDb.accounts || []).find(x => x.code === l.a);
+          return a ? a.cash : (l.a === '1000' || l.a === '1010');
+        });
+        const hasCashDebit = cashLines.some(l => l.d > 0);
+        e.src = hasCashDebit ? 'in' : 'out';
+      }
+    }
+  }
+
+  if (!Array.isArray(targetDb.docs)) return;
   if (!targetDb.schemaVer || targetDb.schemaVer < 2) {
     for (const doc of targetDb.docs) {
       if (!doc) continue;

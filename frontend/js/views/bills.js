@@ -1,7 +1,7 @@
 import { $, $$, esc, fmt, fmtDate, head, kpi, toast, today, uid, P, convertRate, downloadCSV, debounce as _utilsDebounce } from '../modules/utils.js';
-import { db, save, post, reverse, out, dstat, pn, isS, net, checkCashLiquidity } from '../modules/state.js';
+import { db, setDb, save, post, reverse, out, paid, dstat, pn, isS, net, checkCashLiquidity, next, log, ensureAdvanceAccounts, getPartyAdvanceBalance } from '../modules/state.js';
 import { partyForm, markBillPaid, showDoc, isIntraState } from '../modules/actions.js';
-import { showActionSheet } from '../modules/components.js';
+import { showActionSheet, form } from '../modules/components.js';
 import { enhanceMobile } from '../modules/mobile.js';
 
 // Safe debounce fallback: guaranteed never undefined in any scope
@@ -71,8 +71,8 @@ export function formatStockQty(qty, isWeight) {
 }
 
 export function getInventoryStock() {
-  const bills = db.docs.filter(d => d.type === 'bill' && !d.cancelled);
-  const sales = db.docs.filter(d => d.type === 'sale' && !d.cancelled);
+  const bills = db.docs.filter(d => (d.type === 'bill' || d.type === 'debit_note') && !d.cancelled);
+  const sales = db.docs.filter(d => (d.type === 'sale' || d.type === 'credit_note') && !d.cancelled);
 
   const stockMap = new Map();
 
@@ -140,35 +140,51 @@ export function getInventoryStock() {
 
       const entry = stockMap.get(key);
       const isWeight = isWeightUnit(it.u);
+      const isDebitNote = b.type === 'debit_note';
       if (isWeight) {
-        entry.purchasedKg += toBaseKg(it.q, it.u);
+        if (isDebitNote) {
+          entry.purchasedKg = Math.max(0, entry.purchasedKg - toBaseKg(it.q, it.u));
+        } else {
+          entry.purchasedKg += toBaseKg(it.q, it.u);
+        }
       } else {
-        entry.purchasedPcs += it.q;
+        if (isDebitNote) {
+          entry.purchasedPcs = Math.max(0, entry.purchasedPcs - it.q);
+        } else {
+          entry.purchasedPcs += it.q;
+        }
       }
-      entry.totalInvestment += it.amt;
-      if (sup) entry.suppliers.add(sup);
+      if (isDebitNote) {
+        entry.totalInvestment = Math.max(0, entry.totalInvestment - it.amt);
+      } else {
+        entry.totalInvestment += it.amt;
+      }
+      if (sup && !isDebitNote) entry.suppliers.add(sup);
 
-      entry.bills.push({
-        id: b.id,
-        ref: billRef,
-        date: billDate,
-        sup,
-        qty: it.q,
-        unit: it.u,
-        rate: it.r,
-        amt: it.amt
-      });
+      if (!isDebitNote) {
+        entry.bills.push({
+          id: b.id,
+          ref: billRef,
+          date: billDate,
+          sup,
+          qty: it.q,
+          unit: it.u,
+          rate: it.r,
+          amt: it.amt
+        });
 
-      if (!entry.latestDate || billDate >= entry.latestDate) {
-        entry.latestDate = billDate;
-        entry.latestRate = it.r;
-        entry.latestUnit = it.u;
+        if (!entry.latestDate || billDate >= entry.latestDate) {
+          entry.latestDate = billDate;
+          entry.latestRate = it.r;
+          entry.latestUnit = it.u;
+        }
       }
     });
   });
 
   // 2. Process all Sales Invoices (Outflow linkage)
   sales.forEach(s => {
+    const isCreditNote = s.type === 'credit_note';
     (s.lines || []).forEach(l => {
       const matName = (l.n || '').trim();
       if (!matName) return;
@@ -177,9 +193,17 @@ export function getInventoryStock() {
         const entry = stockMap.get(key);
         const sq = parseFloat(l.q) || 0;
         if (isWeightUnit(l.u)) {
-          entry.soldKg += toBaseKg(sq, l.u);
+          if (isCreditNote) {
+            entry.soldKg = Math.max(0, entry.soldKg - toBaseKg(sq, l.u));
+          } else {
+            entry.soldKg += toBaseKg(sq, l.u);
+          }
         } else {
-          entry.soldPcs += sq;
+          if (isCreditNote) {
+            entry.soldPcs = Math.max(0, entry.soldPcs - sq);
+          } else {
+            entry.soldPcs += sq;
+          }
         }
       }
     });
@@ -281,19 +305,133 @@ export function nextBillNo() {
   return prefix + String(maxSeq + 1).padStart(4, '0');
 }
 
+export function nextDnNo() {
+  let maxSeq = 0;
+  for (const d of (db.docs || [])) {
+    if (d.type === 'debit_note' && d.no) {
+      const m = String(d.no).match(/(\d+)$/);
+      if (m) {
+        const num = parseInt(m[1], 10);
+        if (!isNaN(num) && num > maxSeq) maxSeq = num;
+      }
+    }
+  }
+  return 'DN-' + String(maxSeq + 1).padStart(4, '0');
+}
+
+export function showDebitNoteModal(doc, onComplete) {
+  if (!doc) return;
+  const maxPaise = doc.total || 0;
+  const currentOut = out(doc);
+  const defaultAmt = currentOut > 0 ? (currentOut / 100).toFixed(2) : (maxPaise / 100).toFixed(2);
+  const supplierName = doc.sup || pn(doc.party);
+
+  const html = `
+    <div style="font-size:13px;color:var(--t2);margin-bottom:12px;">
+      Issue a Debit Note / Purchase Return against Bill <b>#${esc(doc.sno || doc.no)}</b> for <b>${esc(supplierName)}</b>.
+      <br>Original Total: <b>${fmt(doc.total)}</b> · Outstanding: <b>${fmt(currentOut)}</b>
+    </div>
+    <div class="two">
+      <label>Return Date *
+        <input type="date" name="date" id="dn_date" value="${today()}" required>
+      </label>
+      <label>Return Amount (₹) *
+        <input type="number" name="amt" id="dn_amt" step="0.01" min="0.01" max="${(maxPaise / 100).toFixed(2)}" value="${defaultAmt}" required>
+      </label>
+    </div>
+    <div style="margin-top:10px;">
+      <label>Reason / Narration *
+        <input type="text" name="reason" id="dn_reason" placeholder="e.g. Material defective / returned to supplier / rate difference" required>
+      </label>
+    </div>
+  `;
+
+  form('Debit Note / Purchase Return', html, v => {
+    const amtRupees = parseFloat(v.amt);
+    if (!amtRupees || amtRupees <= 0) throw new Error('Valid return amount is required');
+    const retPaise = P(v.amt);
+    if (retPaise > maxPaise) throw new Error(`Return amount cannot exceed bill total (${fmt(maxPaise)})`);
+
+    const dnDate = v.date || today();
+    const reason = (v.reason || '').trim() || 'Purchase Return';
+    const dnNo = nextDnNo();
+
+    let retBase = retPaise;
+    let retTax = 0;
+    if ((doc.tax?.ig || doc.tax?.cg || doc.gst || 0) > 0 && (doc.total || 0) > 0) {
+      const gstAmt = (doc.gst || (doc.tax?.ig || 0) + (doc.tax?.cg || 0) * 2);
+      const taxRatio = gstAmt / doc.total;
+      retTax = Math.round(retPaise * taxRatio);
+      retBase = retPaise - retTax;
+    }
+
+    const lines = [];
+    lines.push({ a: '2000', d: retPaise, c: 0, p: doc.party });
+    if (retTax > 0) {
+      lines.push({ a: '5000', d: 0, c: retBase, p: doc.party });
+      lines.push({ a: '1300', d: 0, c: retTax, p: doc.party });
+    } else {
+      lines.push({ a: '5000', d: 0, c: retPaise, p: doc.party });
+    }
+
+    const je = post({
+      src: 'bill',
+      date: dnDate,
+      ref: dnNo,
+      desc: `Debit Note ${dnNo} for Bill ${doc.sno || doc.no} (${reason})`,
+      lines
+    });
+
+    const dnDoc = {
+      id: uid(),
+      type: 'debit_note',
+      no: dnNo,
+      date: dnDate,
+      party: doc.party,
+      sup: doc.sup,
+      origDocId: doc.id,
+      origDocNo: doc.sno || doc.no,
+      total: retPaise,
+      base: retBase,
+      tax: retTax,
+      lines: (doc.lines || []).map(l => ({ ...l })),
+      je: je.id,
+      reason,
+      cancelled: false,
+      pays: []
+    };
+    db.docs.push(dnDoc);
+
+    doc.pays = doc.pays || [];
+    doc.pays.push({
+      je: je.id,
+      amt: retPaise,
+      date: dnDate,
+      method: 'Debit Note',
+      acct: '5000',
+      dnNo
+    });
+    doc.paid = paid(doc);
+
+    log('debit note', dnNo);
+    toast(`Debit Note ${dnNo} created successfully`);
+    if (onComplete) onComplete();
+  }, 'Create Debit Note');
+}
+
 export function renderBills() {
   injectAttachmentStyles();
 
-  const bills = db.docs.filter(d => d.type === 'bill').reverse();
+  const bills = db.docs.filter(d => d.type === 'bill' || d.type === 'debit_note').reverse();
   const scrapItems = db.items || [];
   const suppliers = db.parties.filter(isS);
 
   // Stats
-  const totalBills = bills.length;
+  const totalBills = bills.filter(d => d.type === 'bill').length;
   const thisMonthStr = today().slice(0, 7);
-  const thisMonthTotal = bills.filter(d => (d.date || '').startsWith(thisMonthStr) && !d.cancelled).reduce((s, d) => s + (d.total || 0), 0);
-  const totalPurchased = bills.filter(d => !d.cancelled).reduce((s, d) => s + (d.total || 0), 0);
-  const totalPending = bills.filter(d => !d.cancelled).reduce((s, d) => s + out(d), 0);
+  const thisMonthTotal = bills.filter(d => (d.date || '').startsWith(thisMonthStr) && !d.cancelled).reduce((s, d) => s + (d.type === 'debit_note' ? -d.total : (d.total || 0)), 0);
+  const totalPurchased = bills.filter(d => !d.cancelled).reduce((s, d) => s + (d.type === 'debit_note' ? -d.total : (d.total || 0)), 0);
+  const totalPending = bills.filter(d => !d.cancelled && d.type === 'bill').reduce((s, d) => s + out(d), 0);
 
   // Active bill being edited
   let activeBill;
@@ -487,6 +625,23 @@ export function renderBills() {
           </div>
         </div>
 
+        ${(() => {
+          const supAdvBal = activeSupplierId ? getPartyAdvanceBalance(activeSupplierId, false) : 0;
+          if (supAdvBal <= 0) return '';
+          return `
+            <div class="pd-advance-alert" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+              <div>
+                <div style="font-weight:700;font-size:13.5px;color:#166534;">Supplier Advance Available: ${fmt(supAdvBal)}</div>
+                <div style="font-size:12px;color:#15803d;">This supplier has unallocated advance funds (Supplier Advances 1450).</div>
+              </div>
+              <label style="display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px;color:#166534;cursor:pointer;">
+                <input type="checkbox" id="pd_bill_apply_advance" style="width:16px;height:16px;">
+                <span>Allocate advance to this bill</span>
+              </label>
+            </div>
+          `;
+        })()}
+
         <div class="pd-grid">
           <label class="pd-label">Supplier / seller *
             <input type="text" id="u_sup" list="u_sl" value="${esc(supName)}" placeholder="Supplier name">
@@ -617,14 +772,15 @@ export function renderBills() {
             </thead>
             <tbody id="u_b">
               ${filteredBills.length ? filteredBills.map(d => {
+                const isDn = d.type === 'debit_note';
                 const totalAmt = (d.total || 0) / 100;
                 const paidVal = d.paid !== undefined ? d.paid : ((d.total || 0) - out(d)) / 100;
                 const bal = totalAmt - paidVal;
                 const s = dstat(d);
-                const isPaid = bal <= 0 || s[0] === 'Paid';
+                const isPaid = isDn || bal <= 0 || s[0] === 'Paid';
                 const isPartial = !isPaid && (paidVal > 0);
-                const pillCls = isPaid ? '' : (isPartial ? 'p' : 'u');
-                const pillTxt = isPaid ? 'Paid' : (isPartial ? 'Part paid' : 'Unpaid');
+                const pillCls = isDn ? 'pill-overdue' : (isPaid ? '' : (isPartial ? 'p' : 'u'));
+                const pillTxt = isDn ? 'Debit Note' : (isPaid ? 'Paid' : (isPartial ? 'Part paid' : 'Unpaid'));
 
                 return `<tr>
                   <td>${d.date ? d.date.split('-').reverse().join('/') : ''}</td>
@@ -632,9 +788,12 @@ export function renderBills() {
                     <b>${esc(d.sup || pn(d.party))}</b>
                     ${d.pendingFiles ? pendingUploadChipHTML(d.pendingFiles, d.id) : ''}
                   </td>
-                  <td>${esc(d.sno || d.no || '–')}</td>
+                  <td>
+                    <b>${esc(d.sno || d.no || '–')}</b>
+                    ${isDn ? `<small style="display:block;color:#64748b;font-size:11px;">Ref: #${esc(d.origDocNo || '')}</small>` : ''}
+                  </td>
                   <td>${esc(d.mat || d.desc || 'Scrap')}${d.q ? ' (' + d.q + ' ' + (d.u || 'kg') + ')' : ''}</td>
-                  <td style="text-align:right;font-weight:600">${fmt(d.total)}</td>
+                  <td style="text-align:right;font-weight:600">${isDn ? '–' : ''}${fmt(d.total)}</td>
                   <td><span class="pd-pill ${pillCls}">${pillTxt}</span></td>
                   <td style="text-align:center">
                     ${(d.files && d.files.length) || d.hasFiles ? `
@@ -648,11 +807,15 @@ export function renderBills() {
                   </td>
                   <td style="text-align:right">
                     <div class="pd-btn-row desktop-actions sales-desktop-actions" style="justify-content:flex-end">
-                      <button type="button" class="sales-icon-btn sales-btn-view" data-ba="voucher" data-id="${esc(d.id)}" title="View Bill Voucher" aria-label="View Bill Voucher">
+                      <button type="button" class="sales-icon-btn sales-btn-view" data-ba="voucher" data-id="${esc(d.id)}" title="View ${isDn ? 'Debit Note' : 'Bill Voucher'}" aria-label="View ${isDn ? 'Debit Note' : 'Bill Voucher'}">
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                       </button>
                       ${d.cancelled ? `
                         <span style="font-size:11px;font-weight:600;color:#94a3b8;font-style:italic;">Cancelled</span>
+                      ` : (isDn ? `
+                        <button type="button" class="sales-icon-btn sales-btn-del" data-ba="cancel" data-id="${esc(d.id)}" title="Cancel Debit Note" aria-label="Cancel Debit Note">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                        </button>
                       ` : `
                         <button type="button" class="sales-icon-btn sales-btn-edit" data-ba="e" data-id="${esc(d.id)}" title="Edit Purchase Bill" aria-label="Edit Purchase Bill">
                           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
@@ -662,10 +825,13 @@ export function renderBills() {
                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
                           </button>
                         ` : ''}
+                        <button type="button" class="sales-icon-btn sales-btn-dn" data-ba="dn" data-id="${esc(d.id)}" title="Debit Note / Purchase Return" aria-label="Debit Note / Purchase Return" style="color:#d97706;">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"></path></svg>
+                        </button>
                         <button type="button" class="sales-icon-btn sales-btn-del" data-ba="cancel" data-id="${esc(d.id)}" title="Cancel Purchase Bill" aria-label="Cancel Purchase Bill">
                           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
                         </button>
-                      `}
+                      `)}
                     </div>
                     <button type="button" class="pd-more-btn" data-ba="more" data-id="${esc(d.id)}" title="Actions" aria-label="Actions">⋮</button>
                   </td>
@@ -1397,6 +1563,45 @@ export function bindBillsEvents() {
         updatedPays = [];
       }
 
+      // Step 6b: Allocate supplier advance if requested
+      const applyBillAdvEl = document.getElementById('pd_bill_apply_advance');
+      if (applyBillAdvEl && applyBillAdvEl.checked) {
+        const availAdv = getPartyAdvanceBalance(targetSupplierPartyId, false);
+        if (availAdv > 0) {
+          const currentPaidTotal = updatedPays.reduce((s, p) => s + (p.amt || 0), 0);
+          const currentUnpaid = Math.max(0, totalPaisa - currentPaidTotal);
+          const allocAmt = Math.min(availAdv, currentUnpaid);
+          if (allocAmt > 0) {
+            ensureAdvanceAccounts();
+            const advJe = post({
+              src: 'out',
+              date,
+              ref: next('PV'),
+              desc: `Advance allocation of ${fmt(allocAmt)} from Supplier Advances for Bill ${billNo || internalNo}`,
+              meta: {
+                party: targetSupplierPartyId,
+                partyName: supName,
+                acct: '1450',
+                method: 'Supplier Advance',
+                ref: billNo || internalNo,
+                docNo: billNo || internalNo
+              },
+              lines: [
+                { a: '2000', d: allocAmt, c: 0, p: targetSupplierPartyId },
+                { a: '1450', d: 0, c: allocAmt, p: targetSupplierPartyId }
+              ]
+            });
+            updatedPays.push({
+              je: advJe.id,
+              amt: allocAmt,
+              date,
+              method: 'Supplier Advance',
+              acct: '1450'
+            });
+          }
+        }
+      }
+
       // Step 7: Update or create supplier in db.parties ONLY after journal post succeeds
       let supplierParty = db.parties.find(p => p.id === targetSupplierPartyId);
       if (!supplierParty) {
@@ -1706,6 +1911,18 @@ export function bindBillsEvents() {
             }
           });
         }
+        if (!doc.cancelled && doc.type === 'bill') {
+          sheetItems.push({
+            label: 'Debit Note / Purchase Return',
+            icon: '↩️',
+            onClick: () => {
+              showDebitNoteModal(doc, () => {
+                container.innerHTML = renderBills();
+                bindBillsEvents();
+              });
+            }
+          });
+        }
         if (!doc.cancelled) {
           sheetItems.push({
             label: 'Cancel Purchase Bill',
@@ -1778,6 +1995,11 @@ export function bindBillsEvents() {
       } else if (action === 'p') {
         // Mark paid with account selection (Cash vs Bank)
         markBillPaid(doc, () => {
+          container.innerHTML = renderBills();
+          bindBillsEvents();
+        });
+      } else if (action === 'dn') {
+        showDebitNoteModal(doc, () => {
           container.innerHTML = renderBills();
           bindBillsEvents();
         });

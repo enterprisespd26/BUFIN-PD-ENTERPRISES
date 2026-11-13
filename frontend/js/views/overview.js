@@ -66,7 +66,18 @@ export function renderOverview() {
   }
   const mx = Math.max(1, ...mons.flatMap(x => [x[1], x[2]]));
 
-  return head('Overview') +
+  const overviewActions = `
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <button type="button" class="p" data-a="overview-newsale" style="display:inline-flex;align-items:center;gap:5px;height:36px;padding:0 14px;border-radius:8px;font-weight:600;font-size:13px;">
+        <span>+ New invoice</span>
+      </button>
+      <button type="button" class="btn alt sm" data-a="overview-newbill" style="display:inline-flex;align-items:center;gap:5px;height:36px;padding:0 14px;border-radius:8px;font-weight:600;font-size:13px;background:#fff;border:1px solid var(--bd);">
+        <span>+ New bill</span>
+      </button>
+    </div>
+  `;
+
+  return head('Overview', overviewActions) +
     (db.entries.length ? '' : `<div class="warn">Start here: open Opening Balances and enter your cash, bank and other balances as of your start date. Every screen posts to one double-entry ledger.</div>`) +
     `<div class="grid">
       ${kpi('Cash in hand', fmt(cash))}

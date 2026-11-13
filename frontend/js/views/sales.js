@@ -1,7 +1,7 @@
 import { $, $$, esc, fmt, head, toast, today, uid, P, convertRate, downloadCSV, debounce as _utilsDebounce } from '../modules/utils.js';
-import { db, save, post, reverse, out, dstat, pn, isC, isS, paid } from '../modules/state.js';
+import { db, setDb, save, post, reverse, out, dstat, pn, isC, isS, paid, next, log, ensureAdvanceAccounts, getPartyAdvanceBalance } from '../modules/state.js';
 import { partyForm, markSalePaid } from '../modules/actions.js';
-import { showActionSheet } from '../modules/components.js';
+import { showActionSheet, form } from '../modules/components.js';
 import { enhanceMobile } from '../modules/mobile.js';
 import { PD_LOGO } from '../modules/logo_data.js';
 import {
@@ -269,6 +269,20 @@ export function nextInvNo() {
     }
   }
   return prefix + String(maxSeq + 1).padStart(4, '0');
+}
+
+export function nextCnNo() {
+  let maxSeq = 0;
+  for (const d of (db.docs || [])) {
+    if (d.type === 'credit_note' && d.no) {
+      const m = String(d.no).match(/(\d+)$/);
+      if (m) {
+        const num = parseInt(m[1], 10);
+        if (!isNaN(num) && num > maxSeq) maxSeq = num;
+      }
+    }
+  }
+  return 'CN-' + String(maxSeq + 1).padStart(4, '0');
 }
 
 /* ================= HTML SHEET PREVIEW ================= */
@@ -677,6 +691,39 @@ export function showInvoicePreviewModal(doc) {
         <div class="pd-invoice-sheet-wrap">
           ${renderSheet(doc)}
         </div>
+        ${doc.pays && doc.pays.length ? `
+          <div class="pd-invoice-pays-section noprint" style="padding:16px 24px;border-top:1px solid #e2e8f0;background:#f8fafc;">
+            <h4 style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1e293b;">Payment History</h4>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead>
+                <tr style="border-bottom:1px solid #cbd5e1;color:#64748b;text-align:left;">
+                  <th style="padding:4px 8px;">Date</th>
+                  <th style="padding:4px 8px;">Method</th>
+                  <th style="padding:4px 8px;text-align:right;">Amount</th>
+                  <th style="padding:4px 8px;text-align:center;">Status</th>
+                  <th style="padding:4px 8px;text-align:right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${doc.pays.map(p => `
+                  <tr style="border-bottom:1px solid #f1f5f9;${p.void ? 'opacity:0.5;text-decoration:line-through;' : ''}">
+                    <td style="padding:6px 8px;">${esc(p.date || '-')}</td>
+                    <td style="padding:6px 8px;">${esc(p.method || '-')}</td>
+                    <td style="padding:6px 8px;text-align:right;font-weight:600;">${fmt(p.amt)}</td>
+                    <td style="padding:6px 8px;text-align:center;">${p.void ? '<span style="color:#ef4444;font-weight:600;">Reversed</span>' : '<span style="color:#10b981;font-weight:600;">Active</span>'}</td>
+                    <td style="padding:6px 8px;text-align:right;">
+                      ${!p.void && !doc.cancelled ? `
+                        <button type="button" class="undo-inv-pay-btn" data-je="${esc(p.je)}" style="padding:3px 10px;font-size:11px;font-weight:600;color:#dc2626;background:#fff;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;">
+                          Undo payment
+                        </button>
+                      ` : '-'}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : ''}
       </div>
 
       <!-- Mobile sticky bottom action strip (under 640px) -->
@@ -954,22 +1001,144 @@ export function showInvoicePreviewModal(doc) {
     if (el) el.onclick = handleWa;
   });
 
+  modalEl.querySelectorAll('.undo-inv-pay-btn').forEach(btn => {
+    btn.onclick = () => {
+      const jeId = btn.getAttribute('data-je');
+      if (!jeId) return;
+      if (confirm('Are you sure you want to undo this payment? The payment journal entry will be reversed.')) {
+        try {
+          reverse(jeId);
+          toast('Payment reversed successfully');
+          teardown();
+          showInvoicePreviewModal(doc);
+          const sc = document.getElementById('v');
+          if (sc) {
+            sc.innerHTML = renderSales();
+            bindSalesEvents();
+          }
+        } catch (err) {
+          toast('Failed to reverse payment: ' + (err.message || err));
+        }
+      }
+    };
+  });
+
   const closeBtn = modalEl.querySelector('#pd_modal_close');
   if (closeBtn) closeBtn.onclick = closeModal;
+}
+
+export function showCreditNoteModal(doc, onComplete) {
+  if (!doc) return;
+  const maxPaise = doc.total || 0;
+  const currentOut = out(doc);
+  const defaultAmt = currentOut > 0 ? (currentOut / 100).toFixed(2) : (maxPaise / 100).toFixed(2);
+  const customerName = doc.c?.n || pn(doc.party);
+
+  const html = `
+    <div style="font-size:13px;color:var(--t2);margin-bottom:12px;">
+      Issue a Credit Note / Sales Return against Invoice <b>#${esc(doc.no)}</b> for <b>${esc(customerName)}</b>.
+      <br>Original Total: <b>${fmt(doc.total)}</b> · Outstanding: <b>${fmt(currentOut)}</b>
+    </div>
+    <div class="two">
+      <label>Return Date *
+        <input type="date" name="date" id="cn_date" value="${today()}" required>
+      </label>
+      <label>Return Amount (₹) *
+        <input type="number" name="amt" id="cn_amt" step="0.01" min="0.01" max="${(maxPaise / 100).toFixed(2)}" value="${defaultAmt}" required>
+      </label>
+    </div>
+    <div style="margin-top:10px;">
+      <label>Reason / Narration *
+        <input type="text" name="reason" id="cn_reason" placeholder="e.g. Goods returned / quality rejection / rate difference" required>
+      </label>
+    </div>
+  `;
+
+  form('Credit Note / Sales Return', html, v => {
+    const amtRupees = parseFloat(v.amt);
+    if (!amtRupees || amtRupees <= 0) throw new Error('Valid return amount is required');
+    const retPaise = P(v.amt);
+    if (retPaise > maxPaise) throw new Error(`Return amount cannot exceed invoice total (${fmt(maxPaise)})`);
+
+    const cnDate = v.date || today();
+    const reason = (v.reason || '').trim() || 'Sales Return';
+    const cnNo = nextCnNo();
+
+    let retBase = retPaise;
+    let retTax = 0;
+    if ((doc.tax?.ig || doc.tax?.cg || doc.gst || 0) > 0 && (doc.total || 0) > 0) {
+      const gstAmt = (doc.gst || (doc.tax?.ig || 0) + (doc.tax?.cg || 0) * 2);
+      const taxRatio = gstAmt / doc.total;
+      retTax = Math.round(retPaise * taxRatio);
+      retBase = retPaise - retTax;
+    }
+
+    const lines = [];
+    if (retTax > 0) {
+      lines.push({ a: '4000', d: retBase, c: 0, p: doc.party });
+      lines.push({ a: '2200', d: retTax, c: 0, p: doc.party });
+    } else {
+      lines.push({ a: '4000', d: retPaise, c: 0, p: doc.party });
+    }
+    lines.push({ a: '1100', d: 0, c: retPaise, p: doc.party });
+
+    const je = post({
+      src: 'sale',
+      date: cnDate,
+      ref: cnNo,
+      desc: `Credit Note ${cnNo} for Inv ${doc.no} (${reason})`,
+      lines
+    });
+
+    const cnDoc = {
+      id: uid(),
+      type: 'credit_note',
+      no: cnNo,
+      date: cnDate,
+      party: doc.party,
+      c: { ...doc.c },
+      origDocId: doc.id,
+      origDocNo: doc.no,
+      total: retPaise,
+      base: retBase,
+      tax: retTax,
+      lines: (doc.lines || []).map(l => ({ ...l })),
+      je: je.id,
+      reason,
+      cancelled: false,
+      pays: []
+    };
+    db.docs.push(cnDoc);
+
+    doc.pays = doc.pays || [];
+    doc.pays.push({
+      je: je.id,
+      amt: retPaise,
+      date: cnDate,
+      method: 'Credit Note',
+      acct: '4000',
+      cnNo
+    });
+    doc.paid = paid(doc);
+
+    log('credit note', cnNo);
+    toast(`Credit Note ${cnNo} created successfully`);
+    if (onComplete) onComplete();
+  }, 'Create Credit Note');
 }
 
 /* ================= SALES INVOICE VIEW RENDERER ================= */
 export function renderSales() {
   const currentTab = salesState.tab;
   const scrapItems = db.items || [];
-  const sales = db.docs.filter(d => d.type === 'sale').reverse();
+  const sales = db.docs.filter(d => d.type === 'sale' || d.type === 'credit_note').reverse();
 
   // Stats calculation
-  const totalInvoices = sales.length;
+  const totalInvoices = sales.filter(d => d.type === 'sale').length;
   const thisMonthStr = today().slice(0, 7);
-  const thisMonthTotal = sales.filter(d => (d.date || '').startsWith(thisMonthStr) && !d.cancelled).reduce((s, d) => s + (d.total || 0), 0);
-  const totalBilled = sales.filter(d => !d.cancelled).reduce((s, d) => s + (d.total || 0), 0);
-  const totalPending = sales.filter(d => !d.cancelled).reduce((s, d) => s + out(d), 0);
+  const thisMonthTotal = sales.filter(d => (d.date || '').startsWith(thisMonthStr) && !d.cancelled).reduce((s, d) => s + (d.type === 'credit_note' ? -d.total : (d.total || 0)), 0);
+  const totalBilled = sales.filter(d => !d.cancelled).reduce((s, d) => s + (d.type === 'credit_note' ? -d.total : (d.total || 0)), 0);
+  const totalPending = sales.filter(d => !d.cancelled && d.type === 'sale').reduce((s, d) => s + out(d), 0);
 
   // Search filter in Records
   const qLower = (salesState.q || '').toLowerCase();
@@ -1097,6 +1266,23 @@ export function renderSales() {
             </div>
           </div>
         </div>
+
+        ${(() => {
+          const custAdvBal = activeCustomerId ? getPartyAdvanceBalance(activeCustomerId, true) : 0;
+          if (custAdvBal <= 0) return '';
+          return `
+            <div class="pd-advance-alert" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+              <div>
+                <div style="font-weight:700;font-size:13.5px;color:#166534;">Customer Advance Available: ${fmt(custAdvBal)}</div>
+                <div style="font-size:12px;color:#15803d;">This customer has unallocated advance funds (Customer Advances 2300).</div>
+              </div>
+              <label style="display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px;color:#166534;cursor:pointer;">
+                <input type="checkbox" id="pd_apply_advance" style="width:16px;height:16px;">
+                <span>Allocate advance to this invoice</span>
+              </label>
+            </div>
+          `;
+        })()}
 
         <div class="pd-grid">
           <label class="pd-label">Invoice no.
@@ -1327,22 +1513,26 @@ export function renderSales() {
             </thead>
             <tbody>
               ${filteredSales.length ? filteredSales.map(d => {
+          const isCn = d.type === 'credit_note';
           const f = calcFigs(d);
           const s = dstat(d);
-          const isPaid = f.bal <= 0 || s[0] === 'Paid';
+          const isPaid = isCn || f.bal <= 0 || s[0] === 'Paid';
           const isPartial = !isPaid && (d.paid > 0 || (d.pays && d.pays.length > 0));
-          const pillCls = isPaid ? '' : (isPartial ? 'p' : 'u');
-          const pillTxt = isPaid ? 'Paid' : (isPartial ? 'Part paid' : 'Unpaid');
+          const pillCls = isCn ? 'pill-overdue' : (isPaid ? '' : (isPartial ? 'p' : 'u'));
+          const pillTxt = isCn ? 'Credit Note' : (isPaid ? 'Paid' : (isPartial ? 'Part paid' : 'Unpaid'));
 
           return `<tr>
-                  <td data-label="Invoice"><b>${esc(d.no)}</b></td>
+                  <td data-label="Invoice">
+                    <b>${esc(d.no)}</b>
+                    ${isCn ? `<small style="display:block;color:#64748b;font-size:11px;">Ref: #${esc(d.origDocNo || '')}</small>` : ''}
+                  </td>
                   <td data-label="Date">${d.date ? d.date.split('-').reverse().join('/') : ''}</td>
                   <td data-label="Customer">
                     <b>${esc(d.c?.n || pn(d.party))}</b>
                     ${d.pendingFiles ? pendingUploadChipHTML(d.pendingFiles, d.id) : ''}
                   </td>
                   <td data-label="Vehicle">${esc(d.veh || '')}</td>
-                  <td data-label="Total" style="text-align:right;font-weight:600">${fmt(d.total)}</td>
+                  <td data-label="Total" style="text-align:right;font-weight:600">${isCn ? '–' : ''}${fmt(d.total)}</td>
                   <td data-label="Status"><span class="pd-pill ${pillCls}">${pillTxt}</span></td>
                   <td data-label="Files" style="text-align:center">
                     ${(d.files && d.files.length) || d.hasFiles ? `
@@ -1356,11 +1546,15 @@ export function renderSales() {
                   </td>
                   <td data-label="Actions" style="text-align:right">
                     <div class="pd-btn-row desktop-actions sales-desktop-actions" style="justify-content:flex-end">
-                      <button type="button" class="sales-icon-btn sales-btn-view" data-action="view" data-no="${esc(d.no)}" title="View Invoice" aria-label="View Invoice">
+                      <button type="button" class="sales-icon-btn sales-btn-view" data-action="view" data-no="${esc(d.no)}" title="View ${isCn ? 'Credit Note' : 'Invoice'}" aria-label="View ${isCn ? 'Credit Note' : 'Invoice'}">
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                       </button>
                       ${d.cancelled ? `
                         <span style="font-size:11px;font-weight:600;color:#94a3b8;font-style:italic;">Cancelled</span>
+                      ` : (isCn ? `
+                        <button type="button" class="sales-icon-btn sales-btn-del" data-action="cancel" data-no="${esc(d.no)}" title="Cancel Credit Note" aria-label="Cancel Credit Note">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                        </button>
                       ` : `
                         <button type="button" class="sales-icon-btn sales-btn-edit" data-action="edit" data-no="${esc(d.no)}" title="Edit Invoice" aria-label="Edit Invoice">
                           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
@@ -1370,10 +1564,13 @@ export function renderSales() {
                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
                           </button>
                         ` : ''}
+                        <button type="button" class="sales-icon-btn sales-btn-cn" data-action="cn" data-no="${esc(d.no)}" title="Credit Note / Sales Return" aria-label="Credit Note / Sales Return" style="color:#d97706;">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"></path></svg>
+                        </button>
                         <button type="button" class="sales-icon-btn sales-btn-del" data-action="cancel" data-no="${esc(d.no)}" title="Cancel Invoice" aria-label="Cancel Invoice">
                           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
                         </button>
-                      `}
+                      `)}
                     </div>
                     <button type="button" class="pd-more-btn" data-action="more" data-no="${esc(d.no)}" data-id="${esc(d.id)}" title="Actions" aria-label="Actions">⋮</button>
                   </td>
@@ -2312,6 +2509,45 @@ export function bindSalesEvents() {
         }
       }
 
+      // Step 6b: Allocate customer advance if requested
+      const applyAdvEl = document.getElementById('pd_apply_advance');
+      if (applyAdvEl && applyAdvEl.checked) {
+        const availAdv = getPartyAdvanceBalance(targetPartyId, true);
+        if (availAdv > 0) {
+          const currentPaidTotal = updatedPays.reduce((s, p) => s + (p.amt || 0), 0);
+          const currentUnpaid = Math.max(0, totalPaisa - currentPaidTotal);
+          const allocAmt = Math.min(availAdv, currentUnpaid);
+          if (allocAmt > 0) {
+            ensureAdvanceAccounts();
+            const advJe = post({
+              src: 'in',
+              date,
+              ref: next('RV'),
+              desc: `Advance allocation of ${fmt(allocAmt)} from Customer Advances for Inv ${no}`,
+              meta: {
+                party: targetPartyId,
+                partyName: cName,
+                acct: '2300',
+                method: 'Customer Advance',
+                ref: no,
+                docNo: no
+              },
+              lines: [
+                { a: '2300', d: allocAmt, c: 0, p: targetPartyId },
+                { a: '1100', d: 0, c: allocAmt, p: targetPartyId }
+              ]
+            });
+            updatedPays.push({
+              je: advJe.id,
+              amt: allocAmt,
+              date,
+              method: 'Customer Advance',
+              acct: '2300'
+            });
+          }
+        }
+      }
+
       // Step 7: Do the party create/update ONLY after the journal post succeeds
       let party = db.parties.find(p => p.id === targetPartyId);
       if (!party) {
@@ -2537,6 +2773,19 @@ export function bindSalesEvents() {
             }
           });
         }
+        if (!doc.cancelled && doc.type === 'sale') {
+          sheetItems.push({
+            label: 'Credit Note / Sales Return',
+            variant: 'cn',
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"></path></svg>`,
+            onClick: () => {
+              showCreditNoteModal(doc, () => {
+                container.innerHTML = renderSales();
+                bindSalesEvents();
+              });
+            }
+          });
+        }
         if (!doc.cancelled) {
           sheetItems.push({
             label: 'Cancel Invoice',
@@ -2596,6 +2845,11 @@ export function bindSalesEvents() {
       } else if (action === 'pay') {
         // Mark paid with account selection (Cash vs Bank)
         markSalePaid(doc, () => {
+          container.innerHTML = renderSales();
+          bindSalesEvents();
+        });
+      } else if (action === 'cn') {
+        showCreditNoteModal(doc, () => {
           container.innerHTML = renderSales();
           bindSalesEvents();
         });
