@@ -2677,8 +2677,15 @@ function dropTooltips() {
   document.querySelectorAll('table tr[title]').forEach(tr => tr.removeAttribute('title'));
 }
 
+export function isMobileWidth() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia ? window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches : (window.innerWidth <= MOBILE_MAX);
+}
+
 /* ---------------- Public API ---------------- */
-export function enhanceMobile(root = document) {
+export function enhanceMobile(root = (typeof document !== 'undefined' ? document : null)) {
+  if (!root || !isMobileWidth()) return;
+  if (typeof root.querySelectorAll !== 'function') return;
   root.querySelectorAll('table:not([data-mc])').forEach(enhanceTable);
   enhanceFilters(root);
   swapButtonEmoji(root);
@@ -2687,7 +2694,7 @@ export function enhanceMobile(root = document) {
 }
 
 export function injectMobileStyles() {
-  if (document.getElementById('bufin-mobile-css')) return;
+  if (typeof document === 'undefined' || document.getElementById('bufin-mobile-css')) return;
   const st = document.createElement('style');
   st.id = 'bufin-mobile-css';
   st.textContent = CSS;
@@ -2704,23 +2711,25 @@ export function injectMobileStyles() {
   if (!/viewport-fit/.test(meta.content)) meta.content += ', viewport-fit=cover';
 }
 
-let queued = false;
-function schedule() {
-  if (queued) return;
-  queued = true;
-  requestAnimationFrame(() => {
-    queued = false;
-    try { enhanceMobile(); } catch (e) { console.warn('mobile layer:', e); }
-  });
-}
-
 export function initMobileLayer() {
-  if (typeof document === 'undefined' || window.__bufinMobile) return;
-  window.__bufinMobile = true;
+  if (typeof document === 'undefined' || (typeof window !== 'undefined' && window.__bufinMobile)) return;
+  if (typeof window !== 'undefined') window.__bufinMobile = true;
   injectMobileStyles();
-  new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
-  window.addEventListener('resize', schedule);
-  schedule();
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_MAX}px)`);
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', e => {
+        if (e.matches) enhanceMobile();
+      });
+    } else if (typeof mql.addListener === 'function') {
+      mql.addListener(e => {
+        if (e.matches) enhanceMobile();
+      });
+    }
+  }
+  if (isMobileWidth()) {
+    enhanceMobile();
+  }
 }
 
 initMobileLayer();

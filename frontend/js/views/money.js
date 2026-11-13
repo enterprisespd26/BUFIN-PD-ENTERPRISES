@@ -255,7 +255,7 @@ function renderTxnTable(list, kind, emptyMsg) {
           <tbody>
             ${list.map(e => {
               const d = getTxnRowData(e);
-              return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view payment receipt">
+              return `<tr class="k" data-a="ent" data-i="${esc(e.id)}" title="Click to view payment receipt">
                 <td class="col-date">${fmtDate(e.date)}</td>
                 <td class="col-party"><b>${esc(d.partyName)}</b></td>
                 <td class="col-account"><span class="account-tag">${esc(d.acctName)}</span></td>
@@ -264,7 +264,7 @@ function renderTxnTable(list, kind, emptyMsg) {
                 <td class="col-ref"><span class="ref-badge">${esc(d.refNo)}</span></td>
                 <td class="col-desc" title="${esc(d.desc)}"><span class="desc-text">${esc(d.desc)}</span></td>
                 <td class="num col-amt" style="color:#15803D;font-weight:700">+${fmt(d.amt)}</td>
-                <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
+                <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${esc(e.status)}</span></td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -302,7 +302,7 @@ function renderTxnTable(list, kind, emptyMsg) {
           <tbody>
             ${list.map(e => {
               const d = getTxnRowData(e);
-              return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view payment voucher">
+              return `<tr class="k" data-a="ent" data-i="${esc(e.id)}" title="Click to view payment voucher">
                 <td class="col-date">${fmtDate(e.date)}</td>
                 <td class="col-party"><b>${esc(d.partyName)}</b></td>
                 <td class="col-account"><span class="account-tag">${esc(d.acctName)}</span></td>
@@ -311,7 +311,7 @@ function renderTxnTable(list, kind, emptyMsg) {
                 <td class="col-ref"><span class="ref-badge">${esc(d.refNo)}</span></td>
                 <td class="col-desc" title="${esc(d.desc)}"><span class="desc-text">${esc(d.desc)}</span></td>
                 <td class="num col-amt" style="color:#B91C1C;font-weight:700">-${fmt(d.amt)}</td>
-                <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
+                <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${esc(e.status)}</span></td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -356,10 +356,10 @@ function renderTxnTable(list, kind, emptyMsg) {
             const amtColor = isIn ? '#15803D' : isOut ? '#B91C1C' : '#334155';
             const amtSign = isIn ? '+' : isOut ? '-' : '';
             const typeClass = isIn ? 'type-in' : isOut ? 'type-out' : 'type-xfer';
-            return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view voucher ${esc(e.ref)} details">
+            return `<tr class="k" data-a="ent" data-i="${esc(e.id)}" title="Click to view voucher ${esc(e.ref)} details">
               <td class="col-date">${fmtDate(e.date)}</td>
               <td class="col-voucher"><span class="voucher-badge">${esc(e.ref)}</span></td>
-              <td class="col-type"><span class="txn-type-pill ${typeClass}">${esc(d.typeLabel)}</span></td>
+              <td class="col-type"><span class="txn-type-pill ${esc(typeClass)}">${esc(d.typeLabel)}</span></td>
               <td class="col-party"><b>${esc(d.partyName)}</b></td>
               <td class="col-account"><span class="account-tag">${esc(d.acctName)}</span></td>
               <td class="col-category">${esc(d.catName)}</td>
@@ -367,7 +367,7 @@ function renderTxnTable(list, kind, emptyMsg) {
               <td class="col-ref"><span class="ref-badge">${esc(d.refNo)}</span></td>
               <td class="col-desc" title="${esc(d.desc)}"><span class="desc-text">${esc(d.desc)}</span></td>
               <td class="num col-amt" style="font-weight:700;color:${amtColor}">${amtSign}${fmt(d.amt)}</td>
-              <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
+              <td class="col-status"><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${esc(e.status)}</span></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -546,16 +546,16 @@ export function renderTransfers() {
           const amt = e.lines.reduce((s, l) => s + l.d, 0);
           const refNo = e.meta?.ref || '-';
           const desc = e.meta?.desc || e.narr || '-';
-          return `<tr class="k" data-a="ent" data-i="${e.id}" title="Click to view transfer voucher">
+          return `<tr class="k" data-a="ent" data-i="${esc(e.id)}" title="Click to view transfer voucher">
             <td>${fmtDate(e.date)}</td>
             <td><code>${esc(e.ref)}</code></td>
-            <td><span class="pd-pill ${info.badgeClass}">${esc(info.label)}</span></td>
+            <td><span class="pd-pill ${esc(info.badgeClass)}">${esc(info.label)}</span></td>
             <td>${esc(fromL ? an(fromL.a) : '-')}</td>
             <td><b>${esc(toL ? an(toL.a) : '-')}</b></td>
             <td><code>${esc(refNo)}</code></td>
             <td>${esc(desc)}</td>
             <td class="num" style="font-weight:600;color:var(--p)">${fmt(amt)}</td>
-            <td><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${e.status}</span></td>
+            <td><span class="b ${e.status === 'posted' ? 'ok' : 'wn'}">${esc(e.status)}</span></td>
           </tr>`;
         }).join('')}
       </tbody>

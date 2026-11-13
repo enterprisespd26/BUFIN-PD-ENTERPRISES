@@ -108,9 +108,9 @@ function renderLoansDashboard() {
                   const o = Math.max(0, l.principal - l.repaid);
                   const partyName = l.partyName || pn(l.party) || 'Unknown Party';
                   const isOverdue = s[0] === 'Overdue';
-                  return `<tr class="k loan-row grid grid-cols-[minmax(170px,1.8fr)_minmax(80px,0.7fr)_minmax(125px,1.1fr)_minmax(125px,1.1fr)_minmax(90px,0.8fr)_minmax(75px,0.6fr)_auto] gap-4 px-4 w-full" data-a="viewloan" data-i="${l.id}">
+                  return `<tr class="k loan-row grid grid-cols-[minmax(170px,1.8fr)_minmax(80px,0.7fr)_minmax(125px,1.1fr)_minmax(125px,1.1fr)_minmax(90px,0.8fr)_minmax(75px,0.6fr)_auto] gap-4 px-4 w-full" data-a="viewloan" data-i="${esc(l.id)}">
                     <td class="loan-td-name">
-                      <a href="#/loans/${l.id}" class="loan-name-title" title="${esc(l.name || l.ref)}">
+                      <a href="#/loans/${esc(l.id)}" class="loan-name-title" title="${esc(l.name || l.ref)}">
                         ${esc(l.name || l.ref)}
                       </a>
                       <div class="loan-party-subtitle">
@@ -127,20 +127,20 @@ function renderLoansDashboard() {
                       ${fmt(o)}
                     </td>
                     <td class="loan-td-due">
-                      ${l.due ? (isOverdue ? `<span class="loan-due-overdue">${l.due} ⚠️</span>` : `<span class="loan-due-normal">${l.due}</span>`) : `<span class="text-slate-400">–</span>`}
+                      ${l.due ? (isOverdue ? `<span class="loan-due-overdue">${esc(l.due)} ⚠️</span>` : `<span class="loan-due-normal">${esc(l.due)}</span>`) : `<span class="text-slate-400">–</span>`}
                     </td>
                     <td class="loan-td-status text-center">
-                      <span class="loan-pill pill-${s[0].toLowerCase()}">${s[0]}</span>
+                      <span class="loan-pill pill-${s[0].toLowerCase()}">${esc(s[0])}</span>
                     </td>
                     <td class="loan-card-actions text-right flex items-center justify-end gap-2 shrink-0 pr-2">
                       <!-- Desktop Action Group -->
                       <div class="loan-actions-desktop flex items-center justify-end gap-2 shrink-0 pr-2">
                         ${o > 0 ? `
-                          <button type="button" class="loan-btn-primary loan-btn-repay shrink-0" data-a="repay" data-i="${l.id}" title="Record Payment / EMI" onclick="if (window.ACTIONS && window.ACTIONS.repay) { window.ACTIONS.repay('${l.id}'); event.stopPropagation(); }">
+                          <button type="button" class="loan-btn-primary loan-btn-repay shrink-0" data-a="repay" data-i="${esc(l.id)}" title="Record Payment / EMI" onclick="if (window.ACTIONS && window.ACTIONS.repay) { window.ACTIONS.repay('${esc(l.id)}'); event.stopPropagation(); }">
                             Record Payment / EMI
                           </button>
                         ` : ''}
-                        <button type="button" class="loan-btn-secondary loan-btn-view shrink-0" data-a="viewloan" data-i="${l.id}" title="View Statement" onclick="if (window.ACTIONS && window.ACTIONS.viewloan) { window.ACTIONS.viewloan('${l.id}'); event.stopPropagation(); }">
+                        <button type="button" class="loan-btn-secondary loan-btn-view shrink-0" data-a="viewloan" data-i="${esc(l.id)}" title="View Statement" onclick="if (window.ACTIONS && window.ACTIONS.viewloan) { window.ACTIONS.viewloan('${esc(l.id)}'); event.stopPropagation(); }">
                           View Statement
                         </button>
                         
@@ -150,13 +150,13 @@ function renderLoansDashboard() {
                             ⋮
                           </button>
                           <div class="loan-dropdown-menu">
-                            <button type="button" class="loan-dropdown-item" data-a="editloan" data-i="${l.id}" onclick="this.closest('.loan-more-wrap').classList.remove('is-open'); if (window.ACTIONS && window.ACTIONS.editloan) { window.ACTIONS.editloan('${l.id}'); event.stopPropagation(); }">
+                            <button type="button" class="loan-dropdown-item" data-a="editloan" data-i="${esc(l.id)}" onclick="this.closest('.loan-more-wrap').classList.remove('is-open'); if (window.ACTIONS && window.ACTIONS.editloan) { window.ACTIONS.editloan('${esc(l.id)}'); event.stopPropagation(); }">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
                               </svg>
                               <span>Edit Loan</span>
                             </button>
-                            <button type="button" class="loan-dropdown-item red" data-a="delloan" data-i="${l.id}" onclick="this.closest('.loan-more-wrap').classList.remove('is-open'); if (window.ACTIONS && window.ACTIONS.delloan) { window.ACTIONS.delloan('${l.id}'); event.stopPropagation(); }">
+                            <button type="button" class="loan-dropdown-item red" data-a="delloan" data-i="${esc(l.id)}" onclick="this.closest('.loan-more-wrap').classList.remove('is-open'); if (window.ACTIONS && window.ACTIONS.delloan) { window.ACTIONS.delloan('${esc(l.id)}'); event.stopPropagation(); }">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -171,11 +171,11 @@ function renderLoansDashboard() {
 
                       <!-- Mobile Action Footer -->
                       <div class="loan-action-footer">
-                        ${o > 0 ? `<button type="button" class="btn p sm loan-btn-repay" data-a="repay" data-i="${l.id}">Record Payment / EMI</button>` : ''}
+                        ${o > 0 ? `<button type="button" class="btn p sm loan-btn-repay" data-a="repay" data-i="${esc(l.id)}">Record Payment / EMI</button>` : ''}
                       <div class="loan-action-row">
-                        <button type="button" class="btn alt sm loan-btn-view" data-a="viewloan" data-i="${l.id}">View Statement</button>
-                        <button type="button" class="btn alt sm loan-btn-edit" data-a="editloan" data-i="${l.id}">Edit</button>
-                        <button type="button" class="btn alt sm red loan-btn-del" data-a="delloan" data-i="${l.id}">Delete</button>
+                        <button type="button" class="btn alt sm loan-btn-view" data-a="viewloan" data-i="${esc(l.id)}">View Statement</button>
+                        <button type="button" class="btn alt sm loan-btn-edit" data-a="editloan" data-i="${esc(l.id)}">Edit</button>
+                        <button type="button" class="btn alt sm red loan-btn-del" data-a="delloan" data-i="${esc(l.id)}">Delete</button>
                       </div>
                     </div>
                   </td>
@@ -232,7 +232,7 @@ function renderLoanDetail(l) {
       <td class="num">${it ? fmt(it) : '-'}</td>
       <td class="num" style="font-weight:600">${fmt(total)}</td>
       <td class="num" style="font-weight:700">${fmt(Math.max(0, run))}</td>
-      <td style="text-align:right" class="noprint"><button class="btn alt sm" data-a="ent" data-i="${e.id}" style="padding:2px 8px;font-size:11px;">View Voucher</button></td>
+      <td style="text-align:right" class="noprint"><button class="btn alt sm" data-a="ent" data-i="${esc(e.id)}" style="padding:2px 8px;font-size:11px;">View Voucher</button></td>
     </tr>`;
   }).join('');
 
@@ -242,7 +242,7 @@ function renderLoanDetail(l) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         <span>Back to Loans</span>
       </button>
-      <button type="button" class="btn alt sm loan-btn-csv-top" data-a="loancsv" data-i="${l.id}" title="Export Statement CSV">
+      <button type="button" class="btn alt sm loan-btn-csv-top" data-a="loancsv" data-i="${esc(l.id)}" title="Export Statement CSV">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         <span>Export CSV</span>
       </button>
@@ -277,31 +277,31 @@ function renderLoanDetail(l) {
             <span class="b ${s[1]}">${s[0]}</span>
           </div>
           <div class="loan-detail-meta">
-            Party: <b>${esc(partyName)}</b> · Start Date: <b>${l.date}</b>
+            Party: <b>${esc(partyName)}</b> · Start Date: <b>${esc(l.date)}</b>
           </div>
         </div>
 
         <div class="loan-detail-actions noprint">
           ${o > 0 ? `
-            <button type="button" class="loan-btn-primary loan-act-repay-btn" data-a="repay" data-i="${l.id}">
+            <button type="button" class="loan-btn-primary loan-act-repay-btn" data-a="repay" data-i="${esc(l.id)}">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <span>Record Payment / EMI</span>
             </button>
           ` : ''}
           <div class="loan-actions-sub-grid">
             ${o > 0 ? `
-              <button type="button" class="btn alt sm loan-sub-btn" data-a="ltop" data-i="${l.id}">
+              <button type="button" class="btn alt sm loan-sub-btn" data-a="ltop" data-i="${esc(l.id)}">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 <span>Top-up Principal</span>
               </button>
             ` : ''}
             ${o > 0 ? `
-              <button type="button" class="btn alt sm loan-sub-btn" data-a="lfee" data-i="${l.id}">
+              <button type="button" class="btn alt sm loan-sub-btn" data-a="lfee" data-i="${esc(l.id)}">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                 <span>Add Fee / Penalty</span>
               </button>
             ` : ''}
-            <button type="button" class="btn alt sm loan-sub-btn" data-a="editloan" data-i="${l.id}">
+            <button type="button" class="btn alt sm loan-sub-btn" data-a="editloan" data-i="${esc(l.id)}">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
               <span>Edit Terms</span>
             </button>
@@ -342,7 +342,7 @@ function renderLoanDetail(l) {
       </div>
       <div class="kpi">
         <span>Next Due Date</span>
-        <b style="${s[0] === 'Overdue' ? 'color:var(--rd)' : ''}">${l.due ? (s[0] === 'Overdue' ? l.due + ' ⚠️' : l.due) : '-'}</b>
+        <b style="${s[0] === 'Overdue' ? 'color:var(--rd)' : ''}">${l.due ? (s[0] === 'Overdue' ? esc(l.due) + ' ⚠️' : esc(l.due)) : '-'}</b>
       </div>
       <div class="kpi">
         <span>Disbursement Account</span>

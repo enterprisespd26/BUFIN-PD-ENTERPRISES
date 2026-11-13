@@ -110,7 +110,7 @@ export function renderOpen() {
               <div class="ob-meta-divider"></div>
               <div class="ob-meta-item">
                 <span class="ob-meta-label">Journal Ref</span>
-                <b class="ob-meta-val">${activeOpen.ref}</b>
+                <b class="ob-meta-val">${esc(activeOpen.ref)}</b>
               </div>
               <div class="ob-meta-divider"></div>
               <div class="ob-meta-item ob-meta-total">
@@ -425,7 +425,7 @@ export function renderGl() {
       <div class="gl-counter-wrap"><span class="gl-counter-badge">${esc(oth)}</span></div>
     </div>`;
 
-    rows += `<tr class="k" data-a="ent" data-i="${e.id}" style="${isReversed ? 'opacity:0.65;background:rgba(239,68,68,0.03);' : ''}">
+    rows += `<tr class="k" data-a="ent" data-i="${esc(e.id)}" style="${isReversed ? 'opacity:0.65;background:rgba(239,68,68,0.03);' : ''}">
       <td>${fmtDate(e.date)}</td>
       <td><code>${esc(e.ref)}</code></td>
       <td class="gl-details-cell">${details}</td>
@@ -768,7 +768,7 @@ export function renderBook() {
       <div class="gl-narr-text">${esc(e.narr || '—')}${statusBadge}</div>
       <div class="gl-counter-wrap"><span class="gl-counter-badge">${esc(oth)}</span></div>
     </div>`;
-    rows += `<tr class="k" data-a="ent" data-i="${e.id}" style="${isReversed ? 'opacity:0.65;background:rgba(239,68,68,0.03);' : ''}">
+    rows += `<tr class="k" data-a="ent" data-i="${esc(e.id)}" style="${isReversed ? 'opacity:0.65;background:rgba(239,68,68,0.03);' : ''}">
       <td>${fmtDate(e.date)}</td>
       <td><code>${esc(e.ref)}</code></td>
       <td class="gl-details-cell">${details}</td>

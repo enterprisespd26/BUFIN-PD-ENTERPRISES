@@ -88,7 +88,7 @@ export function renderOverview() {
       <div class="empty" style="padding:4px 0 10px">Income (green) versus expenses (amber), last 6 months. Profit is accrual based, not cash in minus cash out.</div>
     </div>
     <h3>Overdue</h3>
-    ${od.length ? `<div class="wrap"><table>${od.map(d => `<tr><td>${d.no}</td><td>${esc(pn(d.party))}</td><td>${d.due}</td><td class="num">${fmt(out(d))}</td></tr>`).join('')}</table></div>` : '<div class="wrap"><div class="empty">Nothing overdue.</div></div>'}
+    ${od.length ? `<div class="wrap"><table>${od.map(d => `<tr><td>${esc(d.no)}</td><td>${esc(pn(d.party))}</td><td>${esc(d.due)}</td><td class="num">${fmt(out(d))}</td></tr>`).join('')}</table></div>` : '<div class="wrap"><div class="empty">Nothing overdue.</div></div>'}
     <h3>Recent transactions</h3>
     ${entTable(db.entries.slice(-8).reverse())}`;
 }

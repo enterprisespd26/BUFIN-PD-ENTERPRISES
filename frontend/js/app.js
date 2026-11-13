@@ -5,7 +5,7 @@ import {
   wipeStorage, resetDb, updateSyncPill, showSyncBanner, hideSyncBanner, showConflictModal
 } from './modules/state.js';
 import { modal, closeM, form, fld, sel, opts } from './modules/components.js';
-import './modules/mobile.js';
+import { enhanceMobile } from './modules/mobile.js';
 
 // Namespace imports never fail when a name is missing, so they are used below to
 // look up helpers (accOpts, lacr) that the loan actions need, without breaking the app.
@@ -265,6 +265,7 @@ export async function render() {
     try {
       vEl.innerHTML = viewFn();
       bindViewEvents();
+      enhanceMobile(vEl);
     } catch (err) {
       console.error('Error rendering ' + currentPage, err);
       vEl.innerHTML = `
@@ -273,6 +274,7 @@ export async function render() {
           <p>${esc(err.message || 'An unexpected error occurred.')}</p>
           <button class="p" onclick="(window.hardReloadBufin ? window.hardReloadBufin() : location.reload())">Reload BUFIN</button>
         </div>`;
+      enhanceMobile(vEl);
     }
   }
 }
@@ -877,7 +879,7 @@ function bindViewEvents() {
             if (resEl) resEl.innerHTML = '<span style="color:#b45309;">⚠️ Cloudinary is not configured in backend environment variables.</span>';
           }
         } else {
-          if (resEl) resEl.innerHTML = '<span style="color:#dc2626;">✕ Cloudinary service check returned status ' + res.status + '</span>';
+          if (resEl) resEl.innerHTML = '<span style="color:#dc2626;">✕ Cloudinary service check returned status ' + esc(res.status) + '</span>';
         }
       } catch (err) {
         if (resEl) resEl.innerHTML = '<span style="color:#dc2626;">✕ Could not connect to backend server: ' + esc(err.message) + '</span>';

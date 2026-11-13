@@ -357,7 +357,7 @@ export function showEnt(id) {
     <!-- Action Buttons -->
     <div class="row modal-actions no-print" style="display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:16px;">
       ${((e.src === 'in' || e.src === 'out' || e.src === 'exp' || e.src === 'pay' || e.src === 'xfer' || e.src === 'jv') && e.status === 'posted') ? `
-        <button type="button" class="btn p" data-a="edittxn" data-i="${e.id}" style="display:inline-flex;align-items:center;gap:6px;background:#2563eb;color:#ffffff;font-weight:600;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;">
+        <button type="button" class="btn p" data-a="edittxn" data-i="${esc(e.id)}" style="display:inline-flex;align-items:center;gap:6px;background:#2563eb;color:#ffffff;font-weight:600;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
           <span>Edit Details</span>
         </button>
@@ -369,7 +369,7 @@ export function showEnt(id) {
         </button>
       ` : ''}
       ${can ? `
-        <button type="button" class="d" data-a="rev" data-i="${e.id}" style="display:inline-flex;align-items:center;gap:6px;">
+        <button type="button" class="d" data-a="rev" data-i="${esc(e.id)}" style="display:inline-flex;align-items:center;gap:6px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
           Reverse Entry
         </button>
@@ -459,7 +459,7 @@ export function showDoc(id) {
   const s = d.type === 'sale';
   const st = dstat(d);
   const b = db.biz || {};
-  modal(`<h3>${d.no} <span class="b ${st[1]}">${st[0]}</span></h3>
+  modal(`<h3>${esc(d.no)} <span class="b ${esc(st[1])}">${esc(st[0])}</span></h3>
     <div style="font-size:12.5px;line-height:1.5;margin-bottom:12px;padding:10px 12px;background:#f8fafc;border:1px solid var(--bd);border-radius:6px">
       <div style="font-weight:700;font-size:15px;color:var(--tx)">${esc(b.name || '')}</div>
       ${b.addr ? `<div style="color:var(--t2)">${esc(b.addr).replace(/\n/g, ', ')}</div>` : ''}
@@ -467,7 +467,7 @@ export function showDoc(id) {
       <div><b>GSTIN:</b> <code>${esc(b.gstin || '')}</code> · <b>State:</b> ${esc(b.state || 'Odisha')} (Code: 21)</div>
     </div>
     <p><b>${s ? 'Bill to' : 'Supplier'}:</b> ${esc(p.name || d.sup || '')} ${p.gstin || d.gstin ? '· <b>GSTIN:</b> ' + esc(p.gstin || d.gstin) : ''}<br>
-    <b>Date:</b> ${d.date}${d.due ? ' · <b>Due:</b> ' + d.due : ''}</p>
+    <b>Date:</b> ${esc(d.date)}${d.due ? ' · <b>Due:</b> ' + esc(d.due) : ''}</p>
     <div class="wrap"><table>
       <tr><td>${esc(d.desc)}</td><td class="num">${fmt(d.base)}</td></tr>
       ${taxRows(d, s)}
@@ -475,11 +475,11 @@ export function showDoc(id) {
       <tr><td>Paid</td><td class="num">${fmt(paid(d))}</td></tr>
       <tr class="tot"><td>Outstanding</td><td class="num">${fmt(out(d))}</td></tr>
     </table></div>
-    ${d.pays.length ? '<small>Payments: ' + d.pays.map(x => x.date + ' ' + fmt(x.amt) + (x.void ? ' (void)' : '')).join(', ') + '</small>' : ''}
+    ${d.pays.length ? '<small>Payments: ' + d.pays.map(x => esc(x.date) + ' ' + fmt(x.amt) + (x.void ? ' (void)' : '')).join(', ') + '</small>' : ''}
     <div class="row">
       <button onclick="window.print()">Print</button>
-      ${!d.cancelled && out(d) > 0 ? `<button class="p" data-a="pay" data-i="${d.id}">${s ? 'Receive payment' : 'Pay bill'}</button>` : ''}
-      ${!d.cancelled ? `<button class="d" data-a="cdoc" data-i="${d.id}">Cancel</button>` : ''}
+      ${!d.cancelled && out(d) > 0 ? `<button class="p" data-a="pay" data-i="${esc(d.id)}">${s ? 'Receive payment' : 'Pay bill'}</button>` : ''}
+      ${!d.cancelled ? `<button class="d" data-a="cdoc" data-i="${esc(d.id)}">Cancel</button>` : ''}
       <button id="closeDocBtn">Close</button>
     </div>`);
   $('#closeDocBtn').onclick = closeM;
@@ -1383,7 +1383,7 @@ export async function moneyInForm(existingEntry = null) {
               const due = (out(b) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 });
               const invNo = b.no || b.sno || b.id;
               const isSelected = isEdit && (existingInvoiceId === b.id || b.pays?.some(p => p.je === existingEntry.id));
-              return `<option value="${b.id}" data-due="${(out(b) / 100).toFixed(2)}" data-no="${esc(invNo)}"${isSelected ? ' selected' : ''}>Invoice #${esc(invNo)} (${b.date}) — Due: ₹${due}</option>`;
+              return `<option value="${esc(b.id)}" data-due="${(out(b) / 100).toFixed(2)}" data-no="${esc(invNo)}"${isSelected ? ' selected' : ''}>Invoice #${esc(invNo)} (${esc(b.date)}) — Due: ₹${due}</option>`;
             }).join('');
         } else {
           invoiceRefSel.innerHTML = '<option value="">-- No pending unpaid invoices (On-Account Receipt) --</option>';
@@ -2131,7 +2131,7 @@ export async function moneyOutForm(existingEntry = null) {
               const billNo = b.sno || b.no;
               const mat = b.mat || (b.lines && b.lines[0]?.n) || 'Goods';
               const isSelected = isEdit && (existingBillId === b.id || b.pays?.some(p => p.je === existingEntry.id));
-              return `<option value="${b.id}" data-due="${(out(b) / 100).toFixed(2)}" data-no="${esc(billNo)}" data-mat="${esc(mat)}"${isSelected ? ' selected' : ''}>Bill #${esc(billNo)} (${b.date}) — Due: ₹${due} [${esc(mat)}]</option>`;
+              return `<option value="${esc(b.id)}" data-due="${(out(b) / 100).toFixed(2)}" data-no="${esc(billNo)}" data-mat="${esc(mat)}"${isSelected ? ' selected' : ''}>Bill #${esc(billNo)} (${esc(b.date)}) — Due: ₹${due} [${esc(mat)}]</option>`;
             }).join('');
         } else {
           billRefSel.innerHTML = '<option value="">-- No pending unpaid bills (On-Account Payment) --</option>';

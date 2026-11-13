@@ -204,6 +204,6 @@ export function renderSettings() {
     </div>
     <h3>Audit log (latest)</h3>
     <div class="wrap"><table>
-      ${db.audit.slice(-15).reverse().map(a => `<tr><td>${a.at.slice(0, 19).replace('T', ' ')}</td><td>${esc(a.a)}</td><td>${esc(a.d)}</td></tr>`).join('') || '<tr><td class="empty">No activity yet.</td></tr>'}
+      ${db.audit.slice(-15).reverse().map(a => `<tr><td>${esc(a.at ? a.at.slice(0, 19).replace('T', ' ') : '')}</td><td>${esc(a.a)}</td><td>${esc(a.d)}</td></tr>`).join('') || '<tr><td class="empty">No activity yet.</td></tr>'}
     </table></div>`;
 }

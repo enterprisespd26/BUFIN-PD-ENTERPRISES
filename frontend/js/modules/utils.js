@@ -1,6 +1,13 @@
 export const $ = s => document.querySelector(s);
 export const $$ = s => document.querySelectorAll(s);
-export const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+export const esc = s => String(s ?? '').replace(/[&<>"'`]/g, c => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+  '`': '&#96;'
+}[c]));
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 export const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });

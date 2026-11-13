@@ -2,6 +2,7 @@ import { $, $$, esc, fmt, head, toast, today, uid, P, convertRate, downloadCSV, 
 import { db, save, post, reverse, out, dstat, pn, isC, isS, paid } from '../modules/state.js';
 import { partyForm, markSalePaid } from '../modules/actions.js';
 import { showActionSheet } from '../modules/components.js';
+import { enhanceMobile } from '../modules/mobile.js';
 import { PD_LOGO } from '../modules/logo_data.js';
 import {
   openCameraScanner,
@@ -1473,6 +1474,7 @@ export function renderSales() {
 export function bindSalesEvents() {
   const container = $('#v');
   if (!container) return;
+  enhanceMobile(container);
 
   // Top-Right Header Button (+ New invoice / View records / + Add item)
   const headAddBtn = $('#pd_head_add');

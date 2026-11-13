@@ -2,6 +2,7 @@ import { $, $$, esc, fmt, fmtDate, head, kpi, toast, today, uid, P, convertRate,
 import { db, save, post, reverse, out, dstat, pn, isS, net, checkCashLiquidity } from '../modules/state.js';
 import { partyForm, markBillPaid, showDoc, isIntraState } from '../modules/actions.js';
 import { showActionSheet } from '../modules/components.js';
+import { enhanceMobile } from '../modules/mobile.js';
 
 // Safe debounce fallback: guaranteed never undefined in any scope
 export const debounce = (typeof _utilsDebounce === 'function') ? _utilsDebounce :
@@ -882,6 +883,7 @@ export function renderBills() {
 export function bindBillsEvents() {
   const container = $('#v');
   if (!container) return;
+  enhanceMobile(container);
 
   const U = i => $('#u_' + i);
 
