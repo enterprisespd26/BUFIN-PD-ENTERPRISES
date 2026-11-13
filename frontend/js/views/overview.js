@@ -2,6 +2,48 @@ import { esc, fmt, today, head, kpi } from '../modules/utils.js';
 import { db, net, sgn, acc, pn, out } from '../modules/state.js';
 import { entTable } from '../modules/components.js';
 
+export function getMonthlyCashFlow(m = today().slice(0, 7)) {
+  const cashAccs = new Set(db.accounts.filter(a => a.cash).map(a => a.code));
+  let cin = 0;
+  let cout = 0;
+
+  for (const e of db.entries) {
+    if (!e.date || !e.date.startsWith(m)) continue;
+    if (e.src === 'open') continue; // opening balances are not period movements
+
+    // Exclude internal contra transfers between cash accounts
+    const isInternalXfer = e.src === 'xfer' || (e.lines && e.lines.length >= 2 && e.lines.every(l => cashAccs.has(l.a)));
+    if (isInternalXfer) continue;
+
+    const cashLines = (e.lines || []).filter(l => cashAccs.has(l.a));
+    if (!cashLines.length) continue;
+
+    const netCash = cashLines.reduce((s, l) => s + (l.d || 0) - (l.c || 0), 0);
+    if (netCash === 0) continue;
+
+    if (e.src === 'rev' && e.rev) {
+      const orig = db.entries.find(x => x.id === e.rev);
+      const origCash = orig ? (orig.lines || []).filter(l => cashAccs.has(l.a)).reduce((s, l) => s + (l.d || 0) - (l.c || 0), 0) : 0;
+      if (origCash > 0) {
+        cin += netCash; // netCash is negative, offsets receipts
+      } else if (origCash < 0) {
+        cout -= netCash; // netCash is positive, offsets payments
+      } else {
+        if (netCash > 0) cin += netCash;
+        else cout += Math.abs(netCash);
+      }
+    } else {
+      if (netCash > 0) {
+        cin += netCash;
+      } else {
+        cout += Math.abs(netCash);
+      }
+    }
+  }
+
+  return { cin: Math.max(0, cin), cout: Math.max(0, cout) };
+}
+
 export function renderOverview() {
   const t = today(), m = t.slice(0, 7), cash = net('1000'), bank = net('1010');
   const rec = db.docs.filter(d => d.type === 'sale' && !d.cancelled).reduce((s, d) => s + out(d), 0);
@@ -9,8 +51,7 @@ export function renderOverview() {
   const rng = (a, f, to) => a.reduce((s, c) => s + sgn(acc(c.code), net(c.code, f, to)), 0);
   const I = db.accounts.filter(a => a.t === 'I'), X = db.accounts.filter(a => a.t === 'X');
   const inc = rng(I, m + '-01', t), exp = rng(X, m + '-01', t);
-  const cin = db.entries.filter(e => e.date.startsWith(m) && e.src === 'in').reduce((s, e) => s + e.lines.reduce((x, l) => x + l.d, 0), 0);
-  const cout = db.entries.filter(e => e.date.startsWith(m) && (e.src === 'out' || e.src === 'exp')).reduce((s, e) => s + e.lines.reduce((x, l) => x + l.d, 0), 0);
+  const { cin, cout } = getMonthlyCashFlow(m);
   const ln = db.loans.filter(l => l.dir === 'taken').reduce((s, l) => s + l.principal - l.repaid, 0);
   const lg = db.loans.filter(l => l.dir === 'given').reduce((s, l) => s + l.principal - l.repaid, 0);
   const od = db.docs.filter(d => !d.cancelled && out(d) > 0 && d.due && d.due < t);

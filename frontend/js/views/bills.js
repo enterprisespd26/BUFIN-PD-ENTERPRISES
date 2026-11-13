@@ -293,7 +293,15 @@ export function renderBills() {
   let activeBill;
   if (billsState.editId) {
     activeBill = db.docs.find(d => d.id === billsState.editId && d.type === 'bill');
+    if (activeBill && activeBill.cancelled) {
+      billsState.editId = null;
+      activeBill = null;
+      toast('Cancelled purchase bills cannot be edited');
+    }
   }
+
+  const activePays = activeBill ? (activeBill.pays || []).filter(p => !p.void) : [];
+  const hasMultiplePayments = activePays.length > 1;
 
   let activeSupplier = null;
   if (billsState.selectedPartyId) {
@@ -318,7 +326,7 @@ export function renderBills() {
   const amt = activeBill ? ((activeBill.base || 0) / 100).toFixed(2) : '';
   const gst = activeBill ? ((activeBill.gst || 0) / 100).toFixed(2) : '0';
   const tot = activeBill ? ((activeBill.total || 0) / 100).toFixed(2) : (amt ? ((+amt) + (+gst)).toFixed(2) : '');
-  const paidAmt = activeBill ? (activeBill.paid !== undefined ? activeBill.paid : (((activeBill.total || 0) - out(activeBill)) / 100).toFixed(2)) : '0';
+  const paidAmt = activeBill ? ((paid(activeBill) / 100).toFixed(2)) : '0';
   const pm = activeBill ? (activeBill.pm || 'Cash') : 'Cash';
   const notes = activeBill ? (activeBill.nt || '') : '';
 
@@ -525,14 +533,20 @@ export function renderBills() {
             <input type="text" id="u_tot" value="${esc(tot)}" readonly style="background:#f1f5f9;font-weight:600">
           </label>
           <label class="pd-label">Paid (₹)
-            <input type="number" step="any" min="0" id="u_paid" value="${esc(paidAmt)}">
+            <input type="number" step="any" min="0" id="u_paid" value="${esc(paidAmt)}" ${hasMultiplePayments ? 'disabled style="background:#f1f5f9;cursor:not-allowed;"' : ''}>
           </label>
           <label class="pd-label">Payment method
-            <select id="u_pm">
+            <select id="u_pm" ${hasMultiplePayments ? 'disabled style="background:#f1f5f9;cursor:not-allowed;"' : ''}>
               ${['Cash', 'UPI', 'Bank transfer', 'Cheque', 'Credit'].map(m => `<option ${m === pm ? 'selected' : ''}>${m}</option>`).join('')}
             </select>
           </label>
         </div>
+
+        ${hasMultiplePayments ? `
+          <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;margin-top:12px;font-size:12.5px;color:#92400e;">
+            ℹ️ This purchase bill has ${activePays.length} recorded payments. Payment amounts and methods cannot be edited from this form. Please manage payments via Records or Money Out.
+          </div>
+        ` : ''}
 
         <!-- Cash in Hand Liquidity Warning -->
         <div id="u_cash_warn" style="display:none;margin-top:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#991b1b;">
@@ -1189,6 +1203,16 @@ export function bindBillsEvents() {
 
   // Save / Update Purchase Bill
   const handleSaveBill = async () => {
+    const isEditMode = Boolean(billsState.editId);
+    const existingDoc = isEditMode ? db.docs.find(d => d.id === billsState.editId && d.type === 'bill') : null;
+
+    if (existingDoc && existingDoc.cancelled) {
+      return toast('Cancelled purchase bills cannot be edited');
+    }
+    if (existingDoc && existingDoc.date && db.biz.lock && existingDoc.date <= db.biz.lock) {
+      return toast(`Cannot edit purchase bill from locked period (dated ${existingDoc.date}, locked up to ${db.biz.lock})`);
+    }
+
     const supName = (U('sup')?.value || '').trim();
     const supPhone = (U('phone')?.value || '').trim();
     const supGstin = (U('gstin')?.value || '').trim().toUpperCase();
@@ -1216,11 +1240,12 @@ export function bindBillsEvents() {
 
     const totalPaisa = Math.round(tot * 100);
     const paidPaisa = Math.min(Math.round(paidAmt * 100), totalPaisa);
-    const isEditMode = Boolean(billsState.editId);
-    const existingDoc = isEditMode ? db.docs.find(d => d.id === billsState.editId && d.type === 'bill') : null;
+
+    const activePays = (existingDoc && existingDoc.pays) ? existingDoc.pays.filter(p => !p.void) : [];
+    const hasMultiplePayments = activePays.length > 1;
 
     // Validate Cash in Hand liquidity if paid upfront in cash
-    if (pm === 'Cash' && paidPaisa > 0) {
+    if (!hasMultiplePayments && pm === 'Cash' && paidPaisa > 0) {
       const existingPayJeId = (existingDoc && existingDoc.pays && existingDoc.pays.length) ? existingDoc.pays[0].je : null;
       const check = checkCashLiquidity('1000', paidPaisa, existingPayJeId);
       if (!check.ok) {
@@ -1232,230 +1257,223 @@ export function bindBillsEvents() {
     const duplicate = db.docs.some(d => d.type === 'bill' && d.id !== billsState.editId && billNo && (d.sno || '').toLowerCase() === billNo.toLowerCase() && (d.sup || pn(d.party)).toLowerCase() === supName.toLowerCase() && !d.cancelled);
     if (duplicate) return toast("This supplier's bill no. is already saved");
 
-    // Find or create supplier in db.parties
-    let supplierParty = billsState.selectedPartyId ? db.parties.find(p => p.id === billsState.selectedPartyId) : null;
-    if (!supplierParty) {
-      supplierParty = db.parties.find(p => p.name.trim().toLowerCase() === supName.toLowerCase() && isS(p));
-    }
-    if (!supplierParty) {
-      supplierParty = {
-        id: uid(),
-        name: supName,
-        type: 'supplier',
-        phone: supPhone,
-        gstin: supGstin,
-        state: supState,
-        addr: supAddr,
-        terms: '0'
-      };
-      db.parties.push(supplierParty);
-    } else {
-      if (supName) supplierParty.name = supName;
-      if (supPhone) supplierParty.phone = supPhone;
-      if (supGstin) supplierParty.gstin = supGstin;
-      if (supState) supplierParty.state = supState;
-      if (supAddr) supplierParty.addr = supAddr;
-    }
+    // Transaction safety: snapshot db before mutating
+    const snapshot = JSON.parse(JSON.stringify(db));
 
-    const basePaisa = Math.round(amt * 100);
-    const gstPaisa = Math.round(gst * 100);
-    const diff = totalPaisa - (basePaisa + gstPaisa);
-
-    // Post purchase double-entry journal entry lines:
-    // Debit: 5000 Purchases / Cost of Goods Sold (for basePaisa)
-    // Debit: 1300 Input GST (for gstPaisa) if gst > 0
-    // Credit: 2000 Accounts Payable (for totalPaisa) with p: supplierParty.id
-    const jLines = [
-      { a: '5000', d: basePaisa + (diff > 0 ? diff : 0), c: 0, p: supplierParty.id }
-    ];
-    if (gstPaisa > 0) {
-      jLines.push({ a: '1300', d: gstPaisa, c: 0, p: supplierParty.id });
-    }
-    if (diff < 0) {
-      jLines.push({ a: '4200', d: 0, c: Math.abs(diff), p: supplierParty.id });
-    }
-    jLines.push({ a: '2000', d: 0, c: totalPaisa, p: supplierParty.id });
-
-    let jeId = null;
-    if (existingDoc && existingDoc.je) {
-      // UPSERT / UPDATE: Update existing journal entry in-place instead of creating a duplicate
-      const existingJe = db.entries.find(e => e.id === existingDoc.je);
-      if (existingJe) {
-        existingJe.date = date;
-        existingJe.narr = (billNo ? billNo + ' - ' : '') + supName + (mat ? ' (' + mat + ')' : '');
-        existingJe.meta = { ...existingJe.meta, docNo: billNo, mat };
-        existingJe.lines = jLines;
-        jeId = existingJe.id;
+    try {
+      // Resolve supplier party ID first without mutating db.parties yet
+      let targetSupplierPartyId = billsState.selectedPartyId;
+      if (!targetSupplierPartyId) {
+        const found = db.parties.find(p => p.name.trim().toLowerCase() === supName.toLowerCase() && isS(p));
+        targetSupplierPartyId = found ? found.id : uid();
       }
-    }
 
-    if (!jeId) {
+      const basePaisa = Math.round(amt * 100);
+      const gstPaisa = Math.round(gst * 100);
+      const diff = totalPaisa - (basePaisa + gstPaisa);
+
+      const jLines = [
+        { a: '5000', d: basePaisa + (diff > 0 ? diff : 0), c: 0, p: targetSupplierPartyId }
+      ];
+      if (gstPaisa > 0) {
+        jLines.push({ a: '1300', d: gstPaisa, c: 0, p: targetSupplierPartyId });
+      }
+      if (diff < 0) {
+        jLines.push({ a: '4200', d: 0, c: Math.abs(diff), p: targetSupplierPartyId });
+      }
+      jLines.push({ a: '2000', d: 0, c: totalPaisa, p: targetSupplierPartyId });
+
+      const docId = existingDoc ? existingDoc.id : uid();
+      const internalNo = existingDoc ? existingDoc.no : ('BILL-' + String(db.docs.filter(d => d.type === 'bill').length + 1).padStart(4, '0'));
+
+      // Step 3 & 4: Immutability - In edit mode, reverse old JE and post new JE with meta.replaces
+      let replacesRef = null;
+      if (existingDoc && existingDoc.je) {
+        const oldJe = db.entries.find(e => e.id === existingDoc.je);
+        if (oldJe && oldJe.status === 'posted') {
+          replacesRef = oldJe.ref;
+          reverse(oldJe.id, { cascadeDoc: false });
+        }
+      }
+
       const je = post({
         date,
         src: 'bill',
         narr: (billNo ? billNo + ' - ' : '') + supName + (mat ? ' (' + mat + ')' : ''),
-        meta: { docNo: billNo, mat },
+        meta: {
+          docNo: billNo || internalNo,
+          mat,
+          replaces: replacesRef
+        },
         lines: jLines
       });
-      jeId = je.id;
-    }
+      const jeId = je.id;
 
-    const docId = existingDoc ? existingDoc.id : uid();
-    const internalNo = existingDoc ? existingDoc.no : ('BILL-' + String(db.docs.filter(d => d.type === 'bill').length + 1).padStart(4, '0'));
-
-    const docObj = existingDoc || {
-      id: docId,
-      type: 'bill',
-      pays: []
-    };
-
-    docObj.no = internalNo;
-    docObj.sno = billNo;
-    docObj.date = date;
-    docObj.due = date;
-    docObj.party = supplierParty.id;
-    docObj.sup = supName;
-    docObj.phone = supPhone;
-    docObj.gstin = supGstin;
-    docObj.state = supState;
-    docObj.addr = supAddr;
-    docObj.mat = mat;
-    docObj.q = q;
-    docObj.u = u;
-    docObj.r = r;
-    docObj.desc = mat + (q ? ' (' + q + ' ' + u + ')' : '');
-    docObj.base = basePaisa;
-    docObj.gst = gstPaisa;
-    docObj.rate = q && r ? Math.round(gst / amt * 100) : 0;
-    const isIntra = isIntraState({ state: supState, gstin: supGstin });
-    const halfGst = Math.floor(gstPaisa / 2);
-    docObj.tax = gstPaisa > 0 ? (isIntra ? { cg: halfGst, sg: gstPaisa - halfGst } : { ig: gstPaisa }) : {};
-    docObj.total = totalPaisa;
-    docObj.paid = paidAmt;
-    docObj.pm = pm;
-    docObj.nt = nt;
-    docObj.je = jeId;
-    docObj.hasFiles = billsState.files.length > 0;
-    docObj.cancelled = false;
-
-    // Handle upfront payment receipt if paidAmt > 0 and not credit
-    if (paidAmt > 0 && pm !== 'Credit') {
-      const paidPaisa = Math.min(Math.round(paidAmt * 100), totalPaisa);
-      const cashAcct = pm === 'Cash' ? '1000' : '1010';
-      let pJeId = null;
-
-      if (existingDoc && existingDoc.pays && existingDoc.pays.length && existingDoc.pays[0].je) {
-        const existingPJe = db.entries.find(e => e.id === existingDoc.pays[0].je);
-        if (existingPJe) {
-          existingPJe.date = date;
-          existingPJe.lines = [
-            { a: '2000', d: paidPaisa, c: 0, p: supplierParty.id },
-            { a: cashAcct, d: 0, c: paidPaisa, p: supplierParty.id }
-          ];
-          existingPJe.narr = `${supplierParty.name} - Payment for Bill ${billNo || internalNo}`;
-          existingPJe.meta = {
-            ...existingPJe.meta,
-            ref: billNo || internalNo,
-            docNo: billNo || internalNo,
-            billId: docId,
-            party: supplierParty.id,
-            partyName: supplierParty.name,
-            acct: cashAcct,
-            method: pm,
-            desc: `${mat ? mat + (q ? ' (' + q + ' ' + u + ')' : '') : 'Material purchase'} - Bill ${billNo || internalNo}`
-          };
-          existingDoc.pays[0].amt = paidPaisa;
-          existingDoc.pays[0].date = date;
-          existingDoc.pays[0].method = pm;
-          existingDoc.pays[0].acct = cashAcct;
-          pJeId = existingPJe.id;
+      // Handle payments
+      let updatedPays = [];
+      if (hasMultiplePayments) {
+        // Step 6: Keep all existing payments when multiple payments exist
+        updatedPays = existingDoc.pays || [];
+      } else if (paidAmt > 0 && pm !== 'Credit') {
+        const cashAcct = pm === 'Cash' ? '1000' : '1010';
+        let replacesPayRef = null;
+        if (existingDoc && existingDoc.pays && existingDoc.pays.length && existingDoc.pays[0].je) {
+          const oldPJe = db.entries.find(e => e.id === existingDoc.pays[0].je);
+          if (oldPJe && oldPJe.status === 'posted') {
+            replacesPayRef = oldPJe.ref;
+            reverse(oldPJe.id, { cascadeDoc: false });
+          }
         }
-      }
 
-      if (!pJeId) {
         const pJe = post({
           date,
           src: 'out',
-          narr: `${supplierParty.name} - Payment for Bill ${billNo || internalNo}`,
+          narr: `${supName} - Payment for Bill ${billNo || internalNo}`,
           meta: {
             ref: billNo || internalNo,
             docNo: billNo || internalNo,
             billId: docId,
-            party: supplierParty.id,
-            partyName: supplierParty.name,
+            party: targetSupplierPartyId,
+            partyName: supName,
             acct: cashAcct,
             cat: '2000',
             method: pm,
-            desc: `${mat ? mat + (q ? ' (' + q + ' ' + u + ')' : '') : 'Material purchase'} - Bill ${billNo || internalNo}`
+            desc: `${mat ? mat + (q ? ' (' + q + ' ' + u + ')' : '') : 'Material purchase'} - Bill ${billNo || internalNo}`,
+            replaces: replacesPayRef
           },
           lines: [
-            { a: '2000', d: paidPaisa, c: 0, p: supplierParty.id },
-            { a: cashAcct, d: 0, c: paidPaisa, p: supplierParty.id }
+            { a: '2000', d: paidPaisa, c: 0, p: targetSupplierPartyId },
+            { a: cashAcct, d: 0, c: paidPaisa, p: targetSupplierPartyId }
           ]
         });
-        docObj.pays = [{ je: pJe.id, amt: paidPaisa, date, method: pm, acct: cashAcct }];
-      }
-    } else {
-      if (existingDoc && existingDoc.pays && existingDoc.pays.length && existingDoc.pays[0].je) {
-        try { reverse(existingDoc.pays[0].je); } catch (e) { }
-      }
-      docObj.pays = [];
-      docObj.paid = 0;
-    }
-
-    if (!existingDoc) {
-      db.docs.push(docObj);
-    }
-
-    // Save files in IndexedDB & sync to Cloudinary if available
-    if (billsState.files.length) {
-      for (const f of billsState.files) {
-        if (!f.url) {
-          try {
-            let dataUrl = f.data;
-            if (!dataUrl && f.blob) {
-              dataUrl = await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(f.blob);
-              });
-            }
-            if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
-              const res = await fetch('/api/upload', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ file: dataUrl, folder: 'bufin/bills' })
-              });
-              if (res.ok) {
-                const json = await res.json();
-                if (json.url) {
-                  f.url = json.url;
-                  f.public_id = json.public_id;
-                  f.cloud = 'cloudinary';
-                }
-              }
-            }
-          } catch (err) {
-            console.warn('Cloudinary upload deferred/failed:', err);
+        updatedPays = [{ je: pJe.id, amt: paidPaisa, date, method: pm, acct: cashAcct }];
+      } else {
+        // paidAmt is 0 or Credit: if upfront payment existed, reverse it
+        if (existingDoc && existingDoc.pays && existingDoc.pays.length && existingDoc.pays[0].je) {
+          const oldPJe = db.entries.find(e => e.id === existingDoc.pays[0].je);
+          if (oldPJe && oldPJe.status === 'posted') {
+            reverse(oldPJe.id, { cascadeDoc: false });
           }
         }
+        updatedPays = [];
       }
-      try {
-        await pPut({ id: docId, files: billsState.files });
-      } catch (e) {
-        console.warn('Could not store files in IndexedDB:', e);
+
+      // Step 7: Update or create supplier in db.parties ONLY after journal post succeeds
+      let supplierParty = db.parties.find(p => p.id === targetSupplierPartyId);
+      if (!supplierParty) {
+        supplierParty = {
+          id: targetSupplierPartyId,
+          name: supName,
+          type: 'supplier',
+          phone: supPhone,
+          gstin: supGstin,
+          state: supState,
+          addr: supAddr,
+          terms: '0'
+        };
+        db.parties.push(supplierParty);
+      } else {
+        if (!isS(supplierParty)) supplierParty.type = supplierParty.type === 'customer' ? 'both' : 'supplier';
+        if (supName) supplierParty.name = supName;
+        if (supPhone) supplierParty.phone = supPhone;
+        if (supGstin) supplierParty.gstin = supGstin;
+        if (supState) supplierParty.state = supState;
+        if (supAddr) supplierParty.addr = supAddr;
       }
+
+      const docObj = existingDoc || {
+        id: docId,
+        type: 'bill',
+        pays: []
+      };
+
+      docObj.no = internalNo;
+      docObj.sno = billNo;
+      docObj.date = date;
+      docObj.due = date;
+      docObj.party = supplierParty.id;
+      docObj.sup = supName;
+      docObj.phone = supPhone;
+      docObj.gstin = supGstin;
+      docObj.state = supState;
+      docObj.addr = supAddr;
+      docObj.mat = mat;
+      docObj.q = q;
+      docObj.u = u;
+      docObj.r = r;
+      docObj.desc = mat + (q ? ' (' + q + ' ' + u + ')' : '');
+      docObj.base = basePaisa;
+      docObj.gst = gstPaisa;
+      docObj.rate = q && r ? Math.round(gst / amt * 100) : 0;
+      const isIntra = isIntraState({ state: supState, gstin: supGstin });
+      const halfGst = Math.floor(gstPaisa / 2);
+      docObj.tax = gstPaisa > 0 ? (isIntra ? { cg: halfGst, sg: gstPaisa - halfGst } : { ig: gstPaisa }) : {};
+      docObj.total = totalPaisa;
+      docObj.pays = updatedPays;
+      docObj.paid = paid(docObj); // integer paise
+      docObj.pm = pm;
+      docObj.nt = nt;
+      docObj.je = jeId;
+      docObj.hasFiles = billsState.files.length > 0;
+      docObj.cancelled = false;
+
+      if (!existingDoc) {
+        db.docs.push(docObj);
+      }
+
+      // Save files in IndexedDB & sync to Cloudinary if available
+      if (billsState.files.length) {
+        for (const f of billsState.files) {
+          if (!f.url) {
+            try {
+              let dataUrl = f.data;
+              if (!dataUrl && f.blob) {
+                dataUrl = await new Promise((resolve) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result);
+                  reader.readAsDataURL(f.blob);
+                });
+              }
+              if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
+                const res = await fetch('/api/upload', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ file: dataUrl, folder: 'bufin/bills' })
+                });
+                if (res.ok) {
+                  const json = await res.json();
+                  if (json.url) {
+                    f.url = json.url;
+                    f.public_id = json.public_id;
+                    f.cloud = 'cloudinary';
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn('Cloudinary upload deferred/failed:', err);
+            }
+          }
+        }
+        try {
+          await pPut({ id: docId, files: billsState.files });
+        } catch (e) {
+          console.warn('Could not store files in IndexedDB:', e);
+        }
+      }
+
+      save();
+      toast(isEditMode ? 'Purchase bill updated successfully' : 'Purchase bill saved successfully');
+
+      billsState.tab = 'rec';
+      billsState.editId = null;
+      billsState.selectedPartyId = null;
+      billsState.files = [];
+      container.innerHTML = renderBills();
+      bindBillsEvents();
+    } catch (err) {
+      setDb(snapshot);
+      toast(err.message || 'Failed to save bill');
     }
-
-    save();
-    toast(isEditMode ? 'Purchase bill updated successfully' : 'Purchase bill saved successfully');
-
-    billsState.tab = 'rec';
-    billsState.editId = null;
-    billsState.selectedPartyId = null;
-    billsState.files = [];
-    container.innerHTML = renderBills();
-    bindBillsEvents();
   };
 
   const saveBtn = U('save');
@@ -1540,8 +1558,10 @@ export function bindBillsEvents() {
             onClick: () => {
               showDoc(id);
             }
-          },
-          {
+          }
+        ];
+        if (!doc.cancelled) {
+          sheetItems.push({
             label: 'Edit Purchase Bill',
             icon: '✏️',
             onClick: async () => {
@@ -1558,8 +1578,8 @@ export function bindBillsEvents() {
               bindBillsEvents();
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
-          }
-        ];
+          });
+        }
         if (doc.hasFiles) {
           sheetItems.push({
             label: '📎 View Attachments',
@@ -1640,6 +1660,7 @@ export function bindBillsEvents() {
         }
       } else if (action === 'e') {
         // Edit bill
+        if (doc.cancelled) return toast('Cancelled purchase bills cannot be edited');
         billsState.editId = id;
         billsState.selectedPartyId = doc.party || null;
         billsState.tab = 'new';

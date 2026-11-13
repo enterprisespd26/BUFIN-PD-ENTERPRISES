@@ -968,6 +968,9 @@ export function renderSales() {
   }
   const activeCustomerId = activeParty ? activeParty.id : (salesState.selectedPartyId || '');
 
+  const activePays = activeInv ? (activeInv.pays || []).filter(p => !p.void) : [];
+  const hasMultiplePayments = activePays.length > 1;
+
   const invNo = activeInv ? activeInv.no : (salesState.newNo || nextInvNo());
   const invDate = activeInv ? activeInv.date : today();
   const invVeh = activeInv ? (activeInv.veh || '') : '';
@@ -981,8 +984,8 @@ export function renderSales() {
   const invMode = activeInv ? (activeInv.modeSel || 'auto') : 'auto';
   const isPaymentReceived = salesState.paymentReceived !== undefined
     ? salesState.paymentReceived
-    : (activeInv ? Boolean((activeInv.paid || 0) > 0 || (activeInv.pays && activeInv.pays.length > 0)) : false);
-  const invPaid = activeInv ? (activeInv.paid || 0) : (isPaymentReceived ? (salesState.invPaid || '') : 0);
+    : (activeInv ? Boolean((activeInv.paid || 0) > 0 || activePays.length > 0) : false);
+  const invPaid = activeInv ? ((paid(activeInv) / 100).toFixed(2)) : (isPaymentReceived ? (salesState.invPaid || '') : 0);
   const invPm = activeInv ? (activeInv.pm || 'Cash') : 'Cash';
   const invDepositAcct = activeInv ? (activeInv.payAcct || (invPm === 'Cash' ? '1000' : '1010')) : '1000';
   const invPayRef = activeInv ? (activeInv.payRef || '') : '';
@@ -1184,27 +1187,33 @@ export function renderSales() {
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
             <div>
               <span style="font-weight:700;font-size:14px;color:var(--tx);display:block;">Payment Status</span>
-              <span style="font-size:12px;color:var(--t2);">Select settlement status (Paid in Full vs Credit / Pending)</span>
+              <span style="font-size:12px;color:var(--t2);">${hasMultiplePayments ? `Invoice has ${activePays.length} recorded payments.` : 'Select settlement status (Paid in Full vs Credit / Pending)'}</span>
             </div>
-            <div class="pd-seg-toggle" style="display:inline-flex;background:#e2e8f0;padding:3px;border-radius:8px;gap:3px;">
-              <button type="button" id="pd_btn_status_paid" class="pd-seg-btn ${isPaymentReceived ? 'active' : ''}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:${isPaymentReceived ? '#059669' : 'transparent'};color:${isPaymentReceived ? '#ffffff' : '#475569'};transition:all 0.15s ease;">
+            <div class="pd-seg-toggle" style="display:inline-flex;background:#e2e8f0;padding:3px;border-radius:8px;gap:3px;${hasMultiplePayments ? 'opacity:0.6;pointer-events:none;' : ''}">
+              <button type="button" id="pd_btn_status_paid" ${hasMultiplePayments ? 'disabled' : ''} class="pd-seg-btn ${isPaymentReceived ? 'active' : ''}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:${hasMultiplePayments ? 'not-allowed' : 'pointer'};background:${isPaymentReceived ? '#059669' : 'transparent'};color:${isPaymentReceived ? '#ffffff' : '#475569'};transition:all 0.15s ease;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                 <span>Paid in Full</span>
               </button>
-              <button type="button" id="pd_btn_status_credit" class="pd-seg-btn ${!isPaymentReceived ? 'active' : ''}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:${!isPaymentReceived ? '#d97706' : 'transparent'};color:${!isPaymentReceived ? '#ffffff' : '#475569'};transition:all 0.15s ease;">
+              <button type="button" id="pd_btn_status_credit" ${hasMultiplePayments ? 'disabled' : ''} class="pd-seg-btn ${!isPaymentReceived ? 'active' : ''}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:${hasMultiplePayments ? 'not-allowed' : 'pointer'};background:${!isPaymentReceived ? '#d97706' : 'transparent'};color:${!isPaymentReceived ? '#ffffff' : '#475569'};transition:all 0.15s ease;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                 <span>Credit / Pending</span>
               </button>
             </div>
-            <input type="checkbox" id="pd_pay_received" ${isPaymentReceived ? 'checked' : ''} style="display:none;">
+            <input type="checkbox" id="pd_pay_received" ${isPaymentReceived ? 'checked' : ''} ${hasMultiplePayments ? 'disabled' : ''} style="display:none;">
           </div>
+
+          ${hasMultiplePayments ? `
+            <div class="warn" style="font-size:12.5px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:8px 12px;border-radius:6px;margin-bottom:8px;">
+              Cannot edit receipt: this invoice has ${activePays.length} recorded payments. Existing payment records are preserved. Please manage individual payments in All Transactions or Party Ledger.
+            </div>
+          ` : ''}
 
           <div id="pd_payment_fields" style="display:${isPaymentReceived ? 'grid' : 'none'};grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;padding-top:14px;border-top:1px dashed var(--bd);">
             <label class="pd-label">Amount received (₹)
-              <input type="number" id="pd_paid" value="${invPaid !== '' ? invPaid : liveFigs.gt}" min="0" step="any" placeholder="₹0.00" data-auto-sync="${isPaymentReceived && (invPaid === '' || invPaid == liveFigs.gt) ? '1' : '0'}">
+              <input type="number" id="pd_paid" ${hasMultiplePayments ? 'disabled' : ''} value="${invPaid !== '' ? invPaid : liveFigs.gt}" min="0" step="any" placeholder="₹0.00" data-auto-sync="${!hasMultiplePayments && isPaymentReceived && (invPaid === '' || invPaid == liveFigs.gt) ? '1' : '0'}">
             </label>
             <label class="pd-label">Payment mode
-              <select id="pd_pm">
+              <select id="pd_pm" ${hasMultiplePayments ? 'disabled' : ''}>
                 <option value="Bank Transfer" ${invPm === 'Bank Transfer' ? 'selected' : ''}>Bank Transfer (NEFT/RTGS)</option>
                 <option value="UPI" ${invPm === 'UPI' ? 'selected' : ''}>UPI</option>
                 <option value="Cash" ${invPm === 'Cash' ? 'selected' : ''}>Cash</option>
@@ -1213,13 +1222,13 @@ export function renderSales() {
               </select>
             </label>
             <label class="pd-label">Deposit Account
-              <select id="pd_deposit_acct">
+              <select id="pd_deposit_acct" ${hasMultiplePayments ? 'disabled' : ''}>
                 <option value="1010" ${invDepositAcct === '1010' ? 'selected' : ''}>1010 · Bank Account</option>
                 <option value="1000" ${invDepositAcct === '1000' ? 'selected' : ''}>1000 · Cash in Hand</option>
               </select>
             </label>
             <label class="pd-label">Payment Reference / Txn ID
-              <input type="text" id="pd_pay_ref" value="${esc(invPayRef)}" placeholder="e.g. NEFT-SBI-9912 / UPI Ref">
+              <input type="text" id="pd_pay_ref" ${hasMultiplePayments ? 'disabled' : ''} value="${esc(invPayRef)}" placeholder="e.g. NEFT-SBI-9912 / UPI Ref">
             </label>
           </div>
         </div>
@@ -1875,12 +1884,34 @@ export function bindSalesEvents() {
     const lines = salesState.lines.filter(l => l.n && (parseFloat(l.q) || 0) > 0 && (parseFloat(l.r) || 0) >= 0);
     if (!lines.length) return toast('Add at least one item with valid quantity and rate');
 
+    const isEditMode = Boolean(salesState.editNo);
+    let existingDoc = isEditMode ? db.docs.find(d => d.no === salesState.editNo && d.type === 'sale') : null;
+    if (!existingDoc && !isEditMode) {
+      existingDoc = db.docs.find(d => d.no === no && d.type === 'sale');
+    }
+
+    if (existingDoc && existingDoc.cancelled) {
+      return toast('Cancelled invoices cannot be edited');
+    }
+
+    if (!existingDoc && db.docs.some(d => d.no === no && d.type === 'sale')) {
+      return toast('Invoice number ' + no + ' is already used');
+    }
+
     const disc = parseFloat($('#pd_disc')?.value) || 0;
     const rate = parseFloat($('#pd_rate')?.value) || 0;
     const modeSel = $('#pd_mode')?.value || 'auto';
     const effMode = getMode(cState, modeSel, rate, cGstin);
+
+    // Existing active payments
+    const activePays = existingDoc ? (existingDoc.pays || []).filter(p => !p.void) : [];
+    const hasMultiplePayments = activePays.length > 1;
+
     const payReceived = Boolean($('#pd_pay_received')?.checked);
-    const paidAmt = payReceived ? (parseFloat($('#pd_paid')?.value) || 0) : 0;
+    const paidAmt = hasMultiplePayments
+      ? (paid(existingDoc) / 100)
+      : (payReceived ? (parseFloat($('#pd_paid')?.value) || 0) : 0);
+
     let pm = $('#pd_pm')?.value || 'Bank Transfer';
     const depositAcct = $('#pd_deposit_acct')?.value || (pm === 'Cash' ? '1000' : '1010');
     const payRef = ($('#pd_pay_ref')?.value || '').trim();
@@ -1894,9 +1925,6 @@ export function bindSalesEvents() {
     }
     if (paidAmt > f.gt) {
       return toast(`Received amount (₹${paidAmt.toLocaleString('en-IN')}) cannot exceed Grand Total (₹${f.gt.toLocaleString('en-IN')})`);
-    }
-    if (f.gt > 0 && paidAmt > f.gt * 10) {
-      return toast(`Received amount looks abnormally high (₹${paidAmt.toLocaleString('en-IN')}). Please enter amount in Rupees (e.g. ₹${f.gt}), not Paise.`);
     }
     const sumPaisa = Math.round(paidAmt * 100) + Math.round(f.bal * 100);
     const gtPaisa = Math.round(f.gt * 100);
@@ -1914,211 +1942,209 @@ export function bindSalesEvents() {
       }
     }
 
-    const totalPaisa = f.gt * 100;
+    const totalPaisa = Math.round(f.gt * 100);
     const basePaisa = Math.round(f.tx * 100);
     const gstPaisa = Math.round(f.tax * 100);
 
-    // Find or create customer in db.parties
-    let party = salesState.selectedPartyId ? db.parties.find(p => p.id === salesState.selectedPartyId) : null;
-    if (!party) {
-      party = db.parties.find(p => p.name.trim().toLowerCase() === cName.toLowerCase() && isC(p));
+    // Resolve party ID before mutating
+    let existingParty = salesState.selectedPartyId ? db.parties.find(p => p.id === salesState.selectedPartyId) : null;
+    if (!existingParty) {
+      existingParty = db.parties.find(p => p.name.trim().toLowerCase() === cName.toLowerCase() && isC(p));
     }
-    if (!party) {
-      party = {
-        id: uid(),
-        name: cName,
-        type: 'customer',
-        phone: cPhone,
-        gstin: cGstin,
-        state: cState,
-        addr: cAddr,
-        terms: '0'
-      };
-      db.parties.push(party);
-    } else {
-      if (cName) party.name = cName;
-      if (cPhone) party.phone = cPhone;
-      if (cGstin) party.gstin = cGstin;
-      if (cState) party.state = cState;
-      if (cAddr) party.addr = cAddr;
-    }
-
-    // Check if editing or new
-    const isEditMode = Boolean(salesState.editNo);
-    let existingDoc = isEditMode ? db.docs.find(d => d.no === salesState.editNo && d.type === 'sale') : null;
-    if (!existingDoc && !isEditMode) {
-      existingDoc = db.docs.find(d => d.no === no && d.type === 'sale');
-    }
-
-    if (!existingDoc && db.docs.some(d => d.no === no && d.type === 'sale')) {
-      return toast('Invoice number ' + no + ' is already used');
-    }
+    const targetPartyId = existingParty ? existingParty.id : ('p_' + uid());
 
     // Party credit limit validation (TC-PARTY-01)
-    if (party && party.limit) {
+    if (existingParty && existingParty.limit) {
       const currentDues = db.docs
-        .filter(d => d.party === party.id && d.type === 'sale' && !d.cancelled && (!existingDoc || d.id !== existingDoc.id))
+        .filter(d => d.party === existingParty.id && d.type === 'sale' && !d.cancelled && (!existingDoc || d.id !== existingDoc.id))
         .reduce((sum, d) => sum + out(d), 0);
       const uncollectedAmt = Math.max(0, totalPaisa - Math.round(paidAmt * 100));
-      if ((currentDues + uncollectedAmt) > party.limit) {
-        const proceed = confirm(`Credit limit exceeded for this party (${fmt(party.limit)}). Current dues + this invoice: ${fmt(currentDues + uncollectedAmt)}. Proceed with authorization?`);
+      if ((currentDues + uncollectedAmt) > existingParty.limit) {
+        const proceed = confirm(`Credit limit exceeded for this party (${fmt(existingParty.limit)}). Current dues + this invoice: ${fmt(currentDues + uncollectedAmt)}. Proceed with authorization?`);
         if (!proceed) return;
       }
     }
 
-    // Compute sales double-entry journal entry lines
-    // Debit: 1100 Accounts Receivable (for totalPaisa)
-    // Credit: 4000 Sales Revenue (for basePaisa)
-    // Credit: 2200 Output GST (for gstPaisa) if gst > 0
-    // Difference (roundoff): adjust against 4000 or 5600
-    const diff = totalPaisa - (basePaisa + gstPaisa);
-    const jLines = [
-      { a: '1100', d: totalPaisa, c: 0, p: party.id },
-      { a: '4000', d: 0, c: basePaisa + (diff > 0 ? diff : 0), p: party.id }
-    ];
-    if (gstPaisa > 0) {
-      jLines.push({ a: '2200', d: 0, c: gstPaisa });
-    }
-    if (diff < 0) {
-      jLines.push({ a: '5600', d: Math.abs(diff), c: 0, p: party.id });
-    }
+    // SNAPSHOT FOR TRANSACTION SAFETY: deep clone before mutating
+    const snapshot = JSON.parse(JSON.stringify(db));
 
-    let jeId = null;
-    if (existingDoc && existingDoc.je) {
-      // UPSERT / UPDATE: Update existing journal entry in-place instead of creating a duplicate
-      const existingJe = db.entries.find(e => e.id === existingDoc.je);
-      if (existingJe) {
-        existingJe.date = date;
-        existingJe.narr = no + ' - ' + cName + ' (Scrap Sale)';
-        existingJe.meta = { ...existingJe.meta, docNo: no, veh };
-        existingJe.lines = jLines;
-        jeId = existingJe.id;
+    try {
+      // Compute sales double-entry journal entry lines
+      const diff = totalPaisa - (basePaisa + gstPaisa);
+      const jLines = [
+        { a: '1100', d: totalPaisa, c: 0, p: targetPartyId },
+        { a: '4000', d: 0, c: basePaisa + (diff > 0 ? diff : 0), p: targetPartyId }
+      ];
+      if (gstPaisa > 0) {
+        jLines.push({ a: '2200', d: 0, c: gstPaisa });
       }
-    }
+      if (diff < 0) {
+        jLines.push({ a: '5600', d: Math.abs(diff), c: 0, p: targetPartyId });
+      }
 
-    // If no existing JE found, post a new one
-    if (!jeId) {
-      const je = post({
-        date,
-        src: 'sale',
-        narr: no + ' - ' + cName + ' (Scrap Sale)',
-        meta: { docNo: no, veh },
-        lines: jLines
-      });
-      jeId = je.id;
-    }
+      // Step 3: Never mutate a posted journal entry in place.
+      // In edit mode: reverse the old JE and post a new one through post() (new ref, linked via meta.replaces)
+      let jeId = null;
+      let oldJeRef = null;
+      if (existingDoc && existingDoc.je) {
+        const oldJe = db.entries.find(e => e.id === existingDoc.je);
+        if (oldJe) {
+          oldJeRef = oldJe.ref;
+          if (oldJe.status === 'posted') {
+            reverse(oldJe.id, { cascadeDoc: false });
+          }
+        }
+        const newJe = post({
+          date,
+          src: 'sale',
+          narr: no + ' - ' + cName + ' (Scrap Sale)',
+          meta: { docNo: no, veh, replaces: oldJeRef },
+          lines: jLines
+        });
+        jeId = newJe.id;
+      } else {
+        const je = post({
+          date,
+          src: 'sale',
+          narr: no + ' - ' + cName + ' (Scrap Sale)',
+          meta: { docNo: no, veh },
+          lines: jLines
+        });
+        jeId = je.id;
+      }
 
-    const docId = existingDoc ? existingDoc.id : uid();
-    const docObj = existingDoc || {
-      id: docId,
-      type: 'sale',
-      pays: []
-    };
+      const docId = existingDoc ? existingDoc.id : uid();
+      const docObj = existingDoc || {
+        id: docId,
+        type: 'sale',
+        pays: []
+      };
 
-    docObj.no = no;
-    docObj.date = date;
-    docObj.due = date;
-    docObj.party = party.id;
-    docObj.sno = veh;
-    docObj.desc = lines.map(l => l.n + ' (' + l.q + ' ' + l.u + ')').join(', ');
-    docObj.base = basePaisa;
-    docObj.gst = gstPaisa;
-    docObj.rate = rate;
-    docObj.tax = { cg: effMode === 'intra' ? Math.round(f.half * 100) : 0, sg: effMode === 'intra' ? Math.round(f.half * 100) : 0, ig: effMode === 'inter' ? gstPaisa : 0 };
-    docObj.total = totalPaisa;
-    docObj.je = jeId;
-    docObj.veh = veh;
-    docObj.disc = disc;
-    docObj.mode = effMode;
-    docObj.modeSel = modeSel;
-    docObj.paid = paidAmt;
-    docObj.pm = pm;
-    docObj.payAcct = depositAcct;
-    docObj.payRef = payRef;
-    docObj.nt = nt;
-    docObj.lines = lines;
-    docObj.c = { n: cName, p: cPhone, g: cGstin, s: cState, a: cAddr };
-    docObj.cancelled = false;
+      // Step 6: Handle payments
+      let updatedPays = [];
+      if (hasMultiplePayments) {
+        // Never rebuild pays if multiple payments exist - keep every existing payment!
+        updatedPays = existingDoc.pays;
+      } else {
+        // Single upfront payment or 0 payment
+        if (paidAmt > 0) {
+          const paidPaisa = Math.min(Math.round(paidAmt * 100), totalPaisa);
+          let oldPJeRef = null;
 
-    // Handle upfront payment receipt entry if paid > 0, or clear if 0
-    if (paidAmt > 0) {
-      const paidPaisa = Math.min(Math.round(paidAmt * 100), totalPaisa);
-      let pJeId = null;
+          if (existingDoc && existingDoc.pays && existingDoc.pays.length && existingDoc.pays[0].je) {
+            const oldPJe = db.entries.find(e => e.id === existingDoc.pays[0].je);
+            if (oldPJe) {
+              oldPJeRef = oldPJe.ref;
+              if (oldPJe.status === 'posted') {
+                reverse(oldPJe.id, { cascadeDoc: false });
+              }
+            }
+          }
 
-      if (existingDoc && existingDoc.pays && existingDoc.pays.length && existingDoc.pays[0].je) {
-        const existingPJe = db.entries.find(e => e.id === existingDoc.pays[0].je);
-        if (existingPJe) {
-          existingPJe.date = date;
-          existingPJe.lines = [
-            { a: depositAcct, d: paidPaisa, c: 0, p: party.id },
-            { a: '1100', d: 0, c: paidPaisa, p: party.id }
-          ];
-          existingPJe.narr = `${party.name} - Receipt for Invoice ${no}`;
-          existingPJe.meta = {
-            ...existingPJe.meta,
-            ref: payRef || no,
-            docNo: no,
-            party: party.id,
-            partyName: party.name,
-            acct: depositAcct,
-            method: pm
-          };
-          existingDoc.pays[0].amt = paidPaisa;
-          existingDoc.pays[0].date = date;
-          existingDoc.pays[0].method = pm;
-          existingDoc.pays[0].acct = depositAcct;
-          pJeId = existingPJe.id;
+          const pJe = post({
+            date,
+            src: 'in',
+            narr: `${cName} - Receipt for Invoice ${no}`,
+            meta: {
+              ref: payRef || no,
+              docNo: no,
+              invoiceId: docId,
+              party: targetPartyId,
+              partyName: cName,
+              acct: depositAcct,
+              cat: '1100',
+              method: pm,
+              desc: `${lines.map(l => l.n + (l.q ? ' (' + l.q + ' ' + (l.u || 'kg') + ')' : '')).join(', ')}${veh ? ' · Veh: ' + veh : ''} - Invoice ${no}`,
+              replaces: oldPJeRef || undefined
+            },
+            lines: [
+              { a: depositAcct, d: paidPaisa, c: 0, p: targetPartyId },
+              { a: '1100', d: 0, c: paidPaisa, p: targetPartyId }
+            ]
+          });
+          updatedPays = [{ je: pJe.id, amt: paidPaisa, date, method: pm, acct: depositAcct }];
+        } else {
+          // paidAmt is 0: if upfront payment existed, reverse it
+          if (existingDoc && existingDoc.pays && existingDoc.pays.length && existingDoc.pays[0].je) {
+            const oldPJe = db.entries.find(e => e.id === existingDoc.pays[0].je);
+            if (oldPJe && oldPJe.status === 'posted') {
+              reverse(oldPJe.id, { cascadeDoc: false });
+            }
+          }
+          updatedPays = [];
         }
       }
 
-      if (!pJeId) {
-        const pJe = post({
-          date,
-          src: 'in',
-          narr: `${party.name} - Receipt for Invoice ${no}`,
-          meta: {
-            ref: payRef || no,
-            docNo: no,
-            invoiceId: docId,
-            party: party.id,
-            partyName: party.name,
-            acct: depositAcct,
-            cat: '1100',
-            method: pm,
-            desc: `${lines.map(l => l.n + (l.q ? ' (' + l.q + ' ' + (l.u || 'kg') + ')' : '')).join(', ')}${veh ? ' · Veh: ' + veh : ''} - Invoice ${no}`
-          },
-          lines: [
-            { a: depositAcct, d: paidPaisa, c: 0, p: party.id },
-            { a: '1100', d: 0, c: paidPaisa, p: party.id }
-          ]
-        });
-        docObj.pays = [{ je: pJe.id, amt: paidPaisa, date, method: pm, acct: depositAcct }];
+      // Step 7: Do the party create/update ONLY after the journal post succeeds
+      let party = db.parties.find(p => p.id === targetPartyId);
+      if (!party) {
+        party = {
+          id: targetPartyId,
+          name: cName,
+          type: 'customer',
+          phone: cPhone,
+          gstin: cGstin,
+          state: cState,
+          addr: cAddr,
+          terms: '0'
+        };
+        db.parties.push(party);
+      } else {
+        if (!isC(party)) party.type = party.type === 'supplier' ? 'both' : 'customer';
+        if (cName) party.name = cName;
+        if (cPhone) party.phone = cPhone;
+        if (cGstin) party.gstin = cGstin;
+        if (cState) party.state = cState;
+        if (cAddr) party.addr = cAddr;
       }
-    } else {
-      if (existingDoc && existingDoc.pays && existingDoc.pays.length && existingDoc.pays[0].je) {
-        try { reverse(existingDoc.pays[0].je); } catch (e) { }
+
+      docObj.no = no;
+      docObj.date = date;
+      docObj.due = date;
+      docObj.party = party.id;
+      docObj.sno = veh;
+      docObj.desc = lines.map(l => l.n + ' (' + l.q + ' ' + l.u + ')').join(', ');
+      docObj.base = basePaisa;
+      docObj.gst = gstPaisa;
+      docObj.rate = rate;
+      docObj.tax = { cg: effMode === 'intra' ? Math.round(f.half * 100) : 0, sg: effMode === 'intra' ? Math.round(f.half * 100) : 0, ig: effMode === 'inter' ? gstPaisa : 0 };
+      docObj.total = totalPaisa;
+      docObj.je = jeId;
+      docObj.veh = veh;
+      docObj.disc = disc;
+      docObj.mode = effMode;
+      docObj.modeSel = modeSel;
+      docObj.pays = updatedPays;
+      docObj.paid = paid(docObj); // Normalised to integer paise!
+      docObj.pm = pm;
+      docObj.payAcct = depositAcct;
+      docObj.payRef = payRef;
+      docObj.nt = nt;
+      docObj.lines = lines;
+      docObj.c = { n: cName, p: cPhone, g: cGstin, s: cState, a: cAddr };
+      docObj.cancelled = false;
+
+      if (!existingDoc) {
+        db.docs.push(docObj);
       }
-      docObj.pays = [];
-      docObj.paid = 0;
+
+      save();
+      toast(isEditMode ? 'Invoice updated successfully' : 'Invoice saved successfully');
+
+      // Post-Save Redirect: Automatically route back to Records tab
+      salesState.tab = 'rec';
+      salesState.editNo = null;
+      salesState.selectedPartyId = null;
+      salesState.lines = [];
+      container.innerHTML = renderSales();
+      bindSalesEvents();
+
+      // Immediately open clean Print/Preview modal
+      showInvoicePreviewModal(docObj);
+    } catch (err) {
+      setDb(snapshot);
+      toast(err.message || 'Failed to save invoice');
     }
-
-    if (!existingDoc) {
-      db.docs.push(docObj);
-    }
-
-    save();
-    toast(isEditMode ? 'Invoice updated successfully' : 'Invoice saved successfully');
-
-    // Post-Save Redirect: Automatically route back to Records tab
-    salesState.tab = 'rec';
-    salesState.editNo = null;
-    salesState.selectedPartyId = null;
-    salesState.lines = [];
-    container.innerHTML = renderSales();
-    bindSalesEvents();
-
-    // Immediately open clean Print/Preview modal
-    showInvoicePreviewModal(docObj);
   };
 
   const saveBtn = $('#pd_btn_save');

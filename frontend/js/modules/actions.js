@@ -585,7 +585,7 @@ export function markBillPaid(docOrId, onComplete) {
 
       if (!d.pays) d.pays = [];
       d.pays.push({ je: pJe.id, amt: aPaisa, date: v.date, method: finalMethod, acct: v.acct });
-      d.paid = total - (Math.max(0, curBalPaisa - aPaisa) / 100);
+      d.paid = totalPaisa - Math.max(0, curBalPaisa - aPaisa);
       save();
       toast('Marked ' + billNo + ' as paid (' + finalMethod + ')');
       if (onComplete) onComplete();
@@ -655,7 +655,7 @@ export function markSalePaid(docOrId, onComplete) {
   if (!d) return;
   const currentPaid = (d.pays && d.pays.length)
     ? d.pays.reduce((s, p) => s + (p.void ? 0 : p.amt), 0)
-    : Math.round((parseFloat(d.paid) || 0) * 100);
+    : (Number(d.paid) || 0);
   const totalPaisa = d.total || Math.round((parseFloat(d.base || 0) + parseFloat(d.gst || 0)));
   const total = totalPaisa / 100;
   const balPaisa = Math.max(0, totalPaisa - currentPaid);
@@ -753,7 +753,7 @@ export function markSalePaid(docOrId, onComplete) {
       if (!a || a <= 0) throw Error('Amount must be above zero');
       const curPaid = (d.pays && d.pays.length)
         ? d.pays.reduce((s, p) => s + (p.void ? 0 : p.amt), 0)
-        : Math.round((parseFloat(d.paid) || 0) * 100);
+        : (Number(d.paid) || 0);
       const curBalPaisa = Math.max(0, totalPaisa - curPaid);
       if (curBalPaisa <= 0) throw Error('This invoice is already paid in full');
       const aPaisa = Math.min(Math.round(a * 100), curBalPaisa);
@@ -786,7 +786,7 @@ export function markSalePaid(docOrId, onComplete) {
 
       if (!d.pays) d.pays = [];
       d.pays.push({ je: pJe.id, amt: aPaisa, date: v.date, method: finalMethod, acct: v.acct });
-      d.paid = (totalPaisa - Math.max(0, curBalPaisa - aPaisa)) / 100;
+      d.paid = totalPaisa - Math.max(0, curBalPaisa - aPaisa);
       save();
       toast('Marked ' + invNo + ' as paid (' + finalMethod + ')');
       if (onComplete) onComplete();
@@ -1168,7 +1168,7 @@ export async function moneyInForm(existingEntry = null) {
         prevInvoices.forEach(inv => {
           inv.pays = inv.pays.filter(p => p.je !== existingEntry.id);
           const paidSum = inv.pays.reduce((s, p) => s + (p.amt || 0), 0);
-          inv.paid = paidSum / 100;
+          inv.paid = paidSum;
         });
       }
 
@@ -1276,7 +1276,7 @@ export async function moneyInForm(existingEntry = null) {
             method: finalMethod,
             acct: v.acct
           });
-          selectedInv.paid = ((selectedInv.total || 0) - Math.max(0, curBal - appliedAmt)) / 100;
+          selectedInv.paid = (selectedInv.total || 0) - Math.max(0, curBal - appliedAmt);
         }
       } else {
         // Interest Income (4300) or Other Miscellaneous Income (4200)
@@ -1715,7 +1715,7 @@ export async function moneyOutForm(existingEntry = null) {
         prevBills.forEach(b => {
           b.pays = b.pays.filter(p => p.je !== existingEntry.id);
           const paidSum = b.pays.reduce((s, p) => s + (p.amt || 0), 0);
-          b.paid = paidSum / 100;
+          b.paid = paidSum;
         });
 
         // Rollback previous loan repayment if applicable
@@ -1864,7 +1864,7 @@ export async function moneyOutForm(existingEntry = null) {
             method: finalMethod,
             acct: v.acct
           });
-          selectedBill.paid = ((selectedBill.total || 0) - Math.max(0, curBal - appliedAmt)) / 100;
+          selectedBill.paid = (selectedBill.total || 0) - Math.max(0, curBal - appliedAmt);
         }
       } else if (cat === 'loan') {
         // 3. Loan Repayment / EMI (Principal + Interest)

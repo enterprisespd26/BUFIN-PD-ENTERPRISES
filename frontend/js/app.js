@@ -1324,22 +1324,30 @@ const ACTIONS = {
   },
   cdoc: i => {
     const d = db.docs.find(x => x.id === i);
+    if (!d) return;
+    if (d.cancelled) return toast('Document is already cancelled');
     if (!confirm('Cancel ' + d.no + '? Its entries and payments will be reversed.')) return;
+    const snapshot = JSON.parse(JSON.stringify(db));
     try {
-      for (const p of d.pays) {
-        if (!p.void) {
-          reverse(p.je);
-          p.void = 1;
+      if (Array.isArray(d.pays)) {
+        for (const p of d.pays) {
+          if (!p.void && p.je) {
+            reverse(p.je);
+            p.void = 1;
+          }
         }
       }
-      reverse(d.je);
+      if (d.je) {
+        reverse(d.je);
+      }
       d.cancelled = 1;
       save();
       closeM();
       render();
       toast('Cancelled');
     } catch (e) {
-      toast(e.message);
+      setDb(snapshot);
+      toast(e.message || 'Failed to cancel document');
     }
   },
   stmt: stmt2,

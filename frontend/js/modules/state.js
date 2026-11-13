@@ -124,11 +124,43 @@ export function syncPartyClassifications(targetDb) {
 
 export const SYS = ['1000','1010','1100','1300','1400','2000','2100','2200','3200','4200','4300','5000','5500','5600'];
 
+export function migrateSchema(targetDb) {
+  if (!targetDb || !Array.isArray(targetDb.docs)) return;
+  if (!targetDb.schemaVer || targetDb.schemaVer < 2) {
+    for (const doc of targetDb.docs) {
+      if (!doc) continue;
+      if (doc.total !== undefined && doc.total !== null) {
+        doc.total = Math.round(Number(doc.total) || 0);
+      }
+      if (Array.isArray(doc.pays)) {
+        for (const p of doc.pays) {
+          if (p.amt !== undefined) p.amt = Math.round(Number(p.amt) || 0);
+          else if (p.a !== undefined) p.amt = Math.round(Number(p.a) || 0);
+        }
+      }
+      if (Array.isArray(doc.pays) && doc.pays.length) {
+        doc.paid = doc.pays.reduce((s, p) => s + (p.void ? 0 : (Number(p.amt || p.a) || 0)), 0);
+      } else if (doc.paid !== undefined && doc.paid !== null) {
+        const rawPaid = Number(doc.paid) || 0;
+        if (doc.total && rawPaid > 0 && rawPaid <= (doc.total / 100)) {
+          doc.paid = Math.round(rawPaid * 100);
+        } else {
+          doc.paid = Math.round(rawPaid);
+        }
+      } else {
+        doc.paid = 0;
+      }
+    }
+    targetDb.schemaVer = 2;
+  }
+}
+
 let initialDb;
 try {
   initialDb = JSON.parse(localStorage.getItem(K));
   if (initialDb) {
     syncPartyClassifications(initialDb);
+    migrateSchema(initialDb);
   }
 } catch (e) {}
 
@@ -386,6 +418,7 @@ export function setDb(newDb) {
   }
   if (db) {
     syncPartyClassifications(db);
+    migrateSchema(db);
   }
   try {
     if (typeof localStorage !== 'undefined') localStorage.setItem(K, JSON.stringify(db));
@@ -738,12 +771,23 @@ export function post(o) {
   if (!o.date) throw Error('Date is required');
   if (db.biz.lock && o.date <= db.biz.lock) throw Error('Period is locked up to ' + db.biz.lock);
 
+  // If this entry replaces an older entry, ensure the original entry was not in a locked period
+  if (o.meta && o.meta.replaces && db.biz.lock) {
+    const origReplaced = db.entries.find(e => e.ref === o.meta.replaces || e.id === o.meta.replaces);
+    if (origReplaced && origReplaced.date <= db.biz.lock) {
+      throw Error('Cannot edit or replace entry from locked period (dated ' + origReplaced.date + ')');
+    }
+  }
+
   // Robust Upsert: If an existing entry matches o.id or o.ref, update in-place without generating a new JV reference
   let existing = null;
   if (o.id) existing = db.entries.find(e => e.id === o.id);
   if (!existing && o.ref) existing = db.entries.find(e => e.ref === o.ref);
 
   if (existing) {
+    if (db.biz.lock && existing.date <= db.biz.lock) {
+      throw Error('Period is locked up to ' + db.biz.lock + ' (original entry dated ' + existing.date + ')');
+    }
     existing.date = o.date;
     if (o.narr !== undefined) existing.narr = o.narr;
     if (o.src) existing.src = o.src;
@@ -772,44 +816,57 @@ export function post(o) {
   return e;
 }
 
-export function reverse(id) {
+export function reverse(id, opts = {}) {
   const e = db.entries.find(x => x.id === id);
   if (!e || e.status !== 'posted') throw Error('Only posted entries can be reversed');
+
+  // Period lock: Reversals must be dated on or after the lock period
+  const revDate = e.src === 'open' ? e.date : (today() > e.date ? today() : e.date);
+  if (db.biz.lock && revDate <= db.biz.lock) {
+    throw Error('Period is locked up to ' + db.biz.lock + '. Reversals must be dated after the lock period.');
+  }
+
   const r = post({
-    date: e.src === 'open' ? e.date : (today() > e.date ? today() : e.date),
+    date: revDate,
     narr: 'Reversal of ' + e.ref + ': ' + (e.narr || ''),
     src: 'rev',
     rev: e.id,
     lines: e.lines.map(l => ({ a: l.a, d: l.c, c: l.d, p: l.p }))
   });
-  e.status = 'reversed';
+
+  // Reversal of a locked-period entry must leave original entry unaltered (Requirement 4)
+  if (!db.biz.lock || e.date > db.biz.lock) {
+    e.status = 'reversed';
+  }
   log('reverse ' + e.ref, r.ref);
 
-  // Cascade Reversal to linked documents & payments
-  // 1. If entry was the primary journal entry of an invoice or bill
-  const linkedMainDoc = db.docs.find(d => d.je === e.id);
-  if (linkedMainDoc) {
-    linkedMainDoc.cancelled = true;
-    if (linkedMainDoc.pays && linkedMainDoc.pays.length) {
-      linkedMainDoc.pays.forEach(p => {
-        if (!p.void && p.je) {
-          const pEntry = db.entries.find(x => x.id === p.je);
-          if (pEntry && pEntry.status === 'posted') {
-            try { reverse(p.je); } catch (err) {}
+  // Cascade Reversal to linked documents & payments (skip when editing doc in sales/bills)
+  if (opts.cascadeDoc !== false) {
+    // 1. If entry was the primary journal entry of an invoice or bill
+    const linkedMainDoc = db.docs.find(d => d.je === e.id);
+    if (linkedMainDoc) {
+      linkedMainDoc.cancelled = true;
+      if (linkedMainDoc.pays && linkedMainDoc.pays.length) {
+        linkedMainDoc.pays.forEach(p => {
+          if (!p.void && p.je) {
+            const pEntry = db.entries.find(x => x.id === p.je);
+            if (pEntry && pEntry.status === 'posted') {
+              try { reverse(p.je, opts); } catch (err) {}
+            }
+            p.void = 1;
           }
-          p.void = 1;
-        }
-      });
+        });
+      }
     }
-  }
 
-  // 2. If entry was a payment on an invoice or bill
-  for (const doc of db.docs) {
-    if (doc.pays && doc.pays.length) {
-      const matchPay = doc.pays.find(p => p.je === e.id);
-      if (matchPay) {
-        matchPay.void = 1;
-        doc.paid = paid(doc) / 100;
+    // 2. If entry was a payment on an invoice or bill
+    for (const doc of db.docs) {
+      if (doc.pays && doc.pays.length) {
+        const matchPay = doc.pays.find(p => p.je === e.id);
+        if (matchPay) {
+          matchPay.void = 1;
+          doc.paid = paid(doc);
+        }
       }
     }
   }
@@ -825,15 +882,21 @@ export function reverse(id) {
   return r;
 }
 
-export const paid = d => (d.pays || []).reduce((s, p) => {
-  if (p.void) return s;
-  if (p.je) {
-    const je = db.entries.find(e => e.id === p.je);
-    if (je && je.status === 'reversed') return s;
+export const paid = d => {
+  if (!d) return 0;
+  if (Array.isArray(d.pays) && d.pays.length) {
+    return d.pays.reduce((s, p) => {
+      if (p.void) return s;
+      if (p.je) {
+        const je = db.entries.find(e => e.id === p.je);
+        if (je && je.status === 'reversed') return s;
+      }
+      const amt = p.amt !== undefined ? p.amt : (p.a !== undefined ? p.a : 0);
+      return s + (Number(amt) || 0);
+    }, 0);
   }
-  const amt = p.amt !== undefined ? p.amt : (p.a !== undefined ? p.a : 0);
-  return s + (parseFloat(amt) || 0);
-}, 0);
+  return Number(d.paid) || 0;
+};
 export const out = d => (d.total || 0) - paid(d);
 export const dstat = d => d.cancelled ? ['Cancelled', 'rd'] : out(d) <= 0 ? ['Paid', 'ok'] : d.due && d.due < today() ? ['Overdue', 'rd'] : paid(d) > 0 ? ['Partial', 'wn'] : ['Open', ''];
 
@@ -858,7 +921,7 @@ export function checkCashLiquidity(accountCode, amountPaisa, excludeJeId = null)
   if (accountCode !== '1000') return { ok: true, available: net(accountCode) };
   let currentNet = 0;
   for (const e of db.entries) {
-    if (e.status !== 'posted' || (excludeJeId && e.id === excludeJeId)) continue;
+    if (excludeJeId && e.id === excludeJeId) continue;
     for (const l of e.lines) {
       if (l.a === '1000') currentNet += (l.d || 0) - (l.c || 0);
     }
