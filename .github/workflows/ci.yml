@@ -25,4 +25,8 @@ jobs:
         run: npm --prefix backend install
 
       - name: Run test:all (Frontend + Backend Test Suites)
+        env:
+          APP_PIN: '1234'
+          SESSION_SECRET: 'bufin-ci-session-secret-32-chars-minimum-length!'
+          NODE_ENV: 'test'
         run: npm run test:all

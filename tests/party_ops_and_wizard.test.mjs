@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+// Configure test environment variables so importing backend modules works cleanly in CI / clean environments without .env
+process.env.NODE_ENV = 'test';
+if (!process.env.APP_PIN && !process.env.APP_PASSWORD) {
+  process.env.APP_PASSWORD = 'TestPassword123!';
+}
+if (!process.env.SESSION_SECRET) {
+  process.env.SESSION_SECRET = 'bufin-test-session-secret-32-chars-minimum-length!';
+}
+
 // Set up browser-like environment for state and action imports
 const storage = new Map();
 globalThis.localStorage = {
