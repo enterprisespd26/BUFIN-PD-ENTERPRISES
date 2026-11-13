@@ -1,10 +1,25 @@
 import { esc, fmt, fmtDate, today, head, kpi, toast, downloadCSV } from '../modules/utils.js';
-import { db, TN, acc, net, sgn } from '../modules/state.js';
+import { db, TN, acc, net, sgn, partyBalance } from '../modules/state.js';
 
 export const reportsState = {
-  pl: { f: today().slice(0, 8) + '01', t: today(), view: 'both' },
-  bs: { t: today() },
-  tb: { t: today(), all: false, q: '' }
+  _pl: null,
+  _bs: null,
+  _tb: null,
+  get pl() {
+    if (!this._pl) this._pl = { f: today().slice(0, 8) + '01', t: today(), view: 'both' };
+    return this._pl;
+  },
+  set pl(v) { this._pl = v; },
+  get bs() {
+    if (!this._bs) this._bs = { t: today() };
+    return this._bs;
+  },
+  set bs(v) { this._bs = v; },
+  get tb() {
+    if (!this._tb) this._tb = { t: today(), all: false, q: '' };
+    return this._tb;
+  },
+  set tb(v) { this._tb = v; }
 };
 
 function getMonthEnd() {
@@ -1082,7 +1097,53 @@ export function renderBs() {
           </td>
         </tr>
       </table>
-    </div>`;
+    </div>
+    ${(() => {
+      const ledgerAR = net('1100', '', t);
+      const partyAR = (db.parties || []).reduce((s, p) => s + partyBalance(p.id, '1100'), 0);
+      const diffAR = ledgerAR - partyAR;
+
+      const ledgerAP = sgn(acc('2000'), net('2000', '', t));
+      const partyAP = (db.parties || []).reduce((s, p) => s + sgn(acc('2000'), partyBalance(p.id, '2000')), 0);
+      const diffAP = ledgerAP - partyAP;
+      const hasDiff = diffAR !== 0 || diffAP !== 0;
+
+      return `
+        <div class="wrap recon-card" style="margin-bottom:28px;padding:14px 18px;background:var(--mu,#f8fafc);border:1px solid var(--bd,#e2e8f0);border-radius:10px;">
+          <div style="font-weight:700;font-size:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <span style="display:flex;align-items:center;gap:6px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              Balance Sheet vs Party Sub-Ledger Reconciliation
+            </span>
+            ${hasDiff 
+              ? `<span class="pill" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;">⚠️ Discrepancy Detected</span>` 
+              : `<span class="pill" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600;">✓ In Equilibrium (Zero Drift)</span>`}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;">
+            <div style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:10px 14px;">
+              <div style="font-size:12px;color:var(--t2);font-weight:600;">Receivables (1100) per ledger vs per party</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">
+                <span style="font-size:14px;font-weight:700;">Ledger: ${fmt(ledgerAR)} · Parties: ${fmt(partyAR)}</span>
+                ${diffAR !== 0 
+                  ? `<span class="b rd" style="font-size:11px;padding:2px 6px;">Diff: ${fmt(diffAR)}</span>` 
+                  : `<span class="b ok" style="font-size:11px;padding:2px 6px;">Diff: ₹0.00</span>`}
+              </div>
+              ${diffAR !== 0 ? `<div style="margin-top:6px;"><a href="#" data-a="show-unallocated" data-i="1100" style="font-size:12px;color:var(--ac);text-decoration:underline;">View unallocated receivables entries</a></div>` : ''}
+            </div>
+            <div style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:10px 14px;">
+              <div style="font-size:12px;color:var(--t2);font-weight:600;">Payables (2000) per ledger vs per party</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">
+                <span style="font-size:14px;font-weight:700;">Ledger: ${fmt(ledgerAP)} · Parties: ${fmt(partyAP)}</span>
+                ${diffAP !== 0 
+                  ? `<span class="b rd" style="font-size:11px;padding:2px 6px;">Diff: ${fmt(diffAP)}</span>` 
+                  : `<span class="b ok" style="font-size:11px;padding:2px 6px;">Diff: ₹0.00</span>`}
+              </div>
+              ${diffAP !== 0 ? `<div style="margin-top:6px;"><a href="#" data-a="show-unallocated" data-i="2000" style="font-size:12px;color:var(--ac);text-decoration:underline;">View unallocated payables entries</a></div>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    })()}`;
 }
 
 export function exportBsCsv() {

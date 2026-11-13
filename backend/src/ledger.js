@@ -4,13 +4,61 @@ function migrateSchema(data) {
   if (!data) return data;
   if (Array.isArray(data.entries)) {
     for (const e of data.entries) {
-      if (e && e.src === 'pay') {
+      if (!e) continue;
+      if (e.src === 'pay') {
         const cashLines = (e.lines || []).filter(l => {
           const a = (data.accounts || []).find(x => x.code === l.a);
           return a ? a.cash : (l.a === '1000' || l.a === '1010');
         });
         const hasCashDebit = cashLines.some(l => l.d > 0);
         e.src = hasCashDebit ? 'in' : 'out';
+      }
+
+      // Populate line party from entry meta if missing on trade accounts
+      if (Array.isArray(e.lines)) {
+        for (const l of e.lines) {
+          if ((l.a === '1100' || l.a === '2000') && !l.p && e.meta?.party) {
+            l.p = e.meta.party;
+          }
+        }
+      }
+
+      // Unify loan entries into { loan, kind: 'rep', pr, int }
+      if (e.meta) {
+        if (e.meta.loanId && !e.meta.loan) {
+          e.meta.loan = e.meta.loanId;
+        }
+        if (e.meta.loan && (!e.meta.kind || e.meta.kind === 'rep')) {
+          e.src = 'loan';
+          e.meta.kind = 'rep';
+          if (e.meta.principal !== undefined && e.meta.pr === undefined) {
+            e.meta.pr = e.meta.principal;
+          }
+          if (e.meta.interest !== undefined && e.meta.int === undefined) {
+            e.meta.int = e.meta.interest;
+          }
+        }
+
+        // Link entry to docId explicitly
+        if (!e.meta.docId) {
+          if (e.meta.invoiceId) e.meta.docId = e.meta.invoiceId;
+          else if (e.meta.billId) e.meta.docId = e.meta.billId;
+          else if (Array.isArray(data.docs)) {
+            const d = data.docs.find(x => x && (x.je === e.id || (x.pays && x.pays.some(p => p.je === e.id))));
+            if (d) e.meta.docId = d.id;
+          }
+        }
+      }
+    }
+  }
+
+  if (Array.isArray(data.docs)) {
+    for (const doc of data.docs) {
+      if (!doc) continue;
+      if (doc.type === 'sale') {
+        if (doc.sno && !doc.veh) doc.veh = doc.sno;
+      } else if (doc.type === 'bill') {
+        if (doc.sno && !doc.supInvNo) doc.supInvNo = doc.sno;
       }
     }
   }
@@ -68,6 +116,9 @@ function validate(next, prev) {
     for (const l of e.lines) {
       if (!codes.has(l.a)) fail(e.ref + ': unknown account ' + l.a);
       if (!Number.isInteger(l.d) || !Number.isInteger(l.c) || l.d < 0 || l.c < 0 || (l.d && l.c)) fail(e.ref + ': invalid line amounts');
+      if (e.src === 'jv' && (l.a === '1100' || l.a === '2000') && !l.p) {
+        fail(`${e.ref}: party is required on line for account ${l.a}`);
+      }
       d += l.d; c += l.c;
     }
     if (d !== c) fail(e.ref + ': debits and credits differ');

@@ -815,9 +815,9 @@ const CSS = String.raw`
   table.mcard td.mc-empty { display: none !important; }
 
   table.mcard td.mc-title { order: -1; display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; font-size: 15.5px; font-weight: 700; color: var(--tx, #0f172a);
-    padding: 4px 0 10px !important; border-bottom: 1.5px solid var(--bd, #e2e8f0) !important; margin-bottom: 4px !important; gap: 8px !important; }
-  table.mcard td.mc-title::before, table.mcard td.mc-span::before, table.mcard td.mc-actions::before { display: none !important; }
-  table.mcard td.mc-title > * { text-align: left !important; max-width: 100% !important; }
+    padding: 4px 0 10px !important; padding-left: 0 !important; margin: 0 0 4px 0 !important; margin-left: 0 !important; border-bottom: 1.5px solid var(--bd, #e2e8f0) !important; gap: 8px !important; width: 100% !important; box-sizing: border-box !important; }
+  table.mcard td.mc-title::before, table.mcard td.mc-span::before, table.mcard td.mc-actions::before { display: none !important; content: none !important; width: 0 !important; }
+  table.mcard td.mc-title > * { text-align: left !important; justify-self: flex-start !important; margin-left: 0 !important; max-width: 100% !important; }
   table.mcard td.mc-title select, table.mcard td.mc-title input { width: 100% !important; min-height: 44px !important; font-size: 15px !important; font-weight: 600 !important; padding: 8px 12px !important; border-radius: 8px !important; border: 1px solid var(--bd, #cbd5e1) !important; box-sizing: border-box !important; background: #fff !important; }
 
   table.mcard td.mc-cell[data-label*="Description"],
@@ -888,6 +888,7 @@ const CSS = String.raw`
   table.coa-table td.coa-title-td,
   table.coa-table tbody tr td:first-child,
   .wrap:not(.no-cards) table.coa-table tbody tr td:first-child {
+    padding-left: 0 !important;
     padding-right: 95px !important;
     min-height: 44px !important;
     display: flex !important;
@@ -897,6 +898,10 @@ const CSS = String.raw`
     text-align: left !important;
     gap: 8px !important;
     box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    margin-left: 0 !important;
   }
 
   table.mcard.coa-table td.mc-title > *,
@@ -905,7 +910,19 @@ const CSS = String.raw`
   table.coa-table tbody tr td:first-child > *,
   .wrap:not(.no-cards) table.coa-table tbody tr td:first-child > * {
     text-align: left !important;
+    justify-self: flex-start !important;
+    margin-left: 0 !important;
     max-width: 100% !important;
+  }
+
+  table.mcard.coa-table td.mc-title::before,
+  table.coa-table.mcard td.mc-title::before,
+  table.coa-table td.coa-title-td::before,
+  table.coa-table tbody tr td:first-child::before,
+  .wrap:not(.no-cards) table.coa-table tbody tr td:first-child::before {
+    display: none !important;
+    content: none !important;
+    width: 0 !important;
   }
 
   table.mcard.coa-table td.mc-actions,

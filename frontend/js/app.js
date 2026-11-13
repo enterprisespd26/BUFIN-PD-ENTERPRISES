@@ -245,8 +245,72 @@ if (typeof window !== 'undefined') {
   else window.addEventListener('load', prefetchRemaining, { once: true });
 }
 
+let prevRenderPage = null;
+
+function showNewDataRefreshPill() {
+  if (typeof document === 'undefined') return;
+  let pill = $('#newDataRefreshPill');
+  if (!pill) {
+    pill = document.createElement('div');
+    pill.id = 'newDataRefreshPill';
+    pill.className = 'new-data-pill';
+    pill.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--p,#2563eb);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.25);display:flex;align-items:center;gap:10px;cursor:pointer;';
+    pill.innerHTML = `<span>⚡ New data available – Refresh</span><button type="button" style="background:rgba(255,255,255,0.25);border:none;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;line-height:1;margin-left:4px;">✕</button>`;
+    document.body.appendChild(pill);
+    pill.onclick = e => {
+      if (e.target.tagName === 'BUTTON') {
+        pill.remove();
+        return;
+      }
+      salesState.formDirty = false;
+      billsState.formDirty = false;
+      pill.remove();
+      render();
+    };
+  }
+}
+
 export async function render() {
-  currentPage = getPage();
+  const newPage = getPage();
+  if (prevRenderPage && prevRenderPage !== newPage) {
+    if (prevRenderPage === 'sales') {
+      if (salesState.formDirty) {
+        salesState.draft = {
+          savedAt: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          lines: salesState.lines,
+          selectedPartyId: salesState.selectedPartyId,
+          files: salesState.files,
+          paymentReceived: salesState.paymentReceived
+        };
+      }
+      salesState.tab = 'rec';
+      salesState.editNo = null;
+      salesState.formDirty = false;
+    }
+    if (prevRenderPage === 'bills') {
+      if (billsState.formDirty) {
+        billsState.draft = {
+          savedAt: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          editId: billsState.editId,
+          files: billsState.files
+        };
+      }
+      billsState.tab = 'rec';
+      billsState.editId = null;
+      billsState.formDirty = false;
+    }
+    const oldPill = $('#newDataRefreshPill');
+    if (oldPill) oldPill.remove();
+  } else if (prevRenderPage === newPage) {
+    const isSalesDirty = newPage === 'sales' && salesState.tab === 'new' && salesState.formDirty;
+    const isBillsDirty = newPage === 'bills' && billsState.tab === 'new' && billsState.formDirty;
+    if (isSalesDirty || isBillsDirty) {
+      showNewDataRefreshPill();
+      return;
+    }
+  }
+  prevRenderPage = newPage;
+  currentPage = newPage;
   drawNav();
 
   const vEl = $('#v');
@@ -345,6 +409,34 @@ function showOpenConfirmModal() {
   const rows = [];
   let totalD = 0, totalC = 0;
 
+  const partyRows = [];
+  document.querySelectorAll('[data-party-acc]').forEach(i => {
+    if (i.value && parseFloat(i.value) > 0) {
+      const code = i.dataset.partyAcc;
+      const partyId = i.dataset.partyId;
+      const side = i.dataset.s;
+      let val = 0;
+      try { val = P(i.value); } catch (e) { return; }
+      if (!val) return;
+      partyRows.push({ a: code, d: side === 'd' ? val : 0, c: side === 'c' ? val : 0, p: partyId });
+    }
+  });
+
+  const loanRows = [];
+  document.querySelectorAll('[data-loan-acc]').forEach(i => {
+    if (i.value && parseFloat(i.value) > 0) {
+      const code = i.dataset.loanAcc;
+      const loanId = i.dataset.loanId;
+      const partyId = i.dataset.partyId;
+      const side = i.dataset.s;
+      let val = 0;
+      try { val = P(i.value); } catch (e) { return; }
+      if (!val) return;
+      loanRows.push({ a: code, d: side === 'd' ? val : 0, c: side === 'c' ? val : 0, p: partyId, meta: { loan: loanId } });
+    }
+  });
+
+  const generalRows = [];
   document.querySelectorAll('[data-c]').forEach(i => {
     if (i.value && parseFloat(i.value) > 0) {
       const code = i.dataset.c;
@@ -353,13 +445,62 @@ function showOpenConfirmModal() {
       try { val = P(i.value); } catch (e) { return; }
       if (!val) return;
 
-      let r = rows.find(x => x.a === code);
+      let r = generalRows.find(x => x.a === code);
       if (!r) {
         r = { a: code, d: 0, c: 0 };
-        rows.push(r);
+        generalRows.push(r);
       }
       r[side] = val;
     }
+  });
+
+  // Merge general rows and party/loan rows
+  const handledAccounts = new Set(['1100', '2000', '2100', '1400']);
+
+  // Handle 1100
+  const arPartyRows = partyRows.filter(r => r.a === '1100');
+  const gen1100 = generalRows.find(r => r.a === '1100');
+  if (arPartyRows.length) {
+    arPartyRows.forEach(r => rows.push(r));
+    const sumPartyAR = arPartyRows.reduce((s, r) => s + r.d, 0);
+    if (gen1100 && gen1100.d > sumPartyAR) {
+      rows.push({ a: '1100', d: gen1100.d - sumPartyAR, c: 0 });
+    }
+  } else if (gen1100) {
+    rows.push(gen1100);
+  }
+
+  // Handle 2000
+  const apPartyRows = partyRows.filter(r => r.a === '2000');
+  const gen2000 = generalRows.find(r => r.a === '2000');
+  if (apPartyRows.length) {
+    apPartyRows.forEach(r => rows.push(r));
+    const sumPartyAP = apPartyRows.reduce((s, r) => s + r.c, 0);
+    if (gen2000 && gen2000.c > sumPartyAP) {
+      rows.push({ a: '2000', d: 0, c: gen2000.c - sumPartyAP });
+    }
+  } else if (gen2000) {
+    rows.push(gen2000);
+  }
+
+  // Handle 2100 & 1400
+  ['2100', '1400'].forEach(c => {
+    const lRows = loanRows.filter(r => r.a === c);
+    const genLoan = generalRows.find(r => r.a === c);
+    if (lRows.length) {
+      lRows.forEach(r => rows.push(r));
+      const sumLoan = lRows.reduce((s, r) => s + (r.d || r.c), 0);
+      if (genLoan && (genLoan.d || genLoan.c) > sumLoan) {
+        rows.push({ a: c, d: genLoan.d ? genLoan.d - sumLoan : 0, c: genLoan.c ? genLoan.c - sumLoan : 0 });
+      }
+    } else if (genLoan) {
+      rows.push(genLoan);
+    }
+  });
+
+  // All other accounts
+  generalRows.forEach(r => {
+    if (!handledAccounts.has(r.a)) rows.push(r);
   });
 
   rows.forEach(r => {
@@ -379,9 +520,10 @@ function showOpenConfirmModal() {
   const previewRows = rows.map(r => {
     const acct = acc(r.a);
     const typeName = acct ? TN[acct.t] : '';
+    const partyName = r.p ? pn(r.p) : '';
     return `
       <tr>
-        <td><b>${esc(acct?.name || an(r.a))}</b> <small style="color:var(--t2);">(${r.a})</small></td>
+        <td><b>${esc(acct?.name || an(r.a))}</b> <small style="color:var(--t2);">(${r.a})</small>${partyName ? `<span class="pill" style="font-size:10px;margin-left:6px;background:#f1f5f9;">${esc(partyName)}</span>` : ''}</td>
         <td><span class="pill" style="font-size:11px;background:var(--mu);padding:2px 6px;border-radius:4px;">${typeName}</span></td>
         <td class="num" style="font-weight:${r.d ? '600' : 'normal'};color:${r.d ? '#0f172a' : 'var(--t2)'};">${r.d ? fmt(r.d) : '—'}</td>
         <td class="num" style="font-weight:${r.c ? '600' : 'normal'};color:${r.c ? '#0f172a' : 'var(--t2)'};">${r.c ? fmt(r.c) : '—'}</td>
@@ -528,6 +670,62 @@ function postOpening(date, rows) {
   if (D !== C) {
     if (!acc('3200')) db.accounts.push({ code: '3200', name: 'Opening Balance Equity', t: 'E' });
     L.push(D > C ? { a: '3200', d: 0, c: D - C } : { a: '3200', d: C - D, c: 0 });
+  }
+
+  // Create or update Opening Balance pseudo-documents for each party with opening AR or AP
+  if (!db.docs) db.docs = [];
+  for (const l of L) {
+    if (l.a === '1100' && l.p && l.d > 0) {
+      const partyId = l.p;
+      const partyObj = (db.parties || []).find(p => p.id === partyId);
+      const partyName = partyObj ? partyObj.name : 'Customer';
+      let doc = db.docs.find(d => d.opening && d.type === 'sale' && d.party === partyId);
+      if (!doc) {
+        doc = {
+          id: 'open_ar_' + partyId,
+          no: 'OPEN-AR-' + (partyObj?.name || partyId).slice(0, 6).toUpperCase().replace(/[^A-Z0-9]/g, ''),
+          type: 'sale',
+          opening: true,
+          date: date,
+          party: partyId,
+          c: { n: partyName, p: partyObj?.phone || '', st: partyObj?.state || '', g: partyObj?.gstin || '' },
+          total: l.d,
+          paid: 0,
+          pays: [],
+          items: [{ desc: 'Opening Balance Receivable', a: l.d, q: 1, u: 'nos', r: l.d }],
+          status: 'open'
+        };
+        db.docs.push(doc);
+      } else {
+        doc.total = l.d;
+        doc.date = date;
+      }
+    } else if (l.a === '2000' && l.p && l.c > 0) {
+      const partyId = l.p;
+      const partyObj = (db.parties || []).find(p => p.id === partyId);
+      const partyName = partyObj ? partyObj.name : 'Supplier';
+      let doc = db.docs.find(d => d.opening && d.type === 'bill' && d.party === partyId);
+      if (!doc) {
+        doc = {
+          id: 'open_ap_' + partyId,
+          no: 'OPEN-AP-' + (partyObj?.name || partyId).slice(0, 6).toUpperCase().replace(/[^A-Z0-9]/g, ''),
+          type: 'bill',
+          opening: true,
+          date: date,
+          party: partyId,
+          sup: partyName,
+          total: l.c,
+          paid: 0,
+          pays: [],
+          items: [{ desc: 'Opening Balance Payable', a: l.c, q: 1, u: 'nos', r: l.c }],
+          status: 'open'
+        };
+        db.docs.push(doc);
+      } else {
+        doc.total = l.c;
+        doc.date = date;
+      }
+    }
   }
 
   const existingOpen = db.entries.find(e => e.src === 'open' && e.status === 'posted');
@@ -964,6 +1162,59 @@ function bindViewEvents() {
         }
       };
     }
+
+    async function loadAuditLog() {
+      const tbody = $('#auditLogTbody');
+      if (!tbody) return;
+      try {
+        const res = await fetch('/api/audit?limit=50');
+        if (res.ok) {
+          const records = await res.json();
+          if (Array.isArray(records) && records.length) {
+            tbody.innerHTML = records.map(r => {
+              const at = r.at ? r.at.slice(0, 19).replace('T', ' ') : '-';
+              const actor = r.actor || 'system';
+              const action = r.action || '-';
+              const entity = r.entity ? `${r.entity}${r.entity_id ? ' #' + r.entity_id : ''}` : '-';
+              let detail = '';
+              if (r.after) {
+                try { detail = typeof r.after === 'string' ? r.after : JSON.stringify(r.after); } catch (_) { detail = String(r.after); }
+              } else if (r.before) {
+                try { detail = typeof r.before === 'string' ? r.before : JSON.stringify(r.before); } catch (_) { detail = String(r.before); }
+              }
+              if (detail.length > 60) detail = detail.slice(0, 57) + '...';
+              const ip = r.ip || '-';
+              return `<tr>
+                <td style="white-space:nowrap;">${esc(at)}</td>
+                <td><span class="pill sm">${esc(actor)}</span></td>
+                <td><b>${esc(action)}</b></td>
+                <td>${esc(entity)}</td>
+                <td style="color:var(--t2);font-family:monospace;font-size:11.5px;">${esc(detail)}</td>
+                <td style="white-space:nowrap;color:var(--t2);">${esc(ip)}</td>
+              </tr>`;
+            }).join('');
+            return;
+          }
+        }
+      } catch (_) {}
+      if (db.audit && db.audit.length) {
+        tbody.innerHTML = db.audit.slice(-25).reverse().map(a => `
+          <tr>
+            <td style="white-space:nowrap;">${esc(a.at ? a.at.slice(0, 19).replace('T', ' ') : '-')}</td>
+            <td><span class="pill sm">client</span></td>
+            <td><b>${esc(a.a || '-')}</b></td>
+            <td>-</td>
+            <td style="color:var(--t2);">${esc(a.d || '')}</td>
+            <td>localhost</td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">No audit activity recorded yet.</td></tr>`;
+      }
+    }
+
+    $('#btnRefreshAuditLog')?.addEventListener('click', loadAuditLog);
+    loadAuditLog();
   }
 }
 
@@ -997,6 +1248,44 @@ const ACTIONS = {
   delloan: deleteLoanAction,
   loancsv: exportLoanCsv,
   repay: repayForm2,
+  'show-unallocated': i => {
+    const acct = i || '1100';
+    const unallocEntries = (db.entries || []).filter(e =>
+      (e.lines || []).some(l => l.a === acct && !l.p)
+    );
+    const rows = unallocEntries.map(e => {
+      const line = (e.lines || []).find(l => l.a === acct && !l.p);
+      const amt = line ? (line.d || line.c) : 0;
+      const type = line && line.d ? 'Debit' : 'Credit';
+      return `<tr class="k" data-a="ent" data-i="${e.id}">
+        <td>${esc(e.date)}</td>
+        <td>${esc(e.ref)}</td>
+        <td>${esc(e.narr || '')}</td>
+        <td>${type}</td>
+        <td class="num">${fmt(amt)}</td>
+      </tr>`;
+    }).join('');
+
+    modal(`
+      <div style="min-width:320px;max-width:600px;">
+        <h3 style="margin-top:0;">Unallocated Entries on ${an(acct)} (${acct})</h3>
+        <p style="font-size:13px;color:var(--t2);">
+          These entries affect account ${acct} but lack a specific party tag (<code>line.p</code>), causing a discrepancy between the general ledger and party sub-ledgers.
+        </p>
+        <div class="wrap" style="max-height:360px;overflow-y:auto;">
+          <table>
+            <thead><tr><th>Date</th><th>Ref</th><th>Narration</th><th>Side</th><th class="num">Amount</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="5" class="empty">No unallocated entries found.</td></tr>'}</tbody>
+          </table>
+        </div>
+        <div style="margin-top:16px;text-align:right;">
+          <button type="button" class="btn" id="closeUnallocBtn">Close</button>
+        </div>
+      </div>
+    `);
+    const btn = $('#closeUnallocBtn');
+    if (btn) btn.onclick = closeM;
+  },
   gl: i => {
     accountingState.gl.acc = i;
     navigate('gl');

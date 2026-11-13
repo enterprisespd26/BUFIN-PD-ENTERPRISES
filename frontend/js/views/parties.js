@@ -1,33 +1,29 @@
 import { esc, fmt, head, kpi } from '../modules/utils.js';
-import { db, PT, isC, isS, isL, isX, out, partyTypeLabel } from '../modules/state.js';
+import { db, PT, isC, isS, isL, isX, out, partyTypeLabel, partyBalance, loanOutstanding, sgn, acc } from '../modules/state.js';
 
 export const partiesState = {
   pt: 'all',
   pq: ''
 };
 
+export const isLoanForParty = (l, p) => {
+  if (!l || !p) return false;
+  const pId = String(p.id || '').trim();
+  const pName = String(p.name || '').trim().toLowerCase();
+  const lParty = String(l.party || '').trim();
+  const lPartyName = String(l.partyName || '').trim().toLowerCase();
+  return (pId && lParty === pId) ||
+         (pName && (lParty.toLowerCase() === pName || lPartyName === pName));
+};
+
+export const tradeR = p => Math.max(0, partyBalance(p.id, '1100'));
+export const tradeY = p => Math.max(0, sgn(acc('2000'), partyBalance(p.id, '2000')));
+export const loanR = p => (db.loans || []).filter(l => isLoanForParty(l, p) && l.dir === 'given').reduce((s, l) => s + loanOutstanding(l), 0);
+export const loanY = p => (db.loans || []).filter(l => isLoanForParty(l, p) && l.dir === 'taken').reduce((s, l) => s + loanOutstanding(l), 0);
+
 export function renderParties() {
   const f = partiesState.pt || 'all';
   const q = (partiesState.pq || '').toLowerCase();
-  const isPartyMatch = (partyRef, p) => {
-    if (!partyRef || !p) return false;
-    const ref = String(partyRef).trim();
-    return ref === String(p.id).trim() || (p.name && ref.toLowerCase() === String(p.name).trim().toLowerCase());
-  };
-  const tradeR = p => db.docs.filter(d => isPartyMatch(d.party, p) && (d.type === 'sale' || d.type === 'credit_note') && !d.cancelled).reduce((s, d) => s + (d.type === 'credit_note' ? -d.total : out(d)), 0);
-  const tradeY = p => db.docs.filter(d => isPartyMatch(d.party, p) && (d.type === 'bill' || d.type === 'debit_note') && !d.cancelled).reduce((s, d) => s + (d.type === 'debit_note' ? -d.total : out(d)), 0);
-
-  const isLoanForParty = (l, p) => {
-    if (!l || !p) return false;
-    const pId = String(p.id || '').trim();
-    const pName = String(p.name || '').trim().toLowerCase();
-    const lParty = String(l.party || '').trim();
-    const lPartyName = String(l.partyName || '').trim().toLowerCase();
-    return (pId && lParty === pId) ||
-           (pName && (lParty.toLowerCase() === pName || lPartyName === pName));
-  };
-  const loanR = p => (db.loans || []).filter(l => isLoanForParty(l, p) && l.dir === 'given').reduce((s, l) => s + Math.max(0, (l.principal || 0) - (l.repaid || 0)), 0);
-  const loanY = p => (db.loans || []).filter(l => isLoanForParty(l, p) && l.dir === 'taken').reduce((s, l) => s + Math.max(0, (l.principal || 0) - (l.repaid || 0)), 0);
 
   const R = p => tradeR(p) + loanR(p);
   const Y = p => tradeY(p) + loanY(p);

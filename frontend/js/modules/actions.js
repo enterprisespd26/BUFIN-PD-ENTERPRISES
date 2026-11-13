@@ -1,5 +1,5 @@
 import { $, $$, esc, fmt, P, today, addD, addM, toast, ic, uid, downloadCSV, downloadJSON, downloadZIP, readZipFile } from './utils.js';
-import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, isL, isX, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries, getOrCreateExpenseAccount, syncPartyClassifications, setVer, setBaseVer, ensureAdvanceAccounts, getPartyAdvanceBalance, getStateByName, getStateByCode, INDIAN_STATES, getFiscalYear } from './state.js';
+import { db, setDb, save, post, reverse, next, log, acc, an, pn, out, paid, dstat, cashAcc, isC, isS, isL, isX, lstat, lacr, SYS, TN, PT, net, checkCashLiquidity, sortEntries, getOrCreateExpenseAccount, syncPartyClassifications, setVer, setBaseVer, ensureAdvanceAccounts, getPartyAdvanceBalance, getStateByName, getStateByCode, INDIAN_STATES, getFiscalYear, loanOutstanding, partyBalance } from './state.js';
 import { modal, closeM, form, fld, sel, opts, accOpts, partyOpts } from './components.js';
 
 import { getTxnRowData } from '../views/money.js';
@@ -74,8 +74,12 @@ function fmtTxnDate(dStr, atStr) {
   return dStr;
 }
 
-function findLinkedDoc(e) {
-  if (!e) return null;
+export function findLinkedDoc(e) {
+  if (!e || !db || !Array.isArray(db.docs)) return null;
+  if (e.meta?.docId) {
+    const doc = db.docs.find(x => x.id === e.meta.docId);
+    if (doc) return doc;
+  }
   if (e.meta?.invoiceId) {
     const doc = db.docs.find(x => x.id === e.meta.invoiceId);
     if (doc) return doc;
@@ -84,20 +88,13 @@ function findLinkedDoc(e) {
     const doc = db.docs.find(x => x.id === e.meta.billId);
     if (doc) return doc;
   }
-  const refNo = e.meta?.docNo || e.meta?.ref;
-  if (refNo) {
-    const doc = db.docs.find(x => x.no === refNo || x.sno === refNo || x.id === refNo);
-    if (doc) return doc;
-  }
   const docByJe = db.docs.find(x => x.je === e.id);
   if (docByJe) return docByJe;
   const docByPay = db.docs.find(x => x.pays && x.pays.some(p => p.je === e.id));
   if (docByPay) return docByPay;
-  if (e.narr) {
-    for (const doc of db.docs) {
-      if (doc.no && e.narr.includes(doc.no)) return doc;
-      if (doc.sno && e.narr.includes(doc.sno)) return doc;
-    }
+  if (e.meta?.docNo) {
+    const doc = db.docs.find(x => x.no === e.meta.docNo);
+    if (doc) return doc;
   }
   return null;
 }
@@ -1493,13 +1490,13 @@ export function stmt2(i) {
       run += (c === '1100' || c === '1450' ? (l.d - l.c) : (l.c - l.d));
       return `<tr><td>${e.date}</td><td>${esc(e.narr)}</td><td class="num">${l.d ? fmt(l.d) : ''}</td><td class="num">${l.c ? fmt(l.c) : ''}</td><td class="num">${fmt(run)}</td></tr>`;
     }));
-    if (c === '1100') rec = run;
-    else if (c === '2000') pay = run;
-    const heading = c === '1100' ? 'Receivable: they owe us ' + fmt(run)
+    if (c === '1100') rec = partyBalance(p.id, '1100');
+    else if (c === '2000') pay = Math.max(0, sgn(acc('2000'), partyBalance(p.id, '2000')));
+    const heading = c === '1100' ? 'Receivable: they owe us ' + fmt(partyBalance(p.id, '1100'))
       : c === '2100' ? 'Loan Payable: we owe them ' + fmt(run)
       : c === '2300' ? 'Customer Advances: unallocated balance ' + fmt(run)
       : c === '1450' ? 'Supplier Advances: unallocated balance ' + fmt(run)
-      : 'Payable: we owe them ' + fmt(run);
+      : 'Payable: we owe them ' + fmt(Math.max(0, sgn(acc('2000'), partyBalance(p.id, '2000'))));
     return `<h4>${heading}</h4>
       <div class="wrap"><table><tr><th>Date</th><th>Details</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr>${rows.join('') || '<tr><td colspan="5" class="empty">No transactions yet.</td></tr>'}</table></div>`;
   }).join('');
@@ -1521,7 +1518,7 @@ export function stmt2(i) {
     }
   }
 
-  const ln = (db.loans || []).filter(isLoanMatch).map(l => `<li>${l.ref}: ${fmt(l.principal - l.repaid)} outstanding</li>`).join('');
+  const ln = (db.loans || []).filter(isLoanMatch).map(l => `<li>${l.ref}: ${fmt(loanOutstanding(l))} outstanding</li>`).join('');
 
   modal(`<h3>${esc(p.name)}</h3>
     <p><small>${esc(partyTypeLabel(p))}${p.phone ? ' · ' + esc(p.phone) : ''}${p.gstin ? ' · GSTIN ' + esc(p.gstin) : ''}${p.state ? ' · ' + esc(p.state) : ''}${p.terms ? ' · ' + p.terms + ' day terms' : ''}</small></p>
@@ -1764,35 +1761,42 @@ export async function moneyInForm(existingEntry = null) {
           ? (partyName ? `${partyName} - ${userDesc}` : userDesc)
           : (invNo ? `${partyName} - Payment for Invoice ${invNo}` : (partyName ? `${partyName} - Customer Payment` : 'Customer Payment'));
 
-        const pJe = postedEnt = post({
-          id: isEdit ? existingEntry.id : undefined,
-          ref: isEdit ? existingEntry.ref : undefined,
-          date: v.date,
-          src: 'in',
-          narr: narr,
-          meta: {
-            ...(isEdit ? existingEntry.meta : {}),
-            method: finalMethod,
-            ref: userRef || invNo,
-            docNo: invNo,
-            invoiceId: selectedInv ? selectedInv.id : '',
-            acct: v.acct,
-            cat: '1100',
-            catName: 'Customer Receipt',
-            party: partyId || '',
-            partyName: partyName,
-            desc: userDesc
-          },
-          lines: [
-            { a: v.acct, d: a, c: 0, p: partyId },
-            { a: '1100', d: 0, c: a, p: partyId }
-          ]
-        });
-
         if (selectedInv) {
-          if (!selectedInv.pays) selectedInv.pays = [];
           const curBal = Math.max(0, out(selectedInv));
           const appliedAmt = Math.min(a, curBal);
+          const surplus = a - appliedAmt;
+
+          const lines = [{ a: v.acct, d: a, c: 0, p: partyId }];
+          if (appliedAmt > 0) lines.push({ a: '1100', d: 0, c: appliedAmt, p: partyId });
+          if (surplus > 0) {
+            ensureAdvanceAccounts();
+            lines.push({ a: '2300', d: 0, c: surplus, p: partyId });
+          }
+
+          const pJe = postedEnt = post({
+            id: isEdit ? existingEntry.id : undefined,
+            ref: isEdit ? existingEntry.ref : undefined,
+            date: v.date,
+            src: 'in',
+            narr: narr,
+            meta: {
+              ...(isEdit ? existingEntry.meta : {}),
+              method: finalMethod,
+              ref: userRef || invNo,
+              docNo: invNo,
+              docId: selectedInv.id,
+              invoiceId: selectedInv.id,
+              acct: v.acct,
+              cat: '1100',
+              catName: 'Customer Receipt',
+              party: partyId || '',
+              partyName: partyName,
+              desc: userDesc
+            },
+            lines
+          });
+
+          if (!selectedInv.pays) selectedInv.pays = [];
           selectedInv.pays.push({
             je: pJe.id,
             amt: appliedAmt,
@@ -1800,7 +1804,88 @@ export async function moneyInForm(existingEntry = null) {
             method: finalMethod,
             acct: v.acct
           });
-          selectedInv.paid = (selectedInv.total || 0) - Math.max(0, curBal - appliedAmt);
+          selectedInv.paid = paid(selectedInv);
+        } else if (partyId) {
+          const openDocs = (db.docs || [])
+            .filter(d => (d.type === 'sale' || (d.opening && d.type !== 'bill')) && !d.cancelled && d.party === partyId && out(d) > 0)
+            .sort((x, y) => (x.date || '').localeCompare(y.date || ''));
+
+          let rem = a;
+          const docAllocs = [];
+          for (const d of openDocs) {
+            if (rem <= 0) break;
+            const curBal = Math.max(0, out(d));
+            if (curBal <= 0) continue;
+            const applied = Math.min(rem, curBal);
+            docAllocs.push({ doc: d, amt: applied });
+            rem -= applied;
+          }
+
+          const settledAmt = a - rem;
+          const surplus = rem;
+          const lines = [{ a: v.acct, d: a, c: 0, p: partyId }];
+          if (settledAmt > 0) lines.push({ a: '1100', d: 0, c: settledAmt, p: partyId });
+          if (surplus > 0) {
+            ensureAdvanceAccounts();
+            lines.push({ a: '2300', d: 0, c: surplus, p: partyId });
+          }
+
+          const firstDoc = docAllocs[0]?.doc;
+          const pJe = postedEnt = post({
+            id: isEdit ? existingEntry.id : undefined,
+            ref: isEdit ? existingEntry.ref : undefined,
+            date: v.date,
+            src: 'in',
+            narr: narr,
+            meta: {
+              ...(isEdit ? existingEntry.meta : {}),
+              method: finalMethod,
+              ref: userRef || (firstDoc ? (firstDoc.no || firstDoc.sno) : ''),
+              docNo: firstDoc ? (firstDoc.no || firstDoc.sno) : '',
+              docId: firstDoc ? firstDoc.id : '',
+              invoiceId: firstDoc ? firstDoc.id : '',
+              acct: v.acct,
+              cat: '1100',
+              catName: 'Customer Receipt',
+              party: partyId || '',
+              partyName: partyName,
+              desc: userDesc
+            },
+            lines
+          });
+
+          for (const alloc of docAllocs) {
+            if (!alloc.doc.pays) alloc.doc.pays = [];
+            alloc.doc.pays.push({
+              je: pJe.id,
+              amt: alloc.amt,
+              date: v.date,
+              method: finalMethod,
+              acct: v.acct
+            });
+            alloc.doc.paid = paid(alloc.doc);
+          }
+        } else {
+          postedEnt = post({
+            id: isEdit ? existingEntry.id : undefined,
+            ref: isEdit ? existingEntry.ref : undefined,
+            date: v.date,
+            src: 'in',
+            narr: narr,
+            meta: {
+              ...(isEdit ? existingEntry.meta : {}),
+              method: finalMethod,
+              ref: userRef,
+              acct: v.acct,
+              cat: '1100',
+              catName: 'Customer Receipt',
+              desc: userDesc
+            },
+            lines: [
+              { a: v.acct, d: a, c: 0 },
+              { a: '1100', d: 0, c: a }
+            ]
+          });
         }
       } else {
         // Interest Income (4300) or Other Miscellaneous Income (4200)
@@ -2352,35 +2437,43 @@ export async function moneyOutForm(existingEntry = null) {
           ? `${supplierName} - ${userDesc}`
           : (billNo ? `${supplierName} - Payment for Bill ${billNo}` : `${supplierName} - Supplier Payment`);
 
-        const pJe = postedEnt = post({
-          id: isEdit ? existingEntry.id : undefined,
-          ref: isEdit ? existingEntry.ref : undefined,
-          date: v.date,
-          src: 'out',
-          narr: narr,
-          meta: {
-            ...(isEdit ? existingEntry.meta : {}),
-            method: finalMethod,
-            ref: userRef || billNo,
-            docNo: billNo,
-            billId: selectedBill ? selectedBill.id : '',
-            acct: v.acct,
-            cat: '2000',
-            catName: 'Supplier Payment',
-            party: supplierId,
-            partyName: supplierName,
-            desc: userDesc
-          },
-          lines: [
-            { a: '2000', d: outflowPaisa, c: 0, p: supplierId },
-            { a: v.acct, d: 0, c: outflowPaisa, p: supplierId }
-          ]
-        });
-
         if (selectedBill) {
-          if (!selectedBill.pays) selectedBill.pays = [];
           const curBal = Math.max(0, out(selectedBill));
           const appliedAmt = Math.min(outflowPaisa, curBal);
+          const surplus = outflowPaisa - appliedAmt;
+
+          const lines = [];
+          if (appliedAmt > 0) lines.push({ a: '2000', d: appliedAmt, c: 0, p: supplierId });
+          if (surplus > 0) {
+            ensureAdvanceAccounts();
+            lines.push({ a: '1450', d: surplus, c: 0, p: supplierId });
+          }
+          lines.push({ a: v.acct, d: 0, c: outflowPaisa, p: supplierId });
+
+          const pJe = postedEnt = post({
+            id: isEdit ? existingEntry.id : undefined,
+            ref: isEdit ? existingEntry.ref : undefined,
+            date: v.date,
+            src: 'out',
+            narr: narr,
+            meta: {
+              ...(isEdit ? existingEntry.meta : {}),
+              method: finalMethod,
+              ref: userRef || billNo,
+              docNo: billNo,
+              docId: selectedBill.id,
+              billId: selectedBill.id,
+              acct: v.acct,
+              cat: '2000',
+              catName: 'Supplier Payment',
+              party: supplierId,
+              partyName: supplierName,
+              desc: userDesc
+            },
+            lines
+          });
+
+          if (!selectedBill.pays) selectedBill.pays = [];
           selectedBill.pays.push({
             je: pJe.id,
             amt: appliedAmt,
@@ -2388,7 +2481,69 @@ export async function moneyOutForm(existingEntry = null) {
             method: finalMethod,
             acct: v.acct
           });
-          selectedBill.paid = (selectedBill.total || 0) - Math.max(0, curBal - appliedAmt);
+          selectedBill.paid = paid(selectedBill);
+        } else {
+          // No bill selected: allocate automatically to the oldest open bill / opening balance of that supplier, and post surplus as advance (1450)
+          const openBills = (db.docs || [])
+            .filter(d => (d.type === 'bill' || (d.opening && d.type === 'bill')) && !d.cancelled && d.party === supplierId && out(d) > 0)
+            .sort((x, y) => (x.date || '').localeCompare(y.date || ''));
+
+          let rem = outflowPaisa;
+          const billAllocs = [];
+          for (const b of openBills) {
+            if (rem <= 0) break;
+            const curBal = Math.max(0, out(b));
+            if (curBal <= 0) continue;
+            const applied = Math.min(rem, curBal);
+            billAllocs.push({ doc: b, amt: applied });
+            rem -= applied;
+          }
+
+          const settledAmt = outflowPaisa - rem;
+          const surplus = rem;
+          const lines = [];
+          if (settledAmt > 0) lines.push({ a: '2000', d: settledAmt, c: 0, p: supplierId });
+          if (surplus > 0) {
+            ensureAdvanceAccounts();
+            lines.push({ a: '1450', d: surplus, c: 0, p: supplierId });
+          }
+          lines.push({ a: v.acct, d: 0, c: outflowPaisa, p: supplierId });
+
+          const firstBill = billAllocs[0]?.doc;
+          const pJe = postedEnt = post({
+            id: isEdit ? existingEntry.id : undefined,
+            ref: isEdit ? existingEntry.ref : undefined,
+            date: v.date,
+            src: 'out',
+            narr: narr,
+            meta: {
+              ...(isEdit ? existingEntry.meta : {}),
+              method: finalMethod,
+              ref: userRef || (firstBill ? (firstBill.no || firstBill.sno) : ''),
+              docNo: firstBill ? (firstBill.no || firstBill.sno) : '',
+              docId: firstBill ? firstBill.id : '',
+              billId: firstBill ? firstBill.id : '',
+              acct: v.acct,
+              cat: '2000',
+              catName: 'Supplier Payment',
+              party: supplierId,
+              partyName: supplierName,
+              desc: userDesc
+            },
+            lines
+          });
+
+          for (const alloc of billAllocs) {
+            if (!alloc.doc.pays) alloc.doc.pays = [];
+            alloc.doc.pays.push({
+              je: pJe.id,
+              amt: alloc.amt,
+              date: v.date,
+              method: finalMethod,
+              acct: v.acct
+            });
+            alloc.doc.paid = paid(alloc.doc);
+          }
         }
       } else if (cat === 'loan') {
         // 3. Loan Repayment / EMI (Principal + Interest)
@@ -2427,46 +2582,37 @@ export async function moneyOutForm(existingEntry = null) {
 
         if (!lenderName) lenderName = 'Lender';
 
-        const lines = [];
-        if (princPaisa > 0) lines.push({ a: '2100', d: princPaisa, c: 0, p: partyId });
-        if (intPaisa > 0) lines.push({ a: '5500', d: intPaisa, c: 0, p: partyId });
-        lines.push({ a: v.acct, d: 0, c: outflowPaisa, p: partyId });
-
-        const narr = userDesc
-          ? (lenderName ? `${lenderName} - ${userDesc}` : userDesc)
-          : `${lenderName} - Loan Repayment / EMI (Principal: ${fmt(princPaisa)}${intPaisa > 0 ? ', Interest: ' + fmt(intPaisa) : ''})`;
-
-        postedEnt = post({
-          id: isEdit ? existingEntry.id : undefined,
-          ref: isEdit ? existingEntry.ref : undefined,
-          date: v.date,
-          src: 'out',
-          narr: narr,
-          meta: {
-            ...(isEdit ? existingEntry.meta : {}),
-            method: finalMethod,
-            ref: userRef || loanRef,
-            acct: v.acct,
-            cat: '2100',
-            catName: 'Loan Repayment / EMI',
-            loanId: loanId,
-            party: partyId,
-            partyName: lenderName,
-            principal: princPaisa,
-            interest: intPaisa,
-            desc: userDesc
-          },
-          lines: lines
-        });
-
-        if (loanId) {
-          const loanObj = (db.loans || []).find(l => l.id === loanId);
-          if (loanObj && princPaisa > 0) {
-            loanObj.repaid = (loanObj.repaid || 0) + princPaisa;
-            loanObj.last = v.date;
-            if ((loanObj.principal || 0) - loanObj.repaid <= 0) loanObj.due = '';
+        if (!loanId) {
+          let ln = (db.loans || []).find(l => l.party === partyId && l.dir === 'taken');
+          if (!ln) {
+            ln = {
+              id: uid(),
+              ref: 'LN-' + ((db.loans || []).length + 1),
+              name: 'Loan from ' + lenderName,
+              party: partyId,
+              partyName: lenderName,
+              dir: 'taken',
+              principal: princPaisa,
+              date: v.date,
+              rate: 0
+            };
+            if (!db.loans) db.loans = [];
+            db.loans.push(ln);
           }
+          loanId = ln.id;
+          loanRef = ln.ref;
         }
+
+        postedEnt = postLoanRepayment(loanId, {
+          date: v.date,
+          pr: princPaisa,
+          int: intPaisa,
+          acct: v.acct,
+          ref: userRef || loanRef,
+          method: finalMethod,
+          notes: userDesc,
+          desc: userDesc ? (lenderName ? `${lenderName} - ${userDesc}` : userDesc) : undefined
+        });
       } else if (cat === 'other') {
         // 4. Other Miscellaneous Expense
         const customCatName = (v.custom_cat || '').trim();
@@ -3380,11 +3526,76 @@ export function loanForm2() {
   );
 }
 
+export function postLoanRepayment(id, { date, pr: prInput, int: itInput, acct, ref, method, notes, desc }) {
+  const l = db.loans.find(x => x.id === id);
+  if (!l) throw Error('Loan not found');
+  const t = l.dir === 'taken';
+  const outstanding = loanOutstanding(l);
+  const partyName = l.partyName || pn(l.party) || 'Party';
+
+  const pr = typeof prInput === 'number' ? prInput : P(prInput || '0');
+  const it = typeof itInput === 'number' ? itInput : P(itInput || '0');
+  if (pr + it <= 0) throw Error('Please enter a valid payment amount (principal or interest)');
+  if (pr > outstanding) throw Error(`Principal repayment (${fmt(pr)}) cannot exceed outstanding balance (${fmt(outstanding)})`);
+
+  const totalPaid = pr + it;
+  const payMethod = method || ((acc(acct)?.name || '').toLowerCase().includes('cash') ? 'Cash' : 'Bank Transfer');
+  const isCash = acct === '1000' || payMethod === 'Cash' || (acc(acct)?.name || '').toLowerCase().includes('cash');
+
+  if (t && isCash && totalPaid > 0) {
+    const check = checkCashLiquidity('1000', totalPaid);
+    if (!check.ok) {
+      throw Error(check.error || 'Insufficient cash in hand balance. Please deposit funds or pay via Bank Account.');
+    }
+  }
+
+  const lines = [];
+  if (t) {
+    if (pr > 0) lines.push({ a: '2100', d: pr, c: 0, p: l.party });
+    if (it > 0) lines.push({ a: '5500', d: it, c: 0, p: l.party });
+    lines.push({ a: acct, d: 0, c: totalPaid, p: l.party });
+  } else {
+    lines.push({ a: acct, d: totalPaid, c: 0, p: l.party });
+    if (pr > 0) lines.push({ a: '1400', d: 0, c: pr, p: l.party });
+    if (it > 0) lines.push({ a: '4300', d: 0, c: it, p: l.party });
+  }
+
+  const refNo = ref || l.ref || '';
+  const narr = desc || `${l.name || l.ref} - ${t ? 'Repayment to' : 'Receipt from'} ${partyName}${refNo ? ' (' + refNo + ')' : ''}`;
+
+  const entry = post({
+    date: date || today(),
+    src: 'loan',
+    narr,
+    meta: {
+      loan: id,
+      kind: 'rep',
+      pr,
+      int: it,
+      acct,
+      party: l.party,
+      partyName,
+      ref: refNo,
+      docNo: refNo,
+      loanName: l.name || l.ref,
+      method: payMethod,
+      desc: notes || desc || `${l.name || l.ref} - ${t ? 'EMI Repayment' : 'Receipt'} (Principal: ${fmt(pr)}, Interest: ${fmt(it)})`
+    },
+    lines
+  });
+
+  l.last = date || today();
+  if (pr > 0 && l.due) l.due = addM(l.due);
+  if (loanOutstanding(l) <= 0) l.due = '';
+  log('repay loan', l.ref);
+  return entry;
+}
+
 export function repayForm2(id, pre) {
   const l = db.loans.find(x => x.id === id);
   if (!l) return;
   const t = l.dir === 'taken';
-  const outstanding = Math.max(0, l.principal - l.repaid);
+  const outstanding = loanOutstanding(l);
   const accrued = lacr(l);
   const partyName = l.partyName || pn(l.party) || 'Party';
 
@@ -3441,59 +3652,15 @@ export function repayForm2(id, pre) {
       </label>
     </div>`,
     v => {
-      const pr = P(v.pr || '0');
-      const it = P(v.int || '0');
-      if (pr + it <= 0) throw Error('Please enter a valid payment amount (principal or interest)');
-      if (pr > outstanding) throw Error(`Principal repayment (${fmt(pr)}) cannot exceed outstanding balance (${fmt(outstanding)})`);
-
-      const totalPaid = pr + it;
-      const method = v.method || ((acc(v.acct)?.name || '').toLowerCase().includes('cash') ? 'Cash' : 'Bank Transfer');
-      const isCash = v.acct === '1000' || method === 'Cash' || (acc(v.acct)?.name || '').toLowerCase().includes('cash');
-
-      if (t && isCash && totalPaid > 0) {
-        const check = checkCashLiquidity('1000', totalPaid);
-        if (!check.ok) {
-          throw Error(check.error || 'Insufficient cash in hand balance. Please deposit funds or pay via Bank Account.');
-        }
-      }
-
-      const lines = [];
-      if (t) {
-        if (pr > 0) lines.push({ a: '2100', d: pr, c: 0, p: l.party });
-        if (it > 0) lines.push({ a: '5500', d: it, c: 0, p: l.party });
-        lines.push({ a: v.acct, d: 0, c: totalPaid, p: l.party });
-      } else {
-        lines.push({ a: v.acct, d: totalPaid, c: 0, p: l.party });
-        if (pr > 0) lines.push({ a: '1400', d: 0, c: pr, p: l.party });
-        if (it > 0) lines.push({ a: '4300', d: 0, c: it, p: l.party });
-      }
-
-      post({
+      postLoanRepayment(id, {
         date: v.date,
-        src: 'loan',
-        narr: `${l.name || l.ref} - ${t ? 'Repayment to' : 'Receipt from'} ${partyName}${v.refNo ? ' (' + v.refNo + ')' : ''}`,
-        meta: {
-          loan: id,
-          kind: 'rep',
-          pr,
-          int: it,
-          acct: v.acct,
-          party: l.party,
-          partyName,
-          ref: v.refNo || l.ref,
-          docNo: v.refNo || l.ref,
-          loanName: l.name || l.ref,
-          method,
-          desc: `${l.name || l.ref} - ${t ? 'EMI Repayment' : 'Receipt'} (Principal: ${fmt(pr)}, Interest: ${fmt(it)})`
-        },
-        lines
+        pr: v.pr,
+        int: v.int,
+        acct: v.acct,
+        ref: v.refNo,
+        method: v.method,
+        notes: v.notes
       });
-
-      l.repaid += pr;
-      l.last = v.date;
-      if (pr > 0 && l.due) l.due = addM(l.due);
-      if (l.principal - l.repaid <= 0) l.due = '';
-      log('repay loan', l.ref);
       toast('Payment recorded successfully');
     },
     'Save Payment',

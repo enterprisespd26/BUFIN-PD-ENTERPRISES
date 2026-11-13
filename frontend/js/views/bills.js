@@ -1,5 +1,5 @@
 import { $, $$, esc, fmt, fmtDate, head, kpi, toast, today, uid, P, convertRate, downloadCSV, debounce as _utilsDebounce } from '../modules/utils.js';
-import { db, setDb, save, post, reverse, out, paid, dstat, pn, isS, net, checkCashLiquidity, next, log, ensureAdvanceAccounts, getPartyAdvanceBalance } from '../modules/state.js';
+import { db, setDb, save, post, reverse, out, paid, dstat, pn, isS, net, checkCashLiquidity, next, log, ensureAdvanceAccounts, getPartyAdvanceBalance, acc, sgn, partyBalance } from '../modules/state.js';
 import { partyForm, markBillPaid, showDoc, isIntraState } from '../modules/actions.js';
 import { showActionSheet, form } from '../modules/components.js';
 import { enhanceMobile } from '../modules/mobile.js';
@@ -47,7 +47,9 @@ export const billsState = {
   invMaterial: '',
   invStatus: 'all',
   invFromDate: '',
-  invToDate: ''
+  invToDate: '',
+  formDirty: false,
+  draft: null
 };
 
 const inr = n => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -604,6 +606,16 @@ export function renderBills() {
           </div>
         `}
 
+        ${billsState.draft && !billsState.editId ? `
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:8px 14px;margin-bottom:14px;font-size:13px;color:#1e40af;">
+            <span>📝 <b>Unsaved draft available</b> (saved at ${esc(billsState.draft.savedAt)})</span>
+            <div style="display:flex;gap:6px;">
+              <button type="button" class="btn p sm" id="btnResumeBillsDraft" style="font-size:12px;padding:4px 10px;">Resume Draft</button>
+              <button type="button" class="btn alt sm" id="btnDiscardBillsDraft" style="font-size:12px;padding:4px 8px;">✕</button>
+            </div>
+          </div>
+        ` : ''}
+
         <!-- EXISTING PARTY SELECTION -->
         <div class="pd-party-selector" style="background:#f8fafc;border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:20px;">
           <div class="pd-supplier-box-wrap">
@@ -613,9 +625,16 @@ export function renderBills() {
               </label>
               <select id="u_sel_supplier" style="width:100%;min-height:44px;padding:8px 12px;border:1px solid var(--bd);border-radius:8px;background:#fff;font-size:14px;font-weight:500;">
                 <option value="">-- Choose from existing suppliers --</option>
-                ${suppliers.map(p => `<option value="${p.id}" ${p.id === activeSupplierId ? 'selected' : ''}>${esc(p.name)}${p.phone ? ' (' + esc(p.phone) + ')' : ''}${p.state ? ' · ' + esc(p.state) : ''}</option>`).join('')}
+                ${suppliers.map(p => {
+                  const b = sgn(acc('2000'), partyBalance(p.id, '2000'));
+                  const balTxt = b > 0 ? ' · Payable: ' + fmt(b) : (b < 0 ? ' · Advance: ' + fmt(-b) : '');
+                  return `<option value="${p.id}" ${p.id === activeSupplierId ? 'selected' : ''}>${esc(p.name)}${balTxt}${p.phone ? ' (' + esc(p.phone) + ')' : ''}</option>`;
+                }).join('')}
                 <option value="__NEW__">➕ + Add New Supplier...</option>
               </select>
+              <div id="u_sup_bal_hint" style="font-size:12px;color:var(--t2);margin-top:4px;">
+                ${activeSupplierId ? `Current Ledger Balance: <b style="color:${sgn(acc('2000'), partyBalance(activeSupplierId, '2000')) > 0 ? '#dc2626' : '#475569'}">${fmt(sgn(acc('2000'), partyBalance(activeSupplierId, '2000')))}</b>` : ''}
+              </div>
             </div>
             <div class="pd-supplier-btn-wrap">
               <button type="button" class="btn p pd-supplier-add-btn" id="u_btn_new_sup">
@@ -1098,6 +1117,37 @@ export function bindBillsEvents() {
   const cancelBottom = U('btn_cancel_bottom');
   if (cancelBottom) cancelBottom.onclick = cancelBillEdit;
 
+  const newTabEl = $('#u-tab-new');
+  if (newTabEl) {
+    newTabEl.addEventListener('input', () => {
+      billsState.formDirty = true;
+    });
+  }
+
+  const resumeBtn = $('#btnResumeBillsDraft');
+  if (resumeBtn) {
+    resumeBtn.onclick = () => {
+      if (billsState.draft) {
+        if (billsState.draft.files) billsState.files = [...billsState.draft.files];
+        billsState.draft = null;
+        billsState.formDirty = true;
+        container.innerHTML = renderBills();
+        bindBillsEvents();
+        toast('Draft restored');
+      }
+    };
+  }
+
+  const discardBtn = $('#btnDiscardBillsDraft');
+  if (discardBtn) {
+    discardBtn.onclick = () => {
+      billsState.draft = null;
+      billsState.formDirty = false;
+      container.innerHTML = renderBills();
+      bindBillsEvents();
+    };
+  }
+
   // "+ New purchase" button in records toolbar
   const addNewBtn = $('#u_btn_add_new');
   if (addNewBtn) {
@@ -1447,13 +1497,13 @@ export function bindBillsEvents() {
       const duplicate = db.docs.some(d =>
         d.type === 'bill' &&
         (!isEditMode || d.id !== existingDoc?.id) &&
-        (d.sno || '').trim().toLowerCase() === billNo.toLowerCase() &&
+        ((d.supInvNo || d.sno || '').trim().toLowerCase() === billNo.toLowerCase()) &&
         (d.sup || pn(d.party)).trim().toLowerCase() === supName.toLowerCase()
       );
       if (duplicate) return toast(`Supplier bill number "${billNo}" is already recorded for this supplier`);
     }
 
-    const internalNo = existingDoc ? existingDoc.no : nextBillNo();
+    let internalNo = existingDoc ? existingDoc.no : nextBillNo();
 
     // Reject duplicate internal bill number across ALL bills (including cancelled)
     const duplicateInternal = db.docs.some(d =>
@@ -1461,7 +1511,14 @@ export function bindBillsEvents() {
       (!isEditMode || d.id !== existingDoc?.id) &&
       (d.no || '').trim().toLowerCase() === internalNo.toLowerCase()
     );
-    if (duplicateInternal) return toast(`Internal bill number "${internalNo}" already exists`);
+    if (duplicateInternal) {
+      if (!isEditMode) {
+        internalNo = nextBillNo();
+        toast(`Internal bill number updated to next available: "${internalNo}"`);
+      } else {
+        return toast(`Internal bill number "${internalNo}" already exists`);
+      }
+    }
 
     // Transaction safety: snapshot db before mutating
     const snapshot = JSON.parse(JSON.stringify(db));
@@ -1632,7 +1689,8 @@ export function bindBillsEvents() {
       };
 
       docObj.no = internalNo;
-      docObj.sno = billNo;
+      docObj.sno = internalNo;
+      docObj.supInvNo = billNo;
       docObj.date = date;
       docObj.due = date;
       docObj.party = supplierParty.id;

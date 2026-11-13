@@ -194,13 +194,61 @@ export function migrateSchema(targetDb) {
   if (!targetDb) return;
   if (Array.isArray(targetDb.entries)) {
     for (const e of targetDb.entries) {
-      if (e && e.src === 'pay') {
+      if (!e) continue;
+      if (e.src === 'pay') {
         const cashLines = (e.lines || []).filter(l => {
           const a = (targetDb.accounts || []).find(x => x.code === l.a);
           return a ? a.cash : (l.a === '1000' || l.a === '1010');
         });
         const hasCashDebit = cashLines.some(l => l.d > 0);
         e.src = hasCashDebit ? 'in' : 'out';
+      }
+
+      // Populate line party from entry meta if missing on trade accounts
+      if (Array.isArray(e.lines)) {
+        for (const l of e.lines) {
+          if ((l.a === '1100' || l.a === '2000') && !l.p && e.meta?.party) {
+            l.p = e.meta.party;
+          }
+        }
+      }
+
+      // Unify loan entries into { loan, kind: 'rep', pr, int }
+      if (e.meta) {
+        if (e.meta.loanId && !e.meta.loan) {
+          e.meta.loan = e.meta.loanId;
+        }
+        if (e.meta.loan && (!e.meta.kind || e.meta.kind === 'rep')) {
+          e.src = 'loan';
+          e.meta.kind = 'rep';
+          if (e.meta.principal !== undefined && e.meta.pr === undefined) {
+            e.meta.pr = e.meta.principal;
+          }
+          if (e.meta.interest !== undefined && e.meta.int === undefined) {
+            e.meta.int = e.meta.interest;
+          }
+        }
+
+        // Link entry to docId explicitly
+        if (!e.meta.docId) {
+          if (e.meta.invoiceId) e.meta.docId = e.meta.invoiceId;
+          else if (e.meta.billId) e.meta.docId = e.meta.billId;
+          else if (Array.isArray(targetDb.docs)) {
+            const d = targetDb.docs.find(x => x && (x.je === e.id || (x.pays && x.pays.some(p => p.je === e.id))));
+            if (d) e.meta.docId = d.id;
+          }
+        }
+      }
+    }
+  }
+
+  if (Array.isArray(targetDb.docs)) {
+    for (const doc of targetDb.docs) {
+      if (!doc) continue;
+      if (doc.type === 'sale') {
+        if (doc.sno && !doc.veh) doc.veh = doc.sno;
+      } else if (doc.type === 'bill') {
+        if (doc.sno && !doc.supInvNo) doc.supInvNo = doc.sno;
       }
     }
   }
@@ -233,6 +281,71 @@ export function migrateSchema(targetDb) {
     }
     targetDb.schemaVer = 2;
   }
+}
+
+export function partyBalance(partyId, accountCode) {
+  if (!partyId || !db || !Array.isArray(db.entries)) return 0;
+  const pId = typeof partyId === 'object' && partyId ? partyId.id : partyId;
+  let sum = 0;
+  for (const e of db.entries) {
+    for (const l of (e.lines || [])) {
+      if (l.a === accountCode && (l.p === pId || (!l.p && e.meta?.party === pId))) {
+        sum += (l.d || 0) - (l.c || 0);
+      }
+    }
+  }
+  return sum;
+}
+
+export function getLoanPrincipal(loan) {
+  if (!loan) return 0;
+  const loanId = typeof loan === 'object' ? loan.id : loan;
+  const lObj = typeof loan === 'object' ? loan : (db.loans || []).find(x => x.id === loanId);
+  return lObj ? (lObj.principal || 0) : 0;
+}
+
+export function getLoanTopups(loan) {
+  if (!loan || !db || !Array.isArray(db.entries)) return 0;
+  const loanId = typeof loan === 'object' ? loan.id : loan;
+  const reversedEntryIds = new Set();
+  for (const e of db.entries) {
+    if (e.status === 'reversed') reversedEntryIds.add(e.id);
+    if (e.src === 'rev' && e.rev) reversedEntryIds.add(e.rev);
+  }
+  let topups = 0;
+  for (const e of db.entries) {
+    if (reversedEntryIds.has(e.id) || e.src === 'rev') continue;
+    if (e.meta && (e.meta.loan === loanId || e.meta.loanId === loanId) && e.meta.kind === 'topup') {
+      topups += (e.meta.pr || 0);
+    }
+  }
+  return topups;
+}
+
+export function getLoanRepaid(loan) {
+  if (!loan || !db || !Array.isArray(db.entries)) return 0;
+  const loanId = typeof loan === 'object' ? loan.id : loan;
+  const reversedEntryIds = new Set();
+  for (const e of db.entries) {
+    if (e.status === 'reversed') reversedEntryIds.add(e.id);
+    if (e.src === 'rev' && e.rev) reversedEntryIds.add(e.rev);
+  }
+  let repaid = 0;
+  for (const e of db.entries) {
+    if (reversedEntryIds.has(e.id) || e.src === 'rev') continue;
+    if (e.meta && (e.meta.loan === loanId || e.meta.loanId === loanId) && e.meta.kind === 'rep') {
+      repaid += (e.meta.pr || 0);
+    }
+  }
+  return repaid;
+}
+
+export function loanOutstanding(loan) {
+  if (!loan) return 0;
+  const orig = getLoanPrincipal(loan);
+  const topups = getLoanTopups(loan);
+  const repaid = getLoanRepaid(loan);
+  return Math.max(0, orig + topups - repaid);
 }
 
 let initialDb;
@@ -829,7 +942,21 @@ export const next = (k, pre) => {
   db.seq[k] = maxNum + 1;
   return pre + String(db.seq[k]).padStart(4, '0');
 };
-export const log = (a, d) => db.audit.push({ at: new Date().toISOString(), a, d });
+export const log = (a, d) => {
+  const at = new Date().toISOString();
+  if (db && Array.isArray(db.audit)) {
+    db.audit.push({ at, a, d });
+  }
+  try {
+    if (typeof fetch === 'function' && typeof window !== 'undefined') {
+      fetch('/api/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: a, entity: d || '', after: { details: d } })
+      }).catch(() => {});
+    }
+  } catch (e) {}
+};
 
 export const net = (c, f, t) => {
   let n = 0;
@@ -848,6 +975,13 @@ export function post(o) {
   const L = o.lines.filter(l => l.d || l.c);
   if (L.length < 2) throw Error('A journal needs at least two postings');
   if (L.some(l => !acc(l.a) || l.d < 0 || l.c < 0 || (l.d && l.c))) throw Error('Each line needs an account and either a debit or a credit');
+  if (o.src === 'jv') {
+    for (const l of L) {
+      if ((l.a === '1100' || l.a === '2000') && !l.p) {
+        throw Error('Party is required on journal line for account ' + l.a);
+      }
+    }
+  }
   const D = L.reduce((s, l) => s + l.d, 0), C = L.reduce((s, l) => s + l.c, 0);
   if (D !== C) throw Error('Debits (' + fmt(D) + ') must strictly equal credits (' + fmt(C) + ')');
   if (!o.date) throw Error('Date is required');
@@ -953,13 +1087,7 @@ export function reverse(id, opts = {}) {
     }
   }
 
-  // 3. If entry was a loan transaction
-  if (e.src === 'loan' && e.meta?.loan) {
-    const loan = (db.loans || []).find(l => l.id === e.meta.loan);
-    if (loan && e.meta.kind === 'rep') {
-      loan.repaid = Math.max(0, (loan.repaid || 0) - (e.meta.pr || 0));
-    }
-  }
+  // 3. If entry was a loan transaction: outstanding is dynamically derived from unreversed entries, so no mutable counter mutation is needed.
 
   return r;
 }
@@ -1098,8 +1226,8 @@ export function isFirstRunNeeded() {
   return (!db.biz?.name || !db.biz?.state || !db.biz?.prefix) && (!db.entries || db.entries.length === 0);
 }
 
-export const lstat = l => l.principal - l.repaid <= 0 ? ['Closed', ''] : l.due && l.due < today() ? ['Overdue', 'rd'] : ['Active', 'ok'];
-export const lacr = l => Math.round((l.principal - l.repaid) * l.rate / 100 * Math.max(0, Math.round((new Date(today()) - new Date(l.last)) / 864e5)) / 365);
+export const lstat = l => loanOutstanding(l) <= 0 ? ['Closed', ''] : l.due && l.due < today() ? ['Overdue', 'rd'] : ['Active', 'ok'];
+export const lacr = l => Math.round(loanOutstanding(l) * ((l.rate || 0) / 100) * Math.max(0, Math.round((new Date(today()) - new Date(l.last || l.date || today())) / 864e5)) / 365);
 
 export const sortEntries = (entries) => {
   return (entries || []).slice().sort((a, b) => {

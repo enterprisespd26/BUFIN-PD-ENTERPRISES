@@ -1,5 +1,5 @@
 import { esc, fmt, fmtDate, today, prev, head, kpi, toast, downloadCSV } from '../modules/utils.js';
-import { db, TN, SYS, acc, an, net, sgn, cashAcc, pn, sortEntries } from '../modules/state.js';
+import { db, TN, SYS, acc, an, net, sgn, cashAcc, pn, sortEntries, isC, isS, isL } from '../modules/state.js';
 import { entTable, accOpts } from '../modules/components.js';
 
 export const accountingState = {
@@ -70,14 +70,27 @@ export function renderOpen() {
 
   const openDebits = {};
   const openCredits = {};
+  const openPartyDebits = {};
+  const openPartyCredits = {};
+  const openLoanBal = {};
   let totalDr = 0;
   if (activeOpen && activeOpen.lines) {
     activeOpen.lines.forEach(l => {
       if (l.d) {
-        openDebits[l.a] = l.d;
+        openDebits[l.a] = (openDebits[l.a] || 0) + l.d;
+        if (l.p) {
+          if (l.a === '1100') openPartyDebits[l.p] = l.d;
+          if (l.a === '1400') openLoanBal['1400_' + (l.meta?.loan || l.p)] = l.d;
+        }
         totalDr += l.d;
       }
-      if (l.c) openCredits[l.a] = l.c;
+      if (l.c) {
+        openCredits[l.a] = (openCredits[l.a] || 0) + l.c;
+        if (l.p) {
+          if (l.a === '2000') openPartyCredits[l.p] = l.c;
+          if (l.a === '2100') openLoanBal['2100_' + (l.meta?.loan || l.p)] = l.c;
+        }
+      }
     });
   }
 
@@ -204,6 +217,59 @@ export function renderOpen() {
     const cStyle = !isNormD ? 'border-color:#c4b5fd;background:var(--sf);' : 'background:var(--sf);';
     const showUnorthodox = (isNormD && cVal) || (!isNormD && dVal);
 
+    let breakdownHtml = '';
+    if (a.code === '1100') {
+      const customers = (db.parties || []).filter(isC);
+      if (customers.length) {
+        breakdownHtml = `
+          <div class="op-party-breakdown" style="margin-top:8px;background:var(--mu,#f8fafc);border-radius:6px;padding:8px 10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--tx);margin-bottom:6px;">Per-Customer Breakdown (Auto-sums to Debit):</div>
+            ${customers.map(p => {
+              const pVal = openPartyDebits[p.id] ? (openPartyDebits[p.id] / 100).toFixed(2) : '';
+              return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;font-size:12px;">
+                <span>${esc(p.name)}</span>
+                <input data-party-acc="1100" data-party-id="${p.id}" data-s="d" inputmode="decimal" placeholder="0.00" value="${pVal}" ${disabledAttr} style="width:110px;padding:4px 8px;font-size:12px;background:#fff;border:1px solid var(--bd);border-radius:4px;text-align:right;">
+              </div>`;
+            }).join('')}
+          </div>
+        `;
+      }
+    } else if (a.code === '2000') {
+      const suppliers = (db.parties || []).filter(isS);
+      if (suppliers.length) {
+        breakdownHtml = `
+          <div class="op-party-breakdown" style="margin-top:8px;background:var(--mu,#f8fafc);border-radius:6px;padding:8px 10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--tx);margin-bottom:6px;">Per-Supplier Breakdown (Auto-sums to Credit):</div>
+            ${suppliers.map(p => {
+              const pVal = openPartyCredits[p.id] ? (openPartyCredits[p.id] / 100).toFixed(2) : '';
+              return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;font-size:12px;">
+                <span>${esc(p.name)}</span>
+                <input data-party-acc="2000" data-party-id="${p.id}" data-s="c" inputmode="decimal" placeholder="0.00" value="${pVal}" ${disabledAttr} style="width:110px;padding:4px 8px;font-size:12px;background:#fff;border:1px solid var(--bd);border-radius:4px;text-align:right;">
+              </div>`;
+            }).join('')}
+          </div>
+        `;
+      }
+    } else if (a.code === '2100' || a.code === '1400') {
+      const isTaken = a.code === '2100';
+      const dirLoans = (db.loans || []).filter(l => l.dir === (isTaken ? 'taken' : 'given'));
+      if (dirLoans.length) {
+        breakdownHtml = `
+          <div class="op-loan-breakdown" style="margin-top:8px;background:var(--mu,#f8fafc);border-radius:6px;padding:8px 10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--tx);margin-bottom:6px;">Per-Loan Breakdown:</div>
+            ${dirLoans.map(l => {
+              const key = a.code + '_' + l.id;
+              const lVal = openLoanBal[key] ? (openLoanBal[key] / 100).toFixed(2) : '';
+              return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;font-size:12px;">
+                <span>${esc(l.ref || l.name)} (${esc(l.partyName || pn(l.party))})</span>
+                <input data-loan-acc="${a.code}" data-loan-id="${l.id}" data-party-id="${l.party}" data-s="${isTaken ? 'c' : 'd'}" inputmode="decimal" placeholder="0.00" value="${lVal}" ${disabledAttr} style="width:110px;padding:4px 8px;font-size:12px;background:#fff;border:1px solid var(--bd);border-radius:4px;text-align:right;">
+              </div>`;
+            }).join('')}
+          </div>
+        `;
+      }
+    }
+
     return `
       <tr>
         <td>
@@ -217,6 +283,7 @@ export function renderOpen() {
               <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${normBg};color:${normColor};font-weight:600;white-space:nowrap;flex-shrink:0;">${normLabel}</span>
             </div>
           </div>
+          ${breakdownHtml}
           <div id="unorthodox_${a.code}" style="display:${showUnorthodox ? 'block' : 'none'};color:#b45309;font-size:11.5px;margin-top:3px;font-weight:500;">
             ⚠️ ${isNormD ? 'Credit balance entered for Asset account (overdraft/contra)' : 'Debit balance entered for Liability/Equity/Income account'}
           </div>

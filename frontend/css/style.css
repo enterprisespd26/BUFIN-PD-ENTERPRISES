@@ -2102,7 +2102,9 @@ aside.open ~ #ov {
   table.mcard.coa-table td.mc-title,
   table.coa-table.mcard td.mc-title,
   table.coa-table td.coa-title-td,
+  table.coa-table tbody tr td:first-child,
   .wrap:not(.no-cards) table.coa-table tbody tr td:first-child {
+    padding-left: 0 !important;
     padding-right: 95px !important;
     min-height: 44px !important;
     display: flex !important;
@@ -2112,14 +2114,31 @@ aside.open ~ #ov {
     text-align: left !important;
     gap: 8px !important;
     box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    margin-left: 0 !important;
   }
 
   table.mcard.coa-table td.mc-title > *,
   table.coa-table.mcard td.mc-title > *,
   table.coa-table td.coa-title-td > *,
+  table.coa-table tbody tr td:first-child > *,
   .wrap:not(.no-cards) table.coa-table tbody tr td:first-child > * {
     text-align: left !important;
+    justify-self: flex-start !important;
+    margin-left: 0 !important;
     max-width: 100% !important;
+  }
+
+  table.mcard.coa-table td.mc-title::before,
+  table.coa-table.mcard td.mc-title::before,
+  table.coa-table td.coa-title-td::before,
+  table.coa-table tbody tr td:first-child::before,
+  .wrap:not(.no-cards) table.coa-table tbody tr td:first-child::before {
+    display: none !important;
+    content: none !important;
+    width: 0 !important;
   }
 
   table.mcard.coa-table td.mc-actions,

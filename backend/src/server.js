@@ -477,6 +477,39 @@ app.post('/api/change-password', async (q, s, n) => {
   }
 });
 
+// Audit Log endpoints: Authenticated, INSERT-only or read list
+app.post('/api/audit', async (q, s, n) => {
+  try {
+    const { action, entity, entity_id, before, after } = q.body || {};
+    if (!action) return s.status(400).json({ error: 'Action is required' });
+    const ip = q.ip || q.socket.remoteAddress || '';
+    const actor = q.session?.sid ? 'session:' + q.session.sid.slice(0, 8) : 'user';
+    const rec = {
+      actor,
+      action: String(action),
+      entity: entity ? String(entity) : null,
+      entity_id: entity_id ? String(entity_id) : null,
+      before: before ? (typeof before === 'object' ? before : { val: before }) : null,
+      after: after ? (typeof after === 'object' ? after : { val: after }) : null,
+      ip
+    };
+    const row = await store.insertAudit(rec);
+    return s.json({ ok: true, audit: row });
+  } catch (e) {
+    n(e);
+  }
+});
+
+app.get('/api/audit', async (q, s, n) => {
+  try {
+    const limit = Math.min(parseInt(q.query.limit, 10) || 100, 500);
+    const rows = await store.getAudit(limit);
+    return s.json({ ok: true, rows: rows || [] });
+  } catch (e) {
+    n(e);
+  }
+});
+
 // Single Page Application routing
 app.get(['/', '/index.html'], (q, s) => {
   s.set({

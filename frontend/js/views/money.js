@@ -9,14 +9,20 @@ export const moneyState = {
 };
 
 export function getTxnRowData(e) {
-  let partyName = e.meta?.partyName || e.meta?.employee || e.meta?.payee || '';
-  if (!partyName) {
-    const pLine = e.lines.find(l => l.p);
-    if (pLine && pLine.p) partyName = pn(pLine.p);
+  let partyName = '';
+  const pLine = e.lines?.find(l => l.p);
+  if (pLine && pLine.p) {
+    partyName = pn(pLine.p);
   }
-  if (!partyName && e.meta?.docNo) {
-    const d = db.docs.find(x => x.no === e.meta.docNo || x.sno === e.meta.docNo);
-    if (d) partyName = d.c?.n || d.sup || pn(d.party) || '';
+  if (!partyName && e.meta?.party) {
+    partyName = pn(e.meta.party);
+  }
+  if (!partyName) {
+    partyName = e.meta?.partyName || e.meta?.employee || e.meta?.payee || '';
+  }
+  if (!partyName && e.meta?.docNo && db.docs) {
+    const d = db.docs.find(x => x.no === e.meta.docNo);
+    if (d) partyName = pn(d.party) || d.c?.n || d.sup || '';
   }
 
   let acctName = '';

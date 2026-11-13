@@ -2279,7 +2279,7 @@ test('TC-OPEN-MOBILE-01: Opening Balances 2-column mobile layout, non-clipping d
 
   // 4. Verify sw.js cache bump
   const sw = nodeFs.readFileSync('frontend/sw.js', 'utf8');
-  assert.ok(/bufin-v(?:9\.[4-9]|1\d+\.\d+)-cache/.test(sw), 'sw.js must be bumped to at least bufin-v9.4-cache');
+  assert.ok(/bufin-v(?:9\.[4-9]|[1-9]\d+\.\d+)-cache/.test(sw), 'sw.js must be bumped to at least bufin-v9.4-cache');
 });
 
 test('TC-TXN-EDIT-01: Remove Print/Export PDF option and add dedicated Edit Details button across transaction views', () => {

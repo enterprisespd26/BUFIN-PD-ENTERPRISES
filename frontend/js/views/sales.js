@@ -1,5 +1,5 @@
 import { $, $$, esc, fmt, head, toast, today, uid, P, convertRate, downloadCSV, debounce as _utilsDebounce } from '../modules/utils.js';
-import { db, setDb, save, post, reverse, out, dstat, pn, isC, isS, paid, next, log, ensureAdvanceAccounts, getPartyAdvanceBalance, formatPrefix, getFiscalYear, getStateByName, getStateByCode, INDIAN_STATES, isFirstRunNeeded } from '../modules/state.js';
+import { db, setDb, save, post, reverse, out, dstat, pn, isC, isS, paid, next, log, ensureAdvanceAccounts, getPartyAdvanceBalance, formatPrefix, getFiscalYear, getStateByName, getStateByCode, INDIAN_STATES, isFirstRunNeeded, partyBalance } from '../modules/state.js';
 import { partyForm, markSalePaid } from '../modules/actions.js';
 import { showActionSheet, form, modal, closeM } from '../modules/components.js';
 import { enhanceMobile } from '../modules/mobile.js';
@@ -51,7 +51,9 @@ export const salesState = {
   viewNo: null,
   selectedPartyId: null,
   q: '',
-  files: []
+  files: [],
+  formDirty: false,
+  draft: null
 };
 
 const hasStamp = () => typeof STAMP === 'string' && STAMP.startsWith('data:image');
@@ -1249,6 +1251,16 @@ export function renderSales() {
           </div>
         `}
 
+        ${salesState.draft && !salesState.editNo ? `
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:8px 14px;margin-bottom:14px;font-size:13px;color:#1e40af;">
+            <span>📝 <b>Unsaved draft available</b> (saved at ${esc(salesState.draft.savedAt)})</span>
+            <div style="display:flex;gap:6px;">
+              <button type="button" class="btn p sm" id="btnResumeSalesDraft" style="font-size:12px;padding:4px 10px;">Resume Draft</button>
+              <button type="button" class="btn alt sm" id="btnDiscardSalesDraft" style="font-size:12px;padding:4px 8px;">✕</button>
+            </div>
+          </div>
+        ` : ''}
+
         <!-- EXISTING PARTY SELECTION -->
         <div class="pd-party-selector" style="background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
           <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
@@ -1258,9 +1270,16 @@ export function renderSales() {
               </label>
               <select id="pd_sel_customer" style="width:100%;padding:8px 12px;border:1px solid var(--bd);border-radius:6px;background:#fff;font-size:14px;font-weight:500;">
                 <option value="">-- Choose from existing customers --</option>
-                ${customers.map(p => `<option value="${p.id}" ${p.id === activeCustomerId ? 'selected' : ''}>${esc(p.name)}${p.phone ? ' (' + esc(p.phone) + ')' : ''}${p.state ? ' · ' + esc(p.state) : ''}</option>`).join('')}
+                ${customers.map(p => {
+                  const b = partyBalance(p.id, '1100');
+                  const balTxt = b > 0 ? ' · Receivable: ' + fmt(b) : (b < 0 ? ' · Advance: ' + fmt(-b) : '');
+                  return `<option value="${p.id}" ${p.id === activeCustomerId ? 'selected' : ''}>${esc(p.name)}${balTxt}${p.phone ? ' (' + esc(p.phone) + ')' : ''}</option>`;
+                }).join('')}
                 <option value="__NEW__">➕ + Add New Customer...</option>
               </select>
+              <div id="pd_cust_bal_hint" style="font-size:12px;color:var(--t2);margin-top:4px;">
+                ${activeCustomerId ? `Current Ledger Balance: <b style="color:${partyBalance(activeCustomerId, '1100') > 0 ? '#15803d' : '#475569'}">${fmt(partyBalance(activeCustomerId, '1100'))}</b>` : ''}
+              </div>
             </div>
             <div style="display:flex;align-items:flex-end;padding-top:18px;">
               <button type="button" class="p" id="pd_btn_new_cust" style="padding:8px 16px;font-size:13px;font-weight:600;white-space:nowrap;">
@@ -1743,6 +1762,40 @@ export function bindSalesEvents() {
   if (backRec) backRec.onclick = cancelEdit;
   const cancelBottom = $('#pd_btn_cancel_bottom');
   if (cancelBottom) cancelBottom.onclick = cancelEdit;
+
+  const newTabEl = $('#pd-tab-new');
+  if (newTabEl) {
+    newTabEl.addEventListener('input', () => {
+      salesState.formDirty = true;
+    });
+  }
+
+  const resumeBtn = $('#btnResumeSalesDraft');
+  if (resumeBtn) {
+    resumeBtn.onclick = () => {
+      if (salesState.draft) {
+        if (salesState.draft.lines) salesState.lines = JSON.parse(JSON.stringify(salesState.draft.lines));
+        if (salesState.draft.selectedPartyId) salesState.selectedPartyId = salesState.draft.selectedPartyId;
+        if (salesState.draft.files) salesState.files = [...salesState.draft.files];
+        if (salesState.draft.paymentReceived !== undefined) salesState.paymentReceived = salesState.draft.paymentReceived;
+        salesState.draft = null;
+        salesState.formDirty = true;
+        container.innerHTML = renderSales();
+        bindSalesEvents();
+        toast('Draft restored');
+      }
+    };
+  }
+
+  const discardBtn = $('#btnDiscardSalesDraft');
+  if (discardBtn) {
+    discardBtn.onclick = () => {
+      salesState.draft = null;
+      salesState.formDirty = false;
+      container.innerHTML = renderSales();
+      bindSalesEvents();
+    };
+  }
 
   // Dynamic lines changes & calculations
   const recalculateForm = () => {
@@ -2584,7 +2637,8 @@ export function bindSalesEvents() {
       docObj.date = date;
       docObj.due = date;
       docObj.party = party.id;
-      docObj.sno = veh;
+      docObj.sno = no;
+      docObj.veh = veh;
       docObj.desc = lines.map(l => l.n + ' (' + l.q + ' ' + l.u + ')').join(', ');
       docObj.base = basePaisa;
       docObj.gst = gstPaisa;

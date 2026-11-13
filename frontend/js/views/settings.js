@@ -272,8 +272,47 @@ export function renderSettings() {
         </div>
       </div>
     </div>
-    <h3>Audit log (latest)</h3>
-    <div class="wrap"><table>
-      ${db.audit.slice(-15).reverse().map(a => `<tr><td>${esc(a.at ? a.at.slice(0, 19).replace('T', ' ') : '')}</td><td>${esc(a.a)}</td><td>${esc(a.d)}</td></tr>`).join('') || '<tr><td class="empty">No activity yet.</td></tr>'}
-    </table></div>`;
+    <h3>Audit Log &amp; System Activity (Read-Only)</h3>
+    <div class="wrap" style="padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:14.5px;font-weight:700;color:#0f172a;">Immutable System Audit Trail</div>
+          <div style="font-size:12px;color:#64748b;">Append-only server log tracking security events, restorations, and transactions.</div>
+        </div>
+        <button type="button" id="btnRefreshAuditLog" class="btn sm" style="display:inline-flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span>Refresh Audit Log</span>
+        </button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="tblAuditLog" style="width:100%;font-size:12.5px;">
+          <thead>
+            <tr style="background:#f8fafc;border-bottom:1px solid var(--bd);">
+              <th style="padding:8px 10px;text-align:left;">Date &amp; Time</th>
+              <th style="padding:8px 10px;text-align:left;">Actor</th>
+              <th style="padding:8px 10px;text-align:left;">Action</th>
+              <th style="padding:8px 10px;text-align:left;">Entity</th>
+              <th style="padding:8px 10px;text-align:left;">Details / Payload</th>
+              <th style="padding:8px 10px;text-align:left;">IP Address</th>
+            </tr>
+          </thead>
+          <tbody id="auditLogTbody">
+            ${(db.audit || []).slice(-15).reverse().map(a => `
+              <tr>
+                <td style="white-space:nowrap;">${esc(a.at ? a.at.slice(0, 19).replace('T', ' ') : '-')}</td>
+                <td><span class="pill sm">client</span></td>
+                <td><b>${esc(a.a || '-')}</b></td>
+                <td>-</td>
+                <td style="color:var(--t2);">${esc(a.d || '')}</td>
+                <td>local</td>
+              </tr>
+            `).join('') || '<tr><td colspan="6" class="empty">No activity yet.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
 }

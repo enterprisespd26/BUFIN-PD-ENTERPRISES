@@ -1,9 +1,10 @@
 // BUFIN Service Worker - Offline Caching & App Shell Acceleration
-const CACHE_NAME = 'bufin-v19.0-cache';
+const CACHE_NAME = 'bufin-v21.0-cache';
 
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
+  '/vendor/jspdf.umd.min.js',
   '/css/style.css',
   '/css/login.css',
   '/css/invoice.css',
