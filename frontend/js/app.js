@@ -855,27 +855,8 @@ function bindViewEvents() {
       if (fd.apiSecret) db.biz.cloudinary_secret = fd.apiSecret.trim();
       save();
 
-      try {
-        const res = await fetch('/api/cloudinary/config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(fd)
-        });
-        if (res.ok) {
-          const cfg = await res.json();
-          if (cfg.cloudName) db.biz.cloudinary_name = cfg.cloudName;
-          if (cfg.apiKey) db.biz.cloudinary_key = cfg.apiKey;
-          save();
-          if (statEl) statEl.innerHTML = '<span style="color:#16a34a">✓ Cloudinary Credentials Saved &amp; Synced</span>';
-          toast('Cloudinary credentials saved successfully');
-        } else {
-          if (statEl) statEl.innerHTML = '<span style="color:#16a34a">✓ Saved in browser storage</span>';
-          toast('Cloudinary credentials saved');
-        }
-      } catch (err) {
-        if (statEl) statEl.innerHTML = '<span style="color:#16a34a">✓ Saved in browser storage (Offline)</span>';
-        toast('Cloudinary credentials saved');
-      }
+      if (statEl) statEl.innerHTML = '<span style="color:#16a34a">✓ Saved in local business settings</span>';
+      toast('Cloudinary account name saved');
     });
 
     $('#btnTestCloudinary')?.addEventListener('click', async () => {
@@ -885,11 +866,11 @@ function bindViewEvents() {
         const res = await fetch('/api/cloudinary/config');
         if (res.ok) {
           const data = await res.json();
-          if (data.hasSecret) {
+          if (data.configured) {
             if (resEl) resEl.innerHTML = `<span style="color:#16a34a;">✓ Connected to Cloudinary (Account: ${esc(data.cloudName)}) — Backend storage active.</span>`;
             toast('Cloudinary connection verified');
           } else {
-            if (resEl) resEl.innerHTML = '<span style="color:#b45309;">⚠️ Cloudinary is configured but API Secret is missing in backend environment.</span>';
+            if (resEl) resEl.innerHTML = '<span style="color:#b45309;">⚠️ Cloudinary is not configured in backend environment variables.</span>';
           }
         } else {
           if (resEl) resEl.innerHTML = '<span style="color:#dc2626;">✕ Cloudinary service check returned status ' + res.status + '</span>';

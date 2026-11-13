@@ -28,3 +28,8 @@ logs/
 
 # Scripts & temporary dev utilities
 backend/scripts/
+
+# Local database / ledger state files
+backend/data/state.json
+backend/data/*.json
+backend/data/*.tmp

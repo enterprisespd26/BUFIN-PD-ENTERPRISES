@@ -1705,14 +1705,26 @@ test('TC-DOC-CLOUDINARY-01: Cloudinary image upload and camera scan integration 
 
   const cloudinaryMod = await import('../backend/src/cloudinary.js');
   const cloudinary = cloudinaryMod.default || cloudinaryMod;
+
+  // Set test credentials via environment variables
+  process.env.CLOUDINARY_CLOUD_NAME = 'iqsinmcr';
+  process.env.CLOUDINARY_API_KEY = '573667157386361';
+  process.env.CLOUDINARY_API_SECRET = 'ZH66sXW2wppxv9V4_9zYd-eRaSU';
+
   const config = cloudinary.getConfig();
 
+  assert.equal(config.configured, true, 'isConfigured must be true when env vars are set');
   assert.equal(config.cloudName, 'iqsinmcr', 'Configured Cloud Name must match account');
-  assert.equal(config.apiKey, '573667157386361', 'Configured API Key must match account');
 
-  // Verify secret keys are NEVER exposed in client config payload
+  // Verify apiKey and secret keys are NEVER exposed in client config payload
+  assert.equal(config.apiKey, undefined, 'API Key must never be exposed to client-side');
   assert.equal(config.apiSecret, undefined, 'API Secret must never be exposed to client-side');
-  assert.ok(typeof config.hasSecret === 'boolean', 'hasSecret status flag must be boolean');
+  assert.equal(config.hasSecret, undefined, 'hasSecret flag must not be returned');
+
+  // Verify missing env vars result in isConfigured() === false
+  delete process.env.CLOUDINARY_CLOUD_NAME;
+  assert.equal(cloudinary.isConfigured(), false, 'isConfigured must be false when env vars are missing');
+  process.env.CLOUDINARY_CLOUD_NAME = 'iqsinmcr';
 
   // Simulate captured paper bill / camera scan
   const sampleBillData = 'data:image/jpeg;base64,' + Buffer.from('fake-camera-scan-weighbridge-slip').toString('base64');

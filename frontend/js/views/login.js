@@ -86,14 +86,21 @@ async function submitPin() {
       body: JSON.stringify({ pin: enteredPin })
     }).then(async res => {
       if (res.ok) {
-        const j = await res.json();
-        if (j.data) {
-          const { setVer, setDb } = await import('../modules/state.js');
-          setVer(j.version);
-          setDb(j.data);
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('bufin-render'));
+        try {
+          const sRes = await fetch('/api/state');
+          if (sRes.ok) {
+            const j = await sRes.json();
+            if (j.data) {
+              const { setVer, setDb } = await import('../modules/state.js');
+              setVer(j.version);
+              setDb(j.data);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('bufin-render'));
+              }
+            }
           }
+        } catch (e) {
+          console.warn('Background state sync:', e);
         }
       } else if (res.status === 401) {
         triggerError('Server PIN changed. Please re-enter.');
@@ -126,17 +133,27 @@ async function submitPin() {
       }
       unlockApp();
       toast('Unlocked');
-      if (data.data) {
-        const { setVer, setDb } = await import('../modules/state.js');
-        setVer(data.version);
-        setDb(data.data);
-      }
       if (activeCallback) {
         const cb = activeCallback;
         activeCallback = null;
         cb();
-      } else if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('bufin-render'));
+      } else {
+        try {
+          const sRes = await fetch('/api/state');
+          if (sRes.ok) {
+            const sj = await sRes.json();
+            if (sj.data) {
+              const { setVer, setDb } = await import('../modules/state.js');
+              setVer(sj.version);
+              setDb(sj.data);
+            }
+          }
+        } catch (e) {
+          console.warn('Login state fetch:', e);
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('bufin-render'));
+        }
       }
     } else {
       triggerError(data.error || 'Invalid PIN code');

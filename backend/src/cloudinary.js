@@ -1,31 +1,39 @@
 const crypto = require('crypto');
 const https = require('https');
 
-let cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'iqsinmcr';
-let apiKey = process.env.CLOUDINARY_API_KEY || '573667157386361';
-let apiSecret = process.env.CLOUDINARY_API_SECRET || 'ZH66sXW2wppxv9V4_9zYd-eRaSU';
+function getCredentials() {
+  let cloudName = process.env.CLOUDINARY_CLOUD_NAME || '';
+  let apiKey = process.env.CLOUDINARY_API_KEY || '';
+  let apiSecret = process.env.CLOUDINARY_API_SECRET || '';
 
-if (process.env.CLOUDINARY_URL) {
-  try {
-    const parsed = new URL(process.env.CLOUDINARY_URL);
-    if (parsed.username) apiKey = decodeURIComponent(parsed.username);
-    if (parsed.password) apiSecret = decodeURIComponent(parsed.password);
-    if (parsed.hostname) cloudName = parsed.hostname;
-  } catch (e) {
-    console.error('Failed to parse CLOUDINARY_URL:', e.message);
+  if (process.env.CLOUDINARY_URL) {
+    try {
+      const parsed = new URL(process.env.CLOUDINARY_URL);
+      if (parsed.username) apiKey = decodeURIComponent(parsed.username);
+      if (parsed.password) apiSecret = decodeURIComponent(parsed.password);
+      if (parsed.hostname) cloudName = parsed.hostname;
+    } catch (e) {
+      console.error('Failed to parse CLOUDINARY_URL:', e.message);
+    }
   }
+
+  return { cloudName, apiKey, apiSecret };
 }
 
 function isConfigured() {
+  const { cloudName, apiKey, apiSecret } = getCredentials();
   return Boolean(cloudName && apiKey && apiSecret);
 }
 
 function uploadToCloudinary(base64Data, folder = 'bufin/bills') {
   return new Promise((resolve, reject) => {
-    if (!apiSecret) {
-      return reject(new Error('Cloudinary API Secret is not configured. Please add CLOUDINARY_API_SECRET or CLOUDINARY_URL in backend/.env'));
+    if (!isConfigured()) {
+      const err = new Error('Cloudinary service is not configured. Missing required environment variables.');
+      err.status = 503;
+      return reject(err);
     }
 
+    const { cloudName, apiKey, apiSecret } = getCredentials();
     const timestamp = Math.floor(Date.now() / 1000);
     // Cloudinary requires signing sorted parameters alphabetically
     const toSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
@@ -42,7 +50,7 @@ function uploadToCloudinary(base64Data, folder = 'bufin/bills') {
     const options = {
       hostname: 'api.cloudinary.com',
       port: 443,
-      path: `/v1_1/${cloudName}/image/upload`,
+      path: `/v1_1/${cloudName}/auto/upload`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -66,10 +74,14 @@ function uploadToCloudinary(base64Data, folder = 'bufin/bills') {
               created_at: json.created_at
             });
           } else {
-            reject(new Error(json.error?.message || `Cloudinary upload error (${res.statusCode})`));
+            const err = new Error(json.error?.message || `Cloudinary upload error (${res.statusCode})`);
+            err.status = res.statusCode >= 500 ? 502 : res.statusCode;
+            reject(err);
           }
         } catch (err) {
-          reject(new Error('Invalid response from Cloudinary: ' + data.slice(0, 100)));
+          const e = new Error('Invalid response from Cloudinary: ' + data.slice(0, 100));
+          e.status = 502;
+          reject(e);
         }
       });
     });
@@ -80,16 +92,16 @@ function uploadToCloudinary(base64Data, folder = 'bufin/bills') {
   });
 }
 
-function setConfig(newConfig = {}) {
-  if (newConfig.cloudName) cloudName = newConfig.cloudName.trim();
-  if (newConfig.apiKey) apiKey = newConfig.apiKey.trim();
-  if (newConfig.apiSecret) apiSecret = newConfig.apiSecret.trim();
-  return { cloudName, apiKey, hasSecret: Boolean(apiSecret) };
+function getConfig() {
+  const { cloudName } = getCredentials();
+  return {
+    configured: isConfigured(),
+    cloudName: cloudName || ''
+  };
 }
 
 module.exports = {
   isConfigured,
   uploadToCloudinary,
-  getConfig: () => ({ cloudName, apiKey, hasSecret: Boolean(apiSecret) }),
-  setConfig
+  getConfig
 };
